@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(flutter --version)",
+      "PowerShell(Write-Output \"=== lib tree ===\"; Get-ChildItem -Path \"C:\\\\TOLY MOLY APP\\\\lib\" -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\TOLY MOLY APP\\\\\", \"\"\\) }; Write-Output \"=== devices ===\"; flutter devices)"
+    ]
+  }
+}
