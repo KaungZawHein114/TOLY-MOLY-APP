@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
 
 enum WorkerSort { distance, rating, priceLow }
@@ -35,7 +36,7 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
     // Fail-safe source list.
     final source = workers.isNotEmpty ? workers : fallbackWorkers;
 
-    // Distinct skills for the filter chips.
+    // Distinct skills for the filter chips — derived from data, not hardcoded.
     final skills = <String>{for (final w in source) w.skill}.toList()..sort();
 
     // Apply filters.
@@ -64,7 +65,7 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
         actions: [
           IconButton(
             icon: const Text("💬", style: TextStyle(fontSize: 20)),
-            onPressed: () => context.go(Routes.chatbot),
+            onPressed: () => context.push(Routes.chatbot),
           ),
         ],
       ),
@@ -75,7 +76,7 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
             height: 46,
             child: ListView(
               scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               children: [
                 _Chip(
                   label: "All",
@@ -92,11 +93,12 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
           ),
           // Sort + availability row
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.xs + 2),
             child: Row(
               children: [
                 Icon(Icons.sort, size: 18, color: theme.hintColor),
-                const SizedBox(width: 6),
+                const SizedBox(width: AppSpacing.xs + 2),
                 DropdownButton<WorkerSort>(
                   value: sort,
                   underline: const SizedBox.shrink(),
@@ -133,12 +135,13 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                     ref.read(availableOnlyProvider.notifier).state = false;
                   })
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(12, 4, 12, 24),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md,
+                        AppSpacing.xs, AppSpacing.md, AppSpacing.xxl),
                     itemCount: list.length,
                     itemBuilder: (context, i) => WorkerCard(
                       worker: list[i],
                       onTap: () => context
-                          .go('${Routes.workerProfile}/${list[i].id}'),
+                          .push('${Routes.workerProfile}/${list[i].id}'),
                     ),
                   ),
           ),
@@ -157,15 +160,16 @@ class _Chip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.only(right: AppSpacing.sm),
       child: ChoiceChip(
         label: Text(label),
         selected: selected,
         onSelected: (_) => onTap(),
         selectedColor: AppColors.teal,
-        labelStyle: TextStyle(
-          color: selected ? Colors.white : null,
+        labelStyle: theme.textTheme.bodyMedium?.copyWith(
+          color: selected ? AppColors.onBrand : null,
           fontWeight: FontWeight.w600,
         ),
       ),
@@ -184,9 +188,9 @@ class _EmptyState extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           const Text("🔍", style: TextStyle(fontSize: 40)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           const Text("No workers match these filters"),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           TextButton(onPressed: onReset, child: const Text("Reset filters")),
         ],
       ),

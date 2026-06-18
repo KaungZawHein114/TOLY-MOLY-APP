@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../constants/app_colors.dart';
+
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
 
 /// A square emoji + label tile used for category grids and skill badges.
+/// Styling comes from theme tokens; the widget only knows about content + tap.
 class SkillTile extends StatelessWidget {
   final String emoji;
   final String label;
@@ -22,7 +25,7 @@ class SkillTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final radius = BorderRadius.circular(18);
+    final radius = BorderRadius.circular(AppRadius.lg);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -50,40 +53,47 @@ class SkillTile extends StatelessWidget {
               ),
             ],
           ),
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 6),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 30)),
-              const SizedBox(height: 6),
-              Text(
-                label,
-                textAlign: TextAlign.center,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.w700,
-                ),
-              ),
-              if (sublabel != null) ...[
-                const SizedBox(height: 2),
+          padding: const EdgeInsets.symmetric(
+              vertical: AppSpacing.sm, horizontal: AppSpacing.xs + 2),
+          // FittedBox is a safety net: if the cell is ever shorter than the
+          // content (small phones, big fonts), the tile scales down instead of
+          // showing an overflow stripe.
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(emoji, style: const TextStyle(fontSize: 28)),
+                const SizedBox(height: AppSpacing.xs),
                 Text(
-                  sublabel!,
+                  label,
                   textAlign: TextAlign.center,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.textTheme.bodySmall?.color
-                        ?.withValues(alpha: 0.7),
-                    fontSize: 10,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
+                if (sublabel != null) ...[
+                  const SizedBox(height: AppSpacing.xxs),
+                  Text(
+                    sublabel!,
+                    textAlign: TextAlign.center,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.hintColor,
+                      fontSize: 10,
+                    ),
+                  ),
+                ],
+                if (selected) ...[
+                  const SizedBox(height: AppSpacing.xxs),
+                  const Icon(Icons.check_circle,
+                      color: AppColors.teal, size: AppSizes.iconSm + 2),
+                ],
               ],
-              if (selected) ...[
-                const SizedBox(height: 4),
-                const Icon(Icons.check_circle, color: AppColors.teal, size: 18),
-              ],
-            ],
+            ),
           ),
         ),
       ),

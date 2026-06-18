@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 
 // LOCAL UI STATE (Riverpod), declared in this screen file.
@@ -32,40 +33,40 @@ class BookingScreen extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text("Book a service")),
       body: ListView(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
           _WorkerStrip(worker: worker),
-          const SizedBox(height: 22),
-          _SectionTitle("Select date", theme),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.xl + 2),
+          Text("Select date", style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm + 2),
           _OptionWrap(
             options: _days,
             selectedIndex: dateIdx,
             onSelect: (i) => ref.read(bookingDateProvider.notifier).state = i,
           ),
-          const SizedBox(height: 22),
-          _SectionTitle("Select time", theme),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.xl + 2),
+          Text("Select time", style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm + 2),
           _OptionWrap(
             options: _slots,
             selectedIndex: timeIdx,
             onSelect: (i) => ref.read(bookingTimeProvider.notifier).state = i,
           ),
-          const SizedBox(height: 22),
-          _SectionTitle("How many hours?", theme),
-          const SizedBox(height: 10),
+          const SizedBox(height: AppSpacing.xl + 2),
+          Text("How many hours?", style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm + 2),
           _HoursStepper(
             hours: hours,
             onChanged: (v) =>
                 ref.read(bookingHoursProvider.notifier).state = v,
           ),
-          const SizedBox(height: 22),
+          const SizedBox(height: AppSpacing.xl + 2),
           _PriceCard(
             hours: hours,
             rate: worker.hourlyRateMmk,
             total: total,
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: AppSpacing.xxl + 4),
           LargeButton(
             label: "${AppStrings.confirmBooking} • $total MMK",
             icon: Icons.check_circle,
@@ -95,82 +96,67 @@ class BookingScreen extends ConsumerWidget {
   }) {
     showDialog<void>(
       context: context,
-      builder: (ctx) => Dialog(
-        shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 72,
-                height: 72,
-                decoration: BoxDecoration(
-                  color: AppColors.success.withValues(alpha: 0.15),
-                  shape: BoxShape.circle,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return Dialog(
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppRadius.xl)),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.xxl),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Container(
+                  width: 72,
+                  height: 72,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.check_rounded,
+                      color: AppColors.success, size: 44),
                 ),
-                child: const Icon(Icons.check_rounded,
-                    color: AppColors.success, size: 44),
-              ),
-              const SizedBox(height: 16),
-              Text(
-                AppStrings.bookingConfirmed,
-                style: Theme.of(ctx)
-                    .textTheme
-                    .titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w900),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                "${worker.name} (${worker.skill}) is booked for "
-                "$day at $time • $hours hrs.",
-                textAlign: TextAlign.center,
-                style: Theme.of(ctx).textTheme.bodyMedium,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                "$total MMK",
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
-                      color: AppColors.orange,
-                      fontWeight: FontWeight.w900,
-                    ),
-              ),
-              const SizedBox(height: 20),
-              LargeButton(
-                label: "Done",
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  context.go(Routes.customerHome);
-                },
-              ),
-              const SizedBox(height: 8),
-              TextButton(
-                onPressed: () {
-                  Navigator.of(ctx).pop();
-                  context.go(Routes.chatbot);
-                },
-                child: const Text("Message the worker"),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.lg),
+                Text(AppStrings.bookingConfirmed,
+                    style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.sm),
+                Text(
+                  "${worker.name} (${worker.skill}) is booked for "
+                  "$day at $time • $hours hrs.",
+                  textAlign: TextAlign.center,
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  "$total MMK",
+                  style: theme.textTheme.titleMedium?.copyWith(
+                    color: AppColors.orange,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                LargeButton(
+                  label: "Done",
+                  onTap: () {
+                    Navigator.of(ctx).pop();
+                    context.go(Routes.customerHome);
+                  },
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(ctx).pop();
+                    context.push(Routes.chatbot);
+                  },
+                  child: const Text("Message the worker"),
+                ),
+              ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
-}
-
-class _SectionTitle extends StatelessWidget {
-  final String text;
-  final ThemeData theme;
-  const _SectionTitle(this.text, this.theme);
-
-  @override
-  Widget build(BuildContext context) => Text(
-        text,
-        style: theme.textTheme.titleMedium
-            ?.copyWith(fontWeight: FontWeight.w800),
-      );
 }
 
 class _WorkerStrip extends StatelessWidget {
@@ -192,15 +178,14 @@ class _WorkerStrip extends StatelessWidget {
           alignment: Alignment.center,
           child: Text(worker.emoji, style: const TextStyle(fontSize: 26)),
         ),
-        const SizedBox(width: 12),
+        const SizedBox(width: AppSpacing.md),
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(worker.name,
-                style: theme.textTheme.titleMedium
-                    ?.copyWith(fontWeight: FontWeight.w800)),
+            Text(worker.name, style: theme.textTheme.titleMedium),
             Text("${worker.skill} • ⭐ ${worker.rating}",
-                style: theme.textTheme.bodySmall),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: theme.hintColor)),
           ],
         ),
       ],
@@ -220,9 +205,10 @@ class _OptionWrap extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Wrap(
-      spacing: 10,
-      runSpacing: 10,
+      spacing: AppSpacing.sm + 2,
+      runSpacing: AppSpacing.sm + 2,
       children: [
         for (int i = 0; i < options.length; i++)
           ChoiceChip(
@@ -230,8 +216,8 @@ class _OptionWrap extends StatelessWidget {
             selected: selectedIndex == i,
             onSelected: (_) => onSelect(i),
             selectedColor: AppColors.teal,
-            labelStyle: TextStyle(
-              color: selectedIndex == i ? Colors.white : null,
+            labelStyle: theme.textTheme.bodyMedium?.copyWith(
+              color: selectedIndex == i ? AppColors.onBrand : null,
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -249,10 +235,11 @@ class _HoursStepper extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.md, vertical: AppSpacing.sm),
       decoration: BoxDecoration(
         border: Border.all(color: theme.dividerColor),
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.md),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -261,9 +248,7 @@ class _HoursStepper extends StatelessWidget {
             onPressed: hours > 1 ? () => onChanged(hours - 1) : null,
             icon: const Icon(Icons.remove),
           ),
-          Text("$hours hours",
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Text("$hours hours", style: theme.textTheme.titleLarge),
           IconButton.filledTonal(
             onPressed: hours < 8 ? () => onChanged(hours + 1) : null,
             icon: const Icon(Icons.add),
@@ -285,7 +270,7 @@ class _PriceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [
@@ -293,20 +278,18 @@ class _PriceCard extends StatelessWidget {
             AppColors.orange.withValues(alpha: 0.10),
           ],
         ),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
       ),
       child: Column(
         children: [
           _row(theme, "Hourly rate", "$rate MMK"),
-          const SizedBox(height: 6),
+          const SizedBox(height: AppSpacing.xs + 2),
           _row(theme, "Hours", "× $hours"),
-          const Divider(height: 22),
+          const Divider(height: AppSpacing.xxl - 2),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text("Estimated total",
-                  style: theme.textTheme.titleMedium
-                      ?.copyWith(fontWeight: FontWeight.w800)),
+              Text("Estimated total", style: theme.textTheme.titleMedium),
               Text("$total MMK",
                   style: theme.textTheme.titleLarge?.copyWith(
                     color: AppColors.orange,

@@ -2,9 +2,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
+import '../../core/theme/app_text_styles.dart';
 
 /// Splash screen. Renders the full branded screen instantly, then a plain
 /// (non-async) Timer auto-navigates to Role Selection after 1.5s.
@@ -48,11 +50,11 @@ class _SplashScreenState extends State<SplashScreen> {
               width: 110,
               height: 110,
               decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(28),
+                color: AppColors.onBrand,
+                borderRadius: BorderRadius.circular(AppRadius.xl),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.2),
+                    color: AppColors.shadow,
                     blurRadius: 24,
                     offset: const Offset(0, 12),
                   ),
@@ -61,36 +63,30 @@ class _SplashScreenState extends State<SplashScreen> {
               alignment: Alignment.center,
               child: const Text("🧰", style: TextStyle(fontSize: 56)),
             ),
-            const SizedBox(height: 28),
-            const Text(
+            const SizedBox(height: AppSpacing.xxl + 4),
+            Text(
               AppStrings.appName,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 34,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 1.5,
-              ),
+              style: AppTextStyles.displayLarge.copyWith(color: AppColors.onBrand),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: AppSpacing.md),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.huge),
               child: Text(
                 AppStrings.tagline,
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  fontSize: 14,
+                style: AppTextStyles.bodyMedium.copyWith(
+                  color: AppColors.onBrandMuted,
                   fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            const SizedBox(height: 40),
+            const SizedBox(height: AppSpacing.huge),
             // Tap anywhere to skip the wait — instant navigation, no blocking.
             TextButton(
               onPressed: () => context.go(Routes.role),
-              child: const Text(
+              child: Text(
                 "Tap to continue",
-                style: TextStyle(color: Colors.white70),
+                style: AppTextStyles.label.copyWith(color: AppColors.onBrandMuted),
               ),
             ),
           ],

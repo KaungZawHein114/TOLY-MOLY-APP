@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/utils/ai_mock.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/skill_tile.dart';
@@ -66,8 +67,15 @@ class _WorkerOnboardingScreenState
           icon: const Icon(Icons.arrow_back),
           onPressed: () {
             if (step == 0) {
-              context.go(Routes.role);
+              // Step 1: leave onboarding — pop back to whatever pushed us
+              // (Role Selection), or reset to it if this is the stack root.
+              if (context.canPop()) {
+                context.pop();
+              } else {
+                context.go(Routes.role);
+              }
             } else {
+              // Later steps: just go back a step (in-screen state, no nav).
               ref.read(onboardStepProvider.notifier).state = step - 1;
             }
           },
@@ -106,16 +114,14 @@ class _WorkerOnboardingScreenState
     final age = ref.watch(onboardAgeProvider);
     return ListView(
       key: const ValueKey(0),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       children: [
-        Text("Tell us about you",
-            style: theme.textTheme.headlineSmall
-                ?.copyWith(fontWeight: FontWeight.w900)),
-        const SizedBox(height: 4),
+        Text("Tell us about you", style: theme.textTheme.headlineSmall),
+        const SizedBox(height: AppSpacing.xs),
         Text("Tap the mic to auto-fill with your voice.",
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: theme.hintColor)),
-        const SizedBox(height: 24),
+        const SizedBox(height: AppSpacing.xxl),
         TextField(
           controller: _nameController,
           decoration: InputDecoration(
@@ -123,15 +129,16 @@ class _WorkerOnboardingScreenState
             hintText: "e.g. Ko Aung",
             prefixIcon: const Icon(Icons.person_outline),
             border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(14)),
+                borderRadius: BorderRadius.circular(AppRadius.md)),
           ),
         ),
         if (_experience.isNotEmpty) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text("Experience detected: $_experience",
-              style: const TextStyle(color: AppColors.teal)),
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.teal)),
         ],
-        const SizedBox(height: 20),
+        const SizedBox(height: AppSpacing.xl),
         Center(
           child: GestureDetector(
             onTap: _captureVoice,
@@ -142,16 +149,14 @@ class _WorkerOnboardingScreenState
                 gradient: AppColors.tealGradient,
                 shape: BoxShape.circle,
               ),
-              child: const Icon(Icons.mic, color: Colors.white, size: 40),
+              child: const Icon(Icons.mic, color: AppColors.onBrand, size: 40),
             ),
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: AppSpacing.sm),
         const Center(child: Text("Tap to speak")),
-        const SizedBox(height: 28),
-        Text("Age: ${age.round()}",
-            style: theme.textTheme.titleMedium
-                ?.copyWith(fontWeight: FontWeight.w700)),
+        const SizedBox(height: AppSpacing.xxl + 4),
+        Text("Age: ${age.round()}", style: theme.textTheme.titleMedium),
         Slider(
           value: age,
           min: 18,
@@ -162,7 +167,7 @@ class _WorkerOnboardingScreenState
           onChanged: (v) =>
               ref.read(onboardAgeProvider.notifier).state = v,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: AppSpacing.md),
         LargeButton(
           label: "Continue",
           icon: Icons.arrow_forward,
@@ -172,7 +177,7 @@ class _WorkerOnboardingScreenState
     );
   }
 
-  // STEP 2 — Skills (10 badges, select 1–3)
+  // STEP 2 — Skills (badges, select 1–3)
   Widget _stepTwo() {
     final theme = Theme.of(context);
     final selected = ref.watch(onboardSkillsProvider);
@@ -181,14 +186,13 @@ class _WorkerOnboardingScreenState
       key: const ValueKey(1),
       children: [
         Padding(
-          padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.xxl, AppSpacing.lg, AppSpacing.xxl, AppSpacing.sm),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text("What can you do?",
-                  style: theme.textTheme.headlineSmall
-                      ?.copyWith(fontWeight: FontWeight.w900)),
-              const SizedBox(height: 4),
+              Text("What can you do?", style: theme.textTheme.headlineSmall),
+              const SizedBox(height: AppSpacing.xs),
               Text("Pick 1–3 skills (${selected.length}/3 selected)",
                   style: theme.textTheme.bodyMedium
                       ?.copyWith(color: theme.hintColor)),
@@ -197,12 +201,12 @@ class _WorkerOnboardingScreenState
         ),
         Expanded(
           child: GridView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxl),
             itemCount: badges.length,
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 3,
-              mainAxisSpacing: 12,
-              crossAxisSpacing: 12,
+              mainAxisSpacing: AppSpacing.md,
+              crossAxisSpacing: AppSpacing.md,
               childAspectRatio: 0.95,
             ),
             itemBuilder: (context, i) {
@@ -219,7 +223,7 @@ class _WorkerOnboardingScreenState
           ),
         ),
         Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: LargeButton(
             label: selected.isEmpty ? "Select at least 1 skill" : "Continue",
             icon: Icons.arrow_forward,
@@ -259,16 +263,14 @@ class _WorkerOnboardingScreenState
     final theme = Theme.of(context);
     return Padding(
       key: const ValueKey(2),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(AppSpacing.xxl),
       child: Column(
         children: [
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           const Text("📜", style: TextStyle(fontSize: 56)),
-          const SizedBox(height: 12),
-          Text("Worker agreement",
-              style: theme.textTheme.headlineSmall
-                  ?.copyWith(fontWeight: FontWeight.w900)),
-          const SizedBox(height: 12),
+          const SizedBox(height: AppSpacing.md),
+          Text("Worker agreement", style: theme.textTheme.headlineSmall),
+          const SizedBox(height: AppSpacing.md),
           Expanded(
             child: SingleChildScrollView(
               child: Text(
@@ -283,7 +285,7 @@ class _WorkerOnboardingScreenState
               ),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           Center(
             child: FractionallySizedBox(
               widthFactor: 0.8,
@@ -295,7 +297,7 @@ class _WorkerOnboardingScreenState
               ),
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
         ],
       ),
     );
@@ -309,7 +311,8 @@ class _ProgressBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.xxl, vertical: AppSpacing.sm),
       child: Row(
         children: List.generate(3, (i) {
           final active = i <= step;
@@ -347,6 +350,7 @@ class _SlideToAcceptState extends State<_SlideToAccept> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return LayoutBuilder(
       builder: (context, constraints) {
         final maxDx = constraints.maxWidth - _thumb;
@@ -361,8 +365,8 @@ class _SlideToAcceptState extends State<_SlideToAccept> {
             children: [
               Text(
                 _done ? "Accepted ✓" : "Slide to accept →",
-                style: const TextStyle(
-                    color: AppColors.tealDark, fontWeight: FontWeight.w700),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: AppColors.tealDark),
               ),
               Positioned(
                 left: _dx,
@@ -393,8 +397,8 @@ class _SlideToAcceptState extends State<_SlideToAccept> {
                     ),
                     child: Icon(
                       _done ? Icons.check : Icons.chevron_right,
-                      color: Colors.white,
-                      size: 28,
+                      color: AppColors.onBrand,
+                      size: AppSizes.iconLg,
                     ),
                   ),
                 ),

@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../constants/app_colors.dart';
 
-/// A big, tappable primary button with haptic feedback. Used everywhere so the
-/// demo feels consistent and responsive. Navigates / acts instantly.
+import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text_styles.dart';
+
+/// A big, tappable primary button with haptic feedback. Pure presentation —
+/// it takes a label + callback and pulls all styling from the theme tokens.
 class LargeButton extends StatelessWidget {
   final String label;
   final IconData? icon;
@@ -22,7 +25,8 @@ class LargeButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(16);
+    final radius = BorderRadius.circular(AppRadius.md);
+    final fg = filled ? AppColors.onBrand : AppColors.teal;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -49,27 +53,21 @@ class LargeButton extends StatelessWidget {
                 : null,
           ),
           child: Container(
-            height: 58,
+            height: AppSizes.buttonHeight,
             alignment: Alignment.center,
-            padding: const EdgeInsets.symmetric(horizontal: 20),
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 if (icon != null) ...[
-                  Icon(icon,
-                      color: filled ? Colors.white : AppColors.teal, size: 22),
-                  const SizedBox(width: 10),
+                  Icon(icon, color: fg, size: AppSizes.iconMd),
+                  const SizedBox(width: AppSpacing.sm),
                 ],
                 Flexible(
                   child: Text(
                     label,
                     overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      color: filled ? Colors.white : AppColors.teal,
-                      fontSize: 17,
-                      fontWeight: FontWeight.w700,
-                      letterSpacing: 0.3,
-                    ),
+                    style: AppTextStyles.button.copyWith(color: fg),
                   ),
                 ),
               ],

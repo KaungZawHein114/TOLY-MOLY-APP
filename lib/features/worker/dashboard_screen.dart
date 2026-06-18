@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
 
 // LOCAL UI STATE (Riverpod), declared in this screen file.
@@ -35,19 +36,19 @@ class WorkerDashboardScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Text("💬", style: TextStyle(fontSize: 20)),
-            onPressed: () => context.go(Routes.chatbot),
+            onPressed: () => context.push(Routes.chatbot),
           ),
         ],
       ),
       body: ListView(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
           _AvailabilityToggle(
             available: available,
             onChanged: (v) =>
                 ref.read(availableToggleProvider.notifier).state = v,
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: AppSpacing.lg),
           Row(
             children: [
               Expanded(
@@ -59,7 +60,7 @@ class WorkerDashboardScreen extends ConsumerWidget {
                   gradient: AppColors.tealGradient,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _StatCard(
                   emoji: "📋",
@@ -71,19 +72,19 @@ class WorkerDashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: AppSpacing.xl),
           Row(
             children: [
               Expanded(
                 child: _MiniStat(
                     label: "Rating", value: "4.9★", color: AppColors.star),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _MiniStat(
                     label: "Jobs done", value: "128", color: AppColors.teal),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: _MiniStat(
                     label: "This week",
@@ -92,13 +93,11 @@ class WorkerDashboardScreen extends ConsumerWidget {
               ),
             ],
           ),
-          const SizedBox(height: 24),
-          Text(AppStrings.pendingRequests,
-              style: theme.textTheme.titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w800)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.xxl),
+          Text(AppStrings.pendingRequests, style: theme.textTheme.titleLarge),
+          const SizedBox(height: AppSpacing.sm),
           if (!available)
-            _OfflineHint()
+            const _OfflineHint()
           else
             ...pending.map((b) => _RequestCard(booking: b)),
         ],
@@ -114,15 +113,15 @@ class _AvailabilityToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg + 2, vertical: AppSpacing.md + 2),
       decoration: BoxDecoration(
         gradient: available ? AppColors.tealGradient : null,
-        color: available ? null : Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(18),
-        border: available
-            ? null
-            : Border.all(color: Theme.of(context).dividerColor),
+        color: available ? null : theme.cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: available ? null : Border.all(color: theme.dividerColor),
         boxShadow: available
             ? [
                 BoxShadow(
@@ -137,30 +136,27 @@ class _AvailabilityToggle extends StatelessWidget {
         children: [
           Icon(
             available ? Icons.flash_on : Icons.flash_off,
-            color: available ? Colors.white : Theme.of(context).hintColor,
+            color: available ? AppColors.onBrand : theme.hintColor,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   AppStrings.availableForBookings,
-                  style: TextStyle(
+                  style: theme.textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.w800,
-                    fontSize: 16,
                     color: available
-                        ? Colors.white
-                        : Theme.of(context).textTheme.bodyLarge?.color,
+                        ? AppColors.onBrand
+                        : theme.textTheme.bodyLarge?.color,
                   ),
                 ),
                 Text(
                   available ? "You're online — jobs incoming" : "You're offline",
-                  style: TextStyle(
-                    color: available
-                        ? Colors.white.withValues(alpha: 0.9)
-                        : Theme.of(context).hintColor,
-                    fontSize: 12,
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color:
+                        available ? AppColors.onBrandMuted : theme.hintColor,
                   ),
                 ),
               ],
@@ -169,7 +165,7 @@ class _AvailabilityToggle extends StatelessWidget {
           Switch(
             value: available,
             onChanged: onChanged,
-            activeColor: Colors.white,
+            activeColor: AppColors.onBrand,
             activeTrackColor: AppColors.tealDark,
           ),
         ],
@@ -194,11 +190,12 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         gradient: gradient,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         boxShadow: [
           BoxShadow(
             color: gradient.colors.first.withValues(alpha: 0.3),
@@ -211,27 +208,24 @@ class _StatCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(emoji, style: const TextStyle(fontSize: 26)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(value,
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900)),
-              const SizedBox(width: 4),
+                  style: theme.textTheme.headlineSmall
+                      ?.copyWith(color: AppColors.onBrand, fontSize: 24)),
+              const SizedBox(width: AppSpacing.xs),
               Text(unit,
-                  style: TextStyle(
-                      color: Colors.white.withValues(alpha: 0.9),
-                      fontSize: 12)),
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.onBrandMuted)),
             ],
           ),
-          const SizedBox(height: 2),
+          const SizedBox(height: AppSpacing.xxs),
           Text(label,
-              style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.9), fontSize: 12)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.onBrandMuted)),
         ],
       ),
     );
@@ -249,18 +243,18 @@ class _MiniStat extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 14),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.md + 2),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.md),
         border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         children: [
           Text(value,
-              style: theme.textTheme.titleMedium?.copyWith(
-                  color: color, fontWeight: FontWeight.w900)),
-          const SizedBox(height: 2),
+              style: theme.textTheme.titleMedium
+                  ?.copyWith(color: color, fontWeight: FontWeight.w900)),
+          const SizedBox(height: AppSpacing.xxs),
           Text(label,
               style:
                   theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
@@ -278,9 +272,9 @@ class _RequestCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Card(
-      margin: const EdgeInsets.symmetric(vertical: 6),
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 2),
       child: Padding(
-        padding: const EdgeInsets.all(14),
+        padding: const EdgeInsets.all(AppSpacing.md + 2),
         child: Column(
           children: [
             Row(
@@ -289,23 +283,23 @@ class _RequestCard extends StatelessWidget {
                   backgroundColor: AppColors.orange.withValues(alpha: 0.15),
                   child: const Text("🧑"),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(booking.customerName,
-                          style: theme.textTheme.titleMedium
-                              ?.copyWith(fontWeight: FontWeight.w700)),
+                          style: theme.textTheme.titleMedium),
                       Text("${booking.skill} • ${booking.date}",
-                          style: theme.textTheme.bodySmall),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: theme.hintColor)),
                     ],
                   ),
                 ),
                 StatusBadge(status: booking.status),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: AppSpacing.sm + 2),
             Row(
               children: [
                 Text("${booking.totalMmk} MMK",
@@ -317,7 +311,7 @@ class _RequestCard extends StatelessWidget {
                   onPressed: () => _toast(context, "Declined"),
                   child: const Text("Decline"),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: AppSpacing.sm),
                 FilledButton(
                   style: FilledButton.styleFrom(
                       backgroundColor: AppColors.teal),
@@ -340,20 +334,22 @@ class _RequestCard extends StatelessWidget {
 }
 
 class _OfflineHint extends StatelessWidget {
+  const _OfflineHint();
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(AppSpacing.xl),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
         border: Border.all(color: theme.dividerColor),
       ),
       child: Column(
         children: [
           const Text("😴", style: TextStyle(fontSize: 36)),
-          const SizedBox(height: 8),
+          const SizedBox(height: AppSpacing.sm),
           Text("Turn on \"Available for bookings\" to see requests",
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyMedium

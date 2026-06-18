@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 
 /// Two giant tiles: Customer | Worker. This is also the universal fallback
 /// screen for any unknown route, so it must always render valid content.
@@ -16,24 +17,19 @@ class RoleSelectionScreen extends StatelessWidget {
     return Scaffold(
       body: SafeArea(
         child: Padding(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.all(AppSpacing.xxl),
           child: Column(
             children: [
-              const SizedBox(height: 12),
-              Text("🧰",
-                  style: const TextStyle(fontSize: 40)),
-              const SizedBox(height: 8),
-              Text(
-                AppStrings.appName,
-                style: theme.textTheme.headlineMedium
-                    ?.copyWith(fontWeight: FontWeight.w900, letterSpacing: 1),
-              ),
-              const SizedBox(height: 4),
+              const SizedBox(height: AppSpacing.md),
+              const Text("🧰", style: TextStyle(fontSize: 40)),
+              const SizedBox(height: AppSpacing.sm),
+              Text(AppStrings.appName, style: theme.textTheme.headlineMedium),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 AppStrings.chooseRole,
                 style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
               ),
-              const SizedBox(height: 28),
+              const SizedBox(height: AppSpacing.xxl + 4),
               Expanded(
                 child: _RoleTile(
                   emoji: "🧑",
@@ -41,10 +37,10 @@ class RoleSelectionScreen extends StatelessWidget {
                   subtitle: AppStrings.customerMm,
                   caption: "Find trusted workers near you",
                   gradient: AppColors.tealGradient,
-                  onTap: () => context.go(Routes.customerHome),
+                  onTap: () => context.push(Routes.customerHome),
                 ),
               ),
-              const SizedBox(height: 18),
+              const SizedBox(height: AppSpacing.lg + 2),
               Expanded(
                 child: _RoleTile(
                   emoji: "🛠️",
@@ -52,10 +48,10 @@ class RoleSelectionScreen extends StatelessWidget {
                   subtitle: AppStrings.workerMm,
                   caption: "Get booked for jobs today",
                   gradient: AppColors.orangeGradient,
-                  onTap: () => context.go(Routes.onboarding),
+                  onTap: () => context.push(Routes.onboarding),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.md),
             ],
           ),
         ),
@@ -83,7 +79,8 @@ class _RoleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(24);
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(AppRadius.xl);
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -102,11 +99,11 @@ class _RoleTile extends StatelessWidget {
             ],
           ),
           child: Padding(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(AppSpacing.xxl),
             child: Row(
               children: [
                 Text(emoji, style: const TextStyle(fontSize: 60)),
-                const SizedBox(width: 20),
+                const SizedBox(width: AppSpacing.xl),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -114,32 +111,25 @@ class _RoleTile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: theme.textTheme.headlineSmall
+                            ?.copyWith(color: AppColors.onBrand, fontSize: 26),
                       ),
                       Text(
                         subtitle,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 14,
-                        ),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: AppColors.onBrandMuted),
                       ),
-                      const SizedBox(height: 6),
+                      const SizedBox(height: AppSpacing.xs + 2),
                       Text(
                         caption,
-                        style: TextStyle(
-                          color: Colors.white.withValues(alpha: 0.85),
-                          fontSize: 13,
-                        ),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.onBrandMuted, fontSize: 13),
                       ),
                     ],
                   ),
                 ),
                 const Icon(Icons.arrow_forward_ios,
-                    color: Colors.white, size: 20),
+                    color: AppColors.onBrand, size: AppSpacing.xl),
               ],
             ),
           ),

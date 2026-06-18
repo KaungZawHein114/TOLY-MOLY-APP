@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../core/constants/app_colors.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
+import '../../core/theme/app_colors.dart';
+import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 
 /// Worker profile. The router guarantees a non-null Worker; if anything is off
@@ -23,7 +24,7 @@ class WorkerProfileScreen extends StatelessWidget {
             expandedHeight: 220,
             pinned: true,
             backgroundColor: AppColors.teal,
-            foregroundColor: Colors.white,
+            foregroundColor: AppColors.onBrand,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
                 decoration: const BoxDecoration(gradient: AppColors.tealGradient),
@@ -31,31 +32,28 @@ class WorkerProfileScreen extends StatelessWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      const SizedBox(height: 30),
+                      const SizedBox(height: AppSpacing.xxxl - 2),
                       Container(
-                        width: 96,
-                        height: 96,
+                        width: AppSizes.avatarLarge,
+                        height: AppSizes.avatarLarge,
                         decoration: const BoxDecoration(
-                          color: Colors.white,
+                          color: AppColors.onBrand,
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
                         child: Text(worker.emoji,
                             style: const TextStyle(fontSize: 48)),
                       ),
-                      const SizedBox(height: 10),
+                      const SizedBox(height: AppSpacing.sm + 2),
                       Text(
                         worker.name,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 24,
-                          fontWeight: FontWeight.w900,
-                        ),
+                        style: theme.textTheme.headlineSmall
+                            ?.copyWith(color: AppColors.onBrand, fontSize: 24),
                       ),
                       Text(
                         worker.skill,
-                        style: TextStyle(
-                            color: Colors.white.withValues(alpha: 0.9)),
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: AppColors.onBrandMuted),
                       ),
                     ],
                   ),
@@ -64,7 +62,7 @@ class WorkerProfileScreen extends StatelessWidget {
             ),
           ),
           SliverPadding(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(AppSpacing.xl),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
                 Row(
@@ -89,29 +87,27 @@ class WorkerProfileScreen extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xl),
                 _AvailabilityBanner(available: worker.isAvailableNow),
-                const SizedBox(height: 20),
-                Text("About",
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(fontWeight: FontWeight.w800)),
-                const SizedBox(height: 6),
+                const SizedBox(height: AppSpacing.xl),
+                Text("About", style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.xs + 2),
                 Text(worker.bio, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: 20),
+                const SizedBox(height: AppSpacing.xl),
                 _RateRow(rate: worker.hourlyRateMmk),
-                const SizedBox(height: 28),
+                const SizedBox(height: AppSpacing.xxl + 4),
                 LargeButton(
                   label: "${AppStrings.bookNow} • ${worker.hourlyRateMmk} MMK/hr",
                   icon: Icons.calendar_month,
                   gradient: AppColors.orangeGradient,
-                  onTap: () => context.go('${Routes.booking}/${worker.id}'),
+                  onTap: () => context.push('${Routes.booking}/${worker.id}'),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: AppSpacing.md),
                 LargeButton(
                   label: "Ask the assistant",
                   icon: Icons.chat_bubble_outline,
                   filled: false,
-                  onTap: () => context.go(Routes.chatbot),
+                  onTap: () => context.push(Routes.chatbot),
                 ),
               ]),
             ),
@@ -140,11 +136,9 @@ class _Stat extends StatelessWidget {
     return Expanded(
       child: Column(
         children: [
-          Icon(icon, color: iconColor, size: 26),
-          const SizedBox(height: 4),
-          Text(value,
-              style: theme.textTheme.titleMedium
-                  ?.copyWith(fontWeight: FontWeight.w800)),
+          Icon(icon, color: iconColor, size: AppSizes.iconLg - 2),
+          const SizedBox(height: AppSpacing.xs),
+          Text(value, style: theme.textTheme.titleMedium),
           Text(label,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.hintColor)),
@@ -160,20 +154,22 @@ class _AvailabilityBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final color = available ? AppColors.success : AppColors.orange;
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(AppSpacing.md + 2),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md - 2),
       ),
       child: Row(
         children: [
           Icon(available ? Icons.check_circle : Icons.schedule, color: color),
-          const SizedBox(width: 10),
+          const SizedBox(width: AppSpacing.sm + 2),
           Text(
             available ? "Available now" : "Available later today",
-            style: TextStyle(color: color, fontWeight: FontWeight.w700),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: color, fontWeight: FontWeight.w700),
           ),
         ],
       ),
@@ -189,15 +185,16 @@ class _RateRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
       decoration: BoxDecoration(
         border: Border.all(color: theme.dividerColor),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(AppRadius.md - 2),
       ),
       child: Row(
         children: [
           const Text("💰", style: TextStyle(fontSize: 22)),
-          const SizedBox(width: 12),
+          const SizedBox(width: AppSpacing.md),
           const Text("Hourly rate"),
           const Spacer(),
           Text("$rate MMK",
