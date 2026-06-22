@@ -6,6 +6,30 @@ import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../large_button.dart';
 
+/// Used by [PhoneOtpForm] to switch in the verified-success container with a
+/// small scale+fade entrance instead of an instant swap — a rare, one-time
+/// moment per user, so a touch of delight is appropriate (not overdone).
+class _SuccessPop extends StatelessWidget {
+  final Widget child;
+  const _SuccessPop({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: AppMotion.medium,
+      curve: AppMotion.enter,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.scale(scale: 0.92 + (value * 0.08), child: child),
+        );
+      },
+      child: child,
+    );
+  }
+}
+
 /// Shared phone-number + mock-OTP verification widget. Used by both the
 /// client and tasker phone-verification steps so the demo OTP behaviour
 /// (12345) lives in exactly one place.
@@ -113,22 +137,24 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
         ),
         const SizedBox(height: AppSpacing.lg),
         if (_verified)
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.check_circle, color: AppColors.success),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: Text(OnboardingStrings.otpVerifiedMessage,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
-                ),
-              ],
+          _SuccessPop(
+            child: Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.success.withValues(alpha: 0.12),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: AppColors.success),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(OnboardingStrings.otpVerifiedMessage,
+                        style: theme.textTheme.bodyMedium
+                            ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
+                  ),
+                ],
+              ),
             ),
           )
         else ...[

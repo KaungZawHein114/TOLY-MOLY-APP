@@ -21,7 +21,7 @@ class ClientPhoneVerificationScreen extends ConsumerWidget {
 
     return OnboardingScaffold(
       progress: const OnboardingProgress(step: 2, totalSteps: 5),
-      mascotState: PhoWaYokeState.pointing,
+      mascotState: draft.otpVerified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.phoneVerificationTitle,
       title: OnboardingStrings.phoneVerificationTitle,
       readAloudText: OnboardingStrings.phoneVerificationTitle,

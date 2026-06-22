@@ -46,7 +46,7 @@ class RulesAgreementPanel extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.lg),
         Material(
-          color: agreed ? AppColors.purple100 : AppColors.lightSurface,
+          color: Colors.transparent,
           borderRadius: BorderRadius.circular(AppRadius.md),
           child: InkWell(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -54,10 +54,15 @@ class RulesAgreementPanel extends StatelessWidget {
               HapticFeedback.selectionClick();
               onChanged(!agreed);
             },
-            child: Container(
+            child: AnimatedContainer(
+              // State-indication, not decoration — keep it quick so
+              // confirming agreement feels instant rather than slow.
+              duration: AppMotion.fast,
+              curve: AppMotion.press,
               constraints: const BoxConstraints(minHeight: 56),
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
               decoration: BoxDecoration(
+                color: agreed ? AppColors.purple100 : AppColors.lightSurface,
                 borderRadius: BorderRadius.circular(AppRadius.md),
                 border: Border.all(
                   color: agreed ? AppColors.purple700 : AppColors.onboardingDivider,
