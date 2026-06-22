@@ -323,6 +323,13 @@ In `lib/core/widgets/mascot/pho_wa_yoke.dart`, add the import:
 import '../../theme/app_spacing.dart';
 ```
 
+This adds a *second* `AnimationController` to `_PhoWaYokeState`. Change its
+class declaration from `with SingleTickerProviderStateMixin` to
+`with TickerProviderStateMixin` (singular only permits one ticker — creating
+a second `AnimationController` on a `SingleTickerProviderStateMixin` throws
+"multiple tickers were created" at runtime, not at analyze-time, so this is
+easy to miss until you actually run the widget).
+
 Add a second controller + animation alongside the existing `_idleController`/`_float`.
 `MediaQuery.of(context)` cannot be called from a `late final` field
 initializer, and is also unsafe to call directly from `initState`
