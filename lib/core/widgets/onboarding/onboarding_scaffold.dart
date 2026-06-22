@@ -73,43 +73,47 @@ class OnboardingScaffold extends StatelessWidget {
                     )
                   else
                     const SizedBox(width: 48),
-                  const Spacer(),
-                  Flexible(
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // A light backdrop badge keeps the logo visible
-                        // regardless of header background — the logo's own
-                        // dark-navy tones are too close to AppColors.purple900
-                        // to read on their own once its white background is
-                        // removed.
-                        Container(
-                          width: 32,
-                          height: 32,
-                          padding: const EdgeInsets.all(4),
-                          decoration: const BoxDecoration(
-                            color: AppColors.onBrand,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Image.asset("assets/logo_circle.png"),
-                        ),
-                        const SizedBox(width: AppSpacing.sm),
-                        Flexible(
-                          child: Text(
-                            "တိုလီမိုလီ",
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleLarge?.copyWith(
+                  Expanded(
+                    // Expanded (not Spacer+Flexible, which used to split the
+                    // remaining width evenly into thirds and left almost no
+                    // room for the title) so this center block gets all the
+                    // space between the two fixed-width end items.
+                    child: Center(
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // A light backdrop badge keeps the logo visible
+                          // regardless of header background — the logo's own
+                          // dark-navy tones are too close to AppColors.purple900
+                          // to read on their own once its white background is
+                          // removed.
+                          Container(
+                            width: 32,
+                            height: 32,
+                            padding: const EdgeInsets.all(4),
+                            decoration: const BoxDecoration(
                               color: AppColors.onBrand,
-                              letterSpacing: 1,
-                              fontFamily: "Myanmar Thuriya",
-                              fontSize: 18,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Image.asset("assets/logo_circle.png"),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Flexible(
+                            child: Text(
+                              "တိုလီမိုလီ",
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                color: AppColors.onBrand,
+                                letterSpacing: 1,
+                                fontFamily: "Myanmar Thuriya",
+                                fontSize: 18,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
-                  const Spacer(),
                   const SizedBox(width: 48),
                 ],
               ),
