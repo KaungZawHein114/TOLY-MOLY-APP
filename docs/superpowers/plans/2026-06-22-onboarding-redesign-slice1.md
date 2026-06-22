@@ -489,25 +489,33 @@ class MascotMessageCard extends StatefulWidget {
 
 class _MascotMessageCardState extends State<MascotMessageCard>
     with SingleTickerProviderStateMixin {
-  late final AnimationController _controller;
+  // The bubble's fade is the back ~70% of a slightly longer timeline than
+  // AppMotion.fast, so it visibly trails the mascot's own entrance instead of
+  // popping in simultaneously. This is baked into one controller's Interval
+  // rather than using a separate Future.delayed Timer — a bare Timer set up
+  // in initState/didChangeDependencies is not reliably cancelled if the
+  // widget is disposed first, and flutter_test's FakeAsync harness fails the
+  // test with "Pending timers" if one outlives the test's pump cycle.
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: AppMotion.medium,
+  );
+  late final Animation<double> _opacity = CurvedAnimation(
+    parent: _controller,
+    curve: const Interval(0.3, 1.0, curve: AppMotion.enter),
+  );
+  bool _appliedReduceMotion = false;
 
   @override
-  void initState() {
-    super.initState();
-    final reduceMotion =
-        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
-    _controller = AnimationController(
-      vsync: this,
-      duration: reduceMotion ? Duration.zero : AppMotion.fast,
-    );
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_appliedReduceMotion) return;
+    _appliedReduceMotion = true;
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
     if (reduceMotion) {
       _controller.value = 1.0;
     } else {
-      // ~80ms after the mascot's own entrance starts, so the bubble reads as
-      // "about to speak" rather than popping in simultaneously.
-      Future.delayed(const Duration(milliseconds: 80), () {
-        if (mounted) _controller.forward();
-      });
+      _controller.forward();
     }
   }
 
@@ -523,13 +531,13 @@ class _MascotMessageCardState extends State<MascotMessageCard>
     final mascot = PhoWaYoke(state: widget.state, size: widget.mascotSize);
     final messageBubble = Expanded(
       child: FadeTransition(
-        opacity: _controller,
+        opacity: _opacity,
         child: Semantics(
           liveRegion: widget.state == PhoWaYokeState.thinking,
           child: Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
-              color: AppColors.communityBlue,
+              gradient: AppColors.guidanceSurfaceGradient,
               borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
             child: Text(
@@ -554,10 +562,8 @@ class _MascotMessageCardState extends State<MascotMessageCard>
 }
 ```
 
-Remove the now-unused `package:flutter/scheduler.dart` import if analyzer
-flags it as unused (it isn't directly referenced — use `Future.delayed` from
-`dart:async`, which is implicitly available; do not add the scheduler
-import at all). Delete that import line if you added it.
+Note this also switches the bubble's flat `AppColors.communityBlue` fill to
+the new `AppColors.guidanceSurfaceGradient` (Task 2) for the soft-depth look.
 
 - [ ] **Step 2: Add press feedback + gradient fill to `OnboardingSelectionCard`**
 
@@ -694,6 +700,7 @@ class _PressableScaleState extends State<_PressableScale> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
             onTap: widget.onTap,
             child: widget.child,
           ),
@@ -703,6 +710,9 @@ class _PressableScaleState extends State<_PressableScale> {
   }
 }
 ```
+
+(The `borderRadius` on `InkWell` clips the ripple to the card's rounded
+corners — without it the ripple would bleed past the rounded edges.)
 
 Remove the now-redundant outer `Material`/`InkWell` that used to wrap the
 card directly under `Semantics` (it's now nested inside `_PressableScale`,
