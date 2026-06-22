@@ -102,6 +102,7 @@ class OnboardingScaffold extends StatelessWidget {
                               color: AppColors.onBrand,
                               letterSpacing: 1,
                               fontFamily: "Myanmar Thuriya",
+                              fontSize: 18,
                             ),
                           ),
                         ),
