@@ -66,6 +66,7 @@ flutter:
 
   assets:
     - assets/mascot/
+    - assets/logo_circle.png
 
   # To add individual assets to your application:
   #   - images/a_dot_burr.jpeg

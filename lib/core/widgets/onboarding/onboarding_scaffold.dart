@@ -75,11 +75,23 @@ class OnboardingScaffold extends StatelessWidget {
                     const SizedBox(width: 48),
                   const Spacer(),
                   Flexible(
-                    child: Text(
-                      "TOLY MOLY",
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppColors.onBrand, letterSpacing: 1),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Image.asset("assets/logo_circle.png", width: 28, height: 28),
+                        const SizedBox(width: AppSpacing.sm),
+                        Flexible(
+                          child: Text(
+                            "တိုလီမိုလီ",
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.titleMedium?.copyWith(
+                              color: AppColors.onBrand,
+                              letterSpacing: 1,
+                              fontFamily: "Myanmar Thuriya",
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                   const Spacer(),
