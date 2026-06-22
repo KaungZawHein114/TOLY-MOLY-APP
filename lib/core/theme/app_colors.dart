@@ -69,6 +69,27 @@ class AppColors {
   // is communicated through fill + this slightly stronger tinted shadow).
   static Color cardShadow = const Color(0xFF000000).withValues(alpha: 0.05);
   static Color selectedCardShadow = brandPurple.withValues(alpha: 0.18);
+  // Soft depth tiers — replaces flat single-shadow cards with a small
+  // elevation scale. cardShadow/selectedCardShadow above are kept for any
+  // existing call sites; new onboarding widgets use these tiers instead.
+  static Color shadowSm = const Color(0xFF000000).withValues(alpha: 0.04);
+  static Color shadowMd = const Color(0xFF000000).withValues(alpha: 0.08);
+  static Color shadowLg = const Color(0xFF000000).withValues(alpha: 0.14);
+  static Color selectedShadowMd = brandPurple.withValues(alpha: 0.22);
+
+  // Soft card-fill gradients (selected/elevated surfaces) — derived strictly
+  // from the existing purple/blue scale, not new hues.
+  static const LinearGradient cardFillGradient = LinearGradient(
+    colors: [purple100, purple300],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
+  static const LinearGradient guidanceSurfaceGradient = LinearGradient(
+    colors: [blue100, blue300],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
 
   // Gradients
   static const LinearGradient tealGradient = LinearGradient(
