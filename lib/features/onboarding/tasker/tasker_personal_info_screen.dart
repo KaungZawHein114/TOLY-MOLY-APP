@@ -10,6 +10,7 @@ import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
+import '../../../core/widgets/onboarding/shake_on_trigger.dart';
 import '../../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
@@ -26,6 +27,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
   late final TextEditingController _ageController;
   String? _nameError;
   String? _ageError;
+  int _genderShakeTrigger = 0;
 
   @override
   void initState() {
@@ -62,6 +64,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     });
     if (_nameError != null || _ageError != null || gender == null) {
       if (gender == null) {
+        setState(() => _genderShakeTrigger++);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("လိင် ရွေးချယ်ပေးပါနော်")),
         );
@@ -123,20 +126,23 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           const SizedBox(height: AppSpacing.xl),
           Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.md),
-          Row(
-            children: Gender.values.map((g) {
-              return Expanded(
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                  child: OnboardingSelectionCard(
-                    emoji: g.emoji,
-                    label: g.label,
-                    selected: draft.gender == g,
-                    onTap: () => _updateDraft(gender: g),
+          ShakeOnTrigger(
+            trigger: _genderShakeTrigger,
+            child: Row(
+              children: Gender.values.map((g) {
+                return Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                    child: OnboardingSelectionCard(
+                      emoji: g.emoji,
+                      label: g.label,
+                      selected: draft.gender == g,
+                      onTap: () => _updateDraft(gender: g),
+                    ),
                   ),
-                ),
-              );
-            }).toList(),
+                );
+              }).toList(),
+            ),
           ),
           const SizedBox(height: AppSpacing.xl),
           Text(OnboardingStrings.ageLabel, style: theme.textTheme.titleMedium),

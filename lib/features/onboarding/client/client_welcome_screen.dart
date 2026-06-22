@@ -8,6 +8,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
+import '../../../core/widgets/onboarding/staggered_entrance.dart';
 import '../onboarding_models.dart';
 
 class ClientWelcomeScreen extends StatelessWidget {
@@ -21,8 +22,8 @@ class ClientWelcomeScreen extends StatelessWidget {
       mascotState: PhoWaYokeState.success,
       mascotMessage: OnboardingStrings.completionUnverifiedMessage,
       title: OnboardingStrings.completionTitle,
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+      layout: OnboardingLayoutMode.moment,
+      body: StaggeredEntrance(
         children: [
           const SizedBox(height: AppSpacing.md),
           Text(
@@ -64,6 +65,7 @@ class ClientWelcomeScreen extends StatelessWidget {
             label: OnboardingStrings.completionUseNowButton,
             icon: Icons.check_circle_outline,
             gradient: AppColors.purpleGradient,
+            celebratory: true,
             onTap: () => context.go(Routes.customerHome),
           ),
         ],
