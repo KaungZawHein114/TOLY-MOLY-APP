@@ -98,6 +98,11 @@ flutter:
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
 
+  fonts:
+    - family: Myanmar Thuriya
+      fonts:
+        - asset: assets/fonts/MyanmarThuriya.ttf
+
 flutter_launcher_icons:
   android: true
   ios: true
