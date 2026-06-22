@@ -114,6 +114,7 @@ class OnboardingScaffold extends StatelessWidget {
                               state: mascotState,
                               message: mascotMessage,
                               mascotSize: layout == OnboardingLayoutMode.moment ? 96 : 64,
+                              centered: layout == OnboardingLayoutMode.moment,
                             ),
                             const SizedBox(height: AppSpacing.lg),
                             if (title != null || readAloudText != null) ...[

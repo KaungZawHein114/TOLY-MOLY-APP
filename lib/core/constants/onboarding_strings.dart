@@ -120,10 +120,6 @@ class OnboardingStrings {
   static const String completionUseNowPrompt = "ယခုချက်ချင်း စတင်အသုံးပြုမလား";
   static const String completionContinueButton = "Profile ဆက်ဖြည့်မည်";
   static const String completionUseNowButton = "ယခုအသုံးပြုမည်";
-  static const String clientCompletionNrc = "နိုင်ငံသားစိစစ်ရေးကတ်";
-  static const String clientCompletionAddress = "လိပ်စာ";
-  static const String clientCompletionFace = "မျက်နှာအတည်ပြုခြင်း";
-  static const String taskerCompletionVideo = "မိတ်ဆက်ဗီဒီယို";
 
   // ── Generic ───────────────────────────────────────────────────────────
   static const String backButtonSemantic = "နောက်သို့";

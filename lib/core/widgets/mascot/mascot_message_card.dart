@@ -15,6 +15,7 @@ class MascotMessageCard extends StatefulWidget {
   final String message;
   final double mascotSize;
   final bool mascotOnRight;
+  final bool centered;
 
   const MascotMessageCard({
     super.key,
@@ -22,6 +23,7 @@ class MascotMessageCard extends StatefulWidget {
     required this.message,
     this.mascotSize = AppSizes.avatarLarge,
     this.mascotOnRight = false,
+    this.centered = false,
   });
 
   @override
@@ -67,29 +69,41 @@ class _MascotMessageCardState extends State<MascotMessageCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final mascot = PhoWaYoke(state: widget.state, size: widget.mascotSize);
-    final messageBubble = Expanded(
-      child: FadeTransition(
-        opacity: _opacity,
-        child: Semantics(
-          liveRegion: widget.state == PhoWaYokeState.thinking,
-          child: Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              gradient: AppColors.guidanceSurfaceGradient,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            child: Text(
-              widget.message,
-              style: theme.textTheme.bodyLarge?.copyWith(
-                color: AppColors.brandPurple,
-                fontWeight: FontWeight.w600,
-              ),
+    final bubbleContent = FadeTransition(
+      opacity: _opacity,
+      child: Semantics(
+        liveRegion: widget.state == PhoWaYokeState.thinking,
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          decoration: BoxDecoration(
+            gradient: AppColors.guidanceSurfaceGradient,
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+          ),
+          child: Text(
+            widget.message,
+            textAlign: widget.centered ? TextAlign.center : null,
+            style: theme.textTheme.bodyLarge?.copyWith(
+              color: AppColors.brandPurple,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
       ),
     );
 
+    if (widget.centered) {
+      // Greeting/celebratory moments: mascot centered above the message,
+      // matching the entry WelcomeScreen's centered-greeting feel.
+      return Column(
+        children: [
+          Center(child: mascot),
+          const SizedBox(height: AppSpacing.lg),
+          bubbleContent,
+        ],
+      );
+    }
+
+    final messageBubble = Expanded(child: bubbleContent);
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: widget.mascotOnRight

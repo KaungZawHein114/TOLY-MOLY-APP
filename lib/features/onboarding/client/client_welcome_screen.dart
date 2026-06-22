@@ -22,6 +22,9 @@ class ClientWelcomeScreen extends StatelessWidget {
       mascotState: PhoWaYokeState.success,
       mascotMessage: OnboardingStrings.completionUnverifiedMessage,
       title: OnboardingStrings.completionTitle,
+      readAloudText: "${OnboardingStrings.completionUnverifiedMessage} "
+          "${OnboardingStrings.completionContinuePrompt} "
+          "${OnboardingStrings.completionUseNowPrompt}",
       layout: OnboardingLayoutMode.moment,
       body: StaggeredEntrance(
         children: [
@@ -41,10 +44,6 @@ class ClientWelcomeScreen extends StatelessWidget {
             style: theme.textTheme.bodyLarge,
             textAlign: TextAlign.center,
           ),
-          const SizedBox(height: AppSpacing.xl),
-          _ChecklistRow(label: OnboardingStrings.clientCompletionNrc, icon: "🪪"),
-          _ChecklistRow(label: OnboardingStrings.clientCompletionAddress, icon: "📍"),
-          _ChecklistRow(label: OnboardingStrings.clientCompletionFace, icon: "🙂"),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
@@ -69,36 +68,6 @@ class ClientWelcomeScreen extends StatelessWidget {
             onTap: () => context.go(Routes.customerHome),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _ChecklistRow extends StatelessWidget {
-  final String label;
-  final String icon;
-  const _ChecklistRow({required this.label, required this.icon});
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      label: "$label - အတည်ပြုထားခြင်း မရှိသေးပါ",
-      child: Container(
-        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        padding: const EdgeInsets.all(AppSpacing.md),
-        constraints: const BoxConstraints(minHeight: 56),
-        decoration: BoxDecoration(
-          color: AppColors.blue100,
-          borderRadius: BorderRadius.circular(AppRadius.md),
-        ),
-        child: Row(
-          children: [
-            Text(icon, style: const TextStyle(fontSize: 22)),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(child: Text(label, style: Theme.of(context).textTheme.bodyMedium)),
-            const Icon(Icons.radio_button_unchecked, color: AppColors.warning),
-          ],
-        ),
       ),
     );
   }
