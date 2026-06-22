@@ -31,7 +31,8 @@ The app is currently a 100% offline, clickable demo built for presentation. It u
 The project uses standard Flutter commands.
 
 ### Key Commands
-- **`flutter pub get`**: Installs dependencies.
+- **`
+`**: Installs dependencies.
 - **`flutter run`**: Runs the app on a connected device or emulator.
 - **`flutter test`**: Runs the widget test suite.
 - **`flutter analyze`**: Runs static analysis.

@@ -3,12 +3,24 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/auth/splash_screen.dart';
-import '../../features/auth/role_selection_screen.dart';
 import '../../features/customer/home_screen.dart';
 import '../../features/customer/worker_list_screen.dart';
 import '../../features/customer/worker_profile_screen.dart';
 import '../../features/customer/booking_screen.dart';
-import '../../features/worker/onboarding_screen.dart';
+import '../../features/onboarding/welcome_screen.dart';
+import '../../features/onboarding/create_account_screen.dart';
+import '../../features/onboarding/basic_info_screen.dart';
+import '../../features/onboarding/client/client_personal_info_screen.dart';
+import '../../features/onboarding/client/client_phone_verification_screen.dart';
+import '../../features/onboarding/client/client_basic_profile_screen.dart';
+import '../../features/onboarding/client/client_rules_screen.dart';
+import '../../features/onboarding/client/client_welcome_screen.dart';
+import '../../features/onboarding/tasker/tasker_personal_info_screen.dart';
+import '../../features/onboarding/tasker/tasker_phone_verification_screen.dart';
+import '../../features/onboarding/tasker/tasker_skills_screen.dart';
+import '../../features/onboarding/tasker/tasker_basic_profile_screen.dart';
+import '../../features/onboarding/tasker/tasker_rules_screen.dart';
+import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
 import '../../features/worker/dashboard_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../data/demo_data.dart';
@@ -20,7 +32,22 @@ class Routes {
 
   // ── auth ────────────────────────────────────────────────────────────────
   static const String splash = '/auth/splash';
-  static const String role = '/auth/role';
+
+  // ── onboarding ──────────────────────────────────────────────────────────
+  static const String onboardingWelcome = '/onboarding/welcome';
+  static const String onboardingCreateAccount = '/onboarding/create-account';
+  static const String onboardingBasicInfo = '/onboarding/basic-info';
+  static const String clientPersonal = '/onboarding/client/personal';
+  static const String clientPhone = '/onboarding/client/phone';
+  static const String clientProfile = '/onboarding/client/profile';
+  static const String clientRules = '/onboarding/client/rules';
+  static const String clientWelcome = '/onboarding/client/welcome';
+  static const String taskerPersonal = '/onboarding/tasker/personal';
+  static const String taskerPhone = '/onboarding/tasker/phone';
+  static const String taskerSkills = '/onboarding/tasker/skills';
+  static const String taskerProfile = '/onboarding/tasker/profile';
+  static const String taskerRules = '/onboarding/tasker/rules';
+  static const String taskerWelcome = '/onboarding/tasker/welcome';
 
   // ── customer ────────────────────────────────────────────────────────────
   static const String customerHome = '/customer/home';
@@ -29,7 +56,6 @@ class Routes {
   static const String booking = '/customer/booking'; // + /:id
 
   // ── worker ──────────────────────────────────────────────────────────────
-  static const String onboarding = '/worker/onboarding';
   static const String dashboard = '/worker/dashboard';
 
   // ── chatbot ─────────────────────────────────────────────────────────────
@@ -46,9 +72,64 @@ final List<RouteBase> _authRoutes = [
     path: Routes.splash,
     builder: (context, state) => const SplashScreen(),
   ),
+];
+
+final List<RouteBase> _onboardingRoutes = [
   GoRoute(
-    path: Routes.role,
-    builder: (context, state) => const RoleSelectionScreen(),
+    path: Routes.onboardingWelcome,
+    builder: (context, state) => const WelcomeScreen(),
+  ),
+  GoRoute(
+    path: Routes.onboardingCreateAccount,
+    builder: (context, state) => const CreateAccountScreen(),
+  ),
+  GoRoute(
+    path: Routes.onboardingBasicInfo,
+    builder: (context, state) => const BasicInfoScreen(),
+  ),
+  GoRoute(
+    path: Routes.clientPersonal,
+    builder: (context, state) => const ClientPersonalInfoScreen(),
+  ),
+  GoRoute(
+    path: Routes.clientPhone,
+    builder: (context, state) => const ClientPhoneVerificationScreen(),
+  ),
+  GoRoute(
+    path: Routes.clientProfile,
+    builder: (context, state) => const ClientBasicProfileScreen(),
+  ),
+  GoRoute(
+    path: Routes.clientRules,
+    builder: (context, state) => const ClientRulesScreen(),
+  ),
+  GoRoute(
+    path: Routes.clientWelcome,
+    builder: (context, state) => const ClientWelcomeScreen(),
+  ),
+  GoRoute(
+    path: Routes.taskerPersonal,
+    builder: (context, state) => const TaskerPersonalInfoScreen(),
+  ),
+  GoRoute(
+    path: Routes.taskerPhone,
+    builder: (context, state) => const TaskerPhoneVerificationScreen(),
+  ),
+  GoRoute(
+    path: Routes.taskerSkills,
+    builder: (context, state) => const TaskerSkillsScreen(),
+  ),
+  GoRoute(
+    path: Routes.taskerProfile,
+    builder: (context, state) => const TaskerBasicProfileScreen(),
+  ),
+  GoRoute(
+    path: Routes.taskerRules,
+    builder: (context, state) => const TaskerRulesScreen(),
+  ),
+  GoRoute(
+    path: Routes.taskerWelcome,
+    builder: (context, state) => const TaskerWelcomeScreen(),
   ),
 ];
 
@@ -79,10 +160,6 @@ final List<RouteBase> _customerRoutes = [
 
 final List<RouteBase> _workerRoutes = [
   GoRoute(
-    path: Routes.onboarding,
-    builder: (context, state) => const WorkerOnboardingScreen(),
-  ),
-  GoRoute(
     path: Routes.dashboard,
     builder: (context, state) => const WorkerDashboardScreen(),
   ),
@@ -101,17 +178,18 @@ final List<RouteBase> _chatbotRoutes = [
 /// screen in [_RootBackHandler]. That gives us a single, centralized place to
 /// govern the Android system back button (see the behaviour table there).
 ///
-/// FAIL-SAFE: any unknown / errored route renders RoleSelectionScreen (still
-/// wrapped in the back-handler) instead of a blank screen or an app exit.
+/// FAIL-SAFE: any unknown / errored route renders the onboarding WelcomeScreen
+/// (still wrapped in the back-handler) instead of a blank screen or app exit.
 final GoRouter appRouter = GoRouter(
   initialLocation: Routes.splash,
   errorBuilder: (context, state) =>
-      const _RootBackHandler(child: RoleSelectionScreen()),
+      const _RootBackHandler(child: WelcomeScreen()),
   routes: [
     ShellRoute(
       builder: (context, state, child) => _RootBackHandler(child: child),
       routes: [
         ..._authRoutes,
+        ..._onboardingRoutes,
         ..._customerRoutes,
         ..._workerRoutes,
         ..._chatbotRoutes,
@@ -140,7 +218,7 @@ Worker _findWorker(String? rawId) {
 //   Screen type      Back button behaviour
 //   ───────────────  ───────────────────────────────────────────────
 //   Splash           ignored (swallowed) — prevents exit mid-launch
-//   Stack root       "Exit app?" confirmation dialog (e.g. Role Selection)
+//   Stack root       "Exit app?" confirmation dialog (e.g. onboarding Welcome)
 //   Any other screen normal back navigation (pops the stack)
 // ============================================================================
 class _RootBackHandler extends StatelessWidget {

@@ -27,7 +27,7 @@ class _SplashScreenState extends State<SplashScreen> {
     super.initState();
     // Plain Timer (not async, not Future.delayed): just fires navigation.
     _timer = Timer(const Duration(milliseconds: 1500), () {
-      if (mounted) context.go(Routes.role);
+      if (mounted) context.go(Routes.onboardingWelcome);
     });
   }
 
@@ -61,7 +61,10 @@ class _SplashScreenState extends State<SplashScreen> {
                 ],
               ),
               alignment: Alignment.center,
-              child: const Text("🧰", style: TextStyle(fontSize: 56)),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.md),
+                child: Image.asset("assets/logo.png", fit: BoxFit.contain),
+              ),
             ),
             const SizedBox(height: AppSpacing.xxl + 4),
             Text(
@@ -83,7 +86,7 @@ class _SplashScreenState extends State<SplashScreen> {
             const SizedBox(height: AppSpacing.huge),
             // Tap anywhere to skip the wait — instant navigation, no blocking.
             TextButton(
-              onPressed: () => context.go(Routes.role),
+              onPressed: () => context.go(Routes.onboardingWelcome),
               child: Text(
                 "Tap to continue",
                 style: AppTextStyles.label.copyWith(color: AppColors.onBrandMuted),

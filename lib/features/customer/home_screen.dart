@@ -33,7 +33,7 @@ class CustomerHomeScreen extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(Icons.swap_horiz),
           tooltip: "Switch role",
-          onPressed: () => context.go(Routes.role),
+          onPressed: () => context.go(Routes.onboardingWelcome),
         ),
         actions: [
           IconButton(

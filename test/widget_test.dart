@@ -1,12 +1,13 @@
 // Smoke + navigation tests.
 //   1. App boots to the splash screen (renders on first frame, no async).
 //   2. Forward navigation builds a real back stack (the critical fix): after
-//      Splash -> Role -> Customer Home, the router can pop back to Role.
+//      Splash -> Welcome -> Create account, the router can pop back to Welcome.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:toly_moly/main.dart';
+import 'package:toly_moly/core/constants/onboarding_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 
 void main() {
@@ -24,24 +25,31 @@ void main() {
 
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
 
-    // Advance past the 1.5s splash timer -> Role Selection.
+    // Advance past the 1.5s splash timer -> the onboarding Welcome screen.
+    // Pho Wa Yoke's idle "breathing" animation repeats forever, so
+    // pumpAndSettle (which waits for animations to stop) would time out —
+    // a bare pump (registers the route change) plus a bounded duration pump
+    // (finishes the page transition) are used instead.
     await tester.pump(const Duration(milliseconds: 1600));
-    await tester.pumpAndSettle();
-    expect(find.text('Customer'), findsOneWidget);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(OnboardingStrings.getStarted), findsOneWidget);
     // At the stack root, there is nothing to pop (back would prompt to exit).
     expect(appRouter.canPop(), isFalse);
 
-    // Push the Customer flow.
-    await tester.tap(find.text('Customer'));
-    await tester.pumpAndSettle();
-    expect(find.text('Mingalaba 👋'), findsOneWidget);
+    // Push the Create Account screen.
+    await tester.tap(find.text(OnboardingStrings.getStarted));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(OnboardingStrings.chooseRolePrompt), findsWidgets);
 
-    // The critical guarantee: a back stack now exists, so back goes to Role
-    // Selection instead of exiting the app.
+    // The critical guarantee: a back stack now exists, so back goes to
+    // Welcome instead of exiting the app.
     expect(appRouter.canPop(), isTrue);
     appRouter.pop();
-    await tester.pumpAndSettle();
-    expect(find.text('Customer'), findsOneWidget);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text(OnboardingStrings.getStarted), findsOneWidget);
     expect(appRouter.canPop(), isFalse);
   });
 }

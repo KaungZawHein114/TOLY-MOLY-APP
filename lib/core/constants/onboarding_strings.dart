@@ -1,0 +1,122 @@
+/// Static Burmese-first copy for the onboarding flow (Welcome through the
+/// client/tasker completion screens). Kept alongside [AppStrings] but in its
+/// own file since the onboarding flow owns a large amount of copy.
+class OnboardingStrings {
+  OnboardingStrings._();
+
+  // ── Welcome ────────────────────────────────────────────────────────────
+  static const String welcomeHeadline = "ယုံကြည်စိတ်ချရသော အိမ်အကူဝန်ဆောင်မှု";
+  static const String welcomeMessage =
+      "မင်္ဂလာပါ။ Pho Wa Yoke က အကူအညီပေးပါမယ်နော်။ စတင်ကြရအောင်။";
+  static const String getStarted = "စတင်မည်";
+
+  // ── Create account ───────────────────────────────────────────────────
+  static const String createAccountTab = "အကောင့်ဖွင့်မည်";
+  static const String loginTab = "အကောင့်ဝင်မည်";
+  static const String chooseRolePrompt = "သင်၏ ရည်ရွယ်ချက်ကို ရွေးချယ်ပါ။";
+  static const String roleClientLabel = "အကူအညီ ငှားမည်";
+  static const String roleClientSublabel = "အလုပ်သမား ရှာဖွေရန်";
+  static const String roleTaskerLabel = "အလုပ် လုပ်မည်";
+  static const String roleTaskerSublabel = "ဝန်ဆောင်မှု ပေးရန်";
+  static const String nameLabel = "အမည်";
+  static const String namePlaceholder = "အမည်အပြည့်အစုံ";
+  static const String phoneLabel = "ဖုန်းနံပါတ်";
+  static const String passwordLabel = "စကားဝှက်";
+  static const String passwordPlaceholder = "••••••••";
+  static const String continueButton = "ဆက်လက်လုပ်ဆောင်မည်";
+  static const String orDivider = "သို့မဟုတ်";
+  static const String googleSignup = "Google ဖြင့် ဝင်ရောက်မည်";
+  static const String loginNotSupported =
+      "Demo အတွက် အကောင့်ဝင်ရောက်ခြင်းကို ပံ့ပိုးမထားပါသေးပါ။ အကောင့်အသစ်ဖွင့်ပါ။";
+  static const String googleNotSupported =
+      "Demo အတွက် Google ဖြင့်ဝင်ရောက်ခြင်းကို ပံ့ပိုးမထားပါသေးပါ။";
+  static const String nameRequiredError = "အမည် ထည့်ပေးပါနော်";
+  static const String phoneRequiredError = "ဖုန်းနံပါတ် ထည့်ပေးပါနော်";
+  static const String passwordRequiredError = "စကားဝှက် ထည့်ပေးပါနော်";
+  static const String roleRequiredError = "ရည်ရွယ်ချက်ကို ရွေးချယ်ပေးပါနော်";
+  static const String signupInstructions =
+      "သင့်အကောင့်အသစ် ဖွင့်ရန် ရည်ရွယ်ချက်ကို ရွေးချယ်ပေးပါ။";
+  static const String loginInstructions =
+      "အကောင့်ဝင်ရန် ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါ။";
+
+  // ── Basic info (signup step 2) ───────────────────────────────────────
+  static const String basicInfoTitle = "အကောင့်အချက်အလက်";
+  static const String basicInfoMascotMessage =
+      "အမည်၊ ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါနော်။";
+  static const String basicInfoInstructions =
+      "အမည်၊ ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါ။";
+
+  // ── Personal information (shared shape, both flows) ─────────────────
+  static const String personalInfoTitle = "ကိုယ်ရေးအချက်အလက်";
+  static const String genderLabel = "လိင်";
+  static const String ageLabel = "အသက်";
+  static const String agePlaceholder = "အသက် (၁၈ - ၁၀၀)";
+  static const String ageRangeError = "အသက်ကို ၁၈ နှင့် ၁၀၀ ကြားတွင် ထည့်ပေးပါ";
+  static const String clientPersonalMascotMessage =
+      "ဒီအချက်အလက်လေး ဖြည့်ပေးပါနော်";
+  static const String taskerPersonalMascotMessage =
+      "သင့်အမည်ကို ပြောလိုက်ပါနော်";
+  static const String speakButton = "ပြောမည်";
+
+  // ── Phone verification (shared widget) ───────────────────────────────
+  static const String phoneVerificationTitle = "ဖုန်းနံပါတ် အတည်ပြုခြင်း";
+  static const String sendOtpButton = "OTP ပို့မည်";
+  static const String verifyOtpButton = "အတည်ပြုမည်";
+  static const String otpLabel = "OTP ကုဒ်";
+  static const String otpSentMessage = "OTP ကို ပို့ပြီးပါပြီ (Demo OTP: 12345)";
+  static const String otpInvalidError = "OTP ကုဒ် မှားနေပါသည်";
+  static const String otpVerifiedMessage = "ဖုန်းနံပါတ် အတည်ပြုပြီးပါပြီ";
+  static const String demoOtp = "12345";
+
+  // ── Skills (tasker step 3) ───────────────────────────────────────────
+  static const String skillsTitle = "ကျွမ်းကျင်မှုများ";
+  static const String skillsMascotMessage = "သင်တတ်ကျွမ်းတဲ့ အလုပ်ကို ပြောလိုက်ပါနော်";
+  static const String experienceQuestion = "အတွေ့အကြုံ ဘယ်လောက်ရှိပါသလဲ";
+  static const String customSkillLabel = "အခြား ကျွမ်းကျင်မှု ထည့်မည်";
+  static const String skillsRequiredError = "ကျွမ်းကျင်မှု အနည်းဆုံး တစ်ခု ရွေးပေးပါနော်";
+
+  // ── Basic profile (both flows) ───────────────────────────────────────
+  static const String basicProfileTitle = "အခြေခံ Profile";
+  static const String profilePhotoLabel = "ဓာတ်ပုံ ထည့်မည်";
+  static const String cameraButton = "ကင်မရာ";
+  static const String chooseFileButton = "ဖိုင်ရွေးမည်";
+  static const String hearAboutQuestion = "Toly Moly ကို ဘယ်က သိရှိခဲ့ပါသလဲ";
+  static const String readAloudButton = "ဖတ်ပြမည်";
+
+  // ── Rules (both flows) ────────────────────────────────────────────────
+  static const String rulesTitle = "စည်းမျဉ်းစည်းကမ်းများ";
+  static const String rulesAgreeClientLabel =
+      "စည်းမျဉ်းစည်းကမ်းများကို ဖတ်ရှုပြီး သဘောတူပါသည်";
+  static const String rulesAgreeTaskerLabel = "စည်းမျဉ်းစည်းကမ်းများကို သဘောတူပါသည်";
+  static const String rulesAgreeRequiredError =
+      "ဆက်လက်ရန် စည်းမျဉ်းစည်းကမ်းများကို သဘောတူရန် လိုအပ်ပါသည်";
+  static const String rulesBodyText =
+      "TOLY MOLY ကို အသုံးပြုသူအားလုံးအတွက်:\n\n"
+      "• မှန်ကန်သော အချက်အလက်များကိုသာ ဖြည့်သွင်းပါ။\n"
+      "• သတ်မှတ်ထားသော အချိန်အတိုင်း လုပ်ငန်းများကို လေးစားပါ။\n"
+      "• အခြားသုံးစွဲသူများကို ရိုသေလေးစားစွာ ဆက်ဆံပါ။\n"
+      "• လုံခြုံမှုနှင့် ယုံကြည်စိတ်ချရမှုကို ဦးစားပေးပါ။\n"
+      "• မမှန်ကန်သော အသုံးပြုမှုများကို တွေ့ရှိပါက အကောင့်ကို ရပ်ဆိုင်းနိုင်ပါသည်။\n\n"
+      "ဆက်လက်ရန် အောက်ပါ အကွက်ကို သေချာစွာ ဖတ်ရှုပြီး သဘောတူညီကြောင်း အမှန်ခြစ်ပေးပါ။";
+
+  // ── Welcome / completion (both flows) ─────────────────────────────────
+  static const String completionTitle = "ကြိုဆိုပါသည် 🎉";
+  static const String completionUnverifiedMessage =
+      "လက်ရှိတွင် သင့်အကောင့်ကို အတည်ပြုထားခြင်း မရှိသေးပါ။";
+  static const String completionContinuePrompt = "Profile ကို ဆက်လက်ဖြည့်သွင်းမလား";
+  static const String completionOrPrompt = "သို့မဟုတ်";
+  static const String completionUseNowPrompt = "ယခုချက်ချင်း စတင်အသုံးပြုမလား";
+  static const String completionContinueButton = "Profile ဆက်ဖြည့်မည်";
+  static const String completionUseNowButton = "ယခုအသုံးပြုမည်";
+  static const String clientCompletionNrc = "နိုင်ငံသားစိစစ်ရေးကတ်";
+  static const String clientCompletionAddress = "လိပ်စာ";
+  static const String clientCompletionFace = "မျက်နှာအတည်ပြုခြင်း";
+  static const String taskerCompletionVideo = "မိတ်ဆက်ဗီဒီယို";
+
+  // ── Generic ───────────────────────────────────────────────────────────
+  static const String backButtonSemantic = "နောက်သို့";
+  static const String continueGeneric = "ရှေ့ဆက်မည်";
+  static const String mockPhotoSelectedMessage = "ဓာတ်ပုံ ရွေးချယ်ပြီးပါပြီ (Demo)";
+  static const String mockVoiceCapturedMessage = "🎙️ အသံဖြင့် ထည့်သွင်းပြီးပါပြီ";
+  static const String mockReadingAloudMessage = "🔊 ဖတ်ပြနေသည်...";
+}

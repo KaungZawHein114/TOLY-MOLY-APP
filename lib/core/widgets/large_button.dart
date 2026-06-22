@@ -13,6 +13,7 @@ class LargeButton extends StatelessWidget {
   final VoidCallback onTap;
   final bool filled;
   final Gradient gradient;
+  final Color outlineColor;
 
   const LargeButton({
     super.key,
@@ -21,12 +22,13 @@ class LargeButton extends StatelessWidget {
     this.icon,
     this.filled = true,
     this.gradient = AppColors.tealGradient,
+    this.outlineColor = AppColors.teal,
   });
 
   @override
   Widget build(BuildContext context) {
     final radius = BorderRadius.circular(AppRadius.md);
-    final fg = filled ? AppColors.onBrand : AppColors.teal;
+    final fg = filled ? AppColors.onBrand : outlineColor;
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -41,7 +43,7 @@ class LargeButton extends StatelessWidget {
             borderRadius: radius,
             border: filled
                 ? null
-                : Border.all(color: AppColors.teal, width: 2),
+                : Border.all(color: outlineColor, width: 2),
             boxShadow: filled
                 ? [
                     BoxShadow(

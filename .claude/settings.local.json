@@ -2,7 +2,15 @@
   "permissions": {
     "allow": [
       "PowerShell(flutter --version)",
-      "PowerShell(Write-Output \"=== lib tree ===\"; Get-ChildItem -Path \"C:\\\\TOLY MOLY APP\\\\lib\" -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\TOLY MOLY APP\\\\\", \"\"\\) }; Write-Output \"=== devices ===\"; flutter devices)"
+      "PowerShell(Write-Output \"=== lib tree ===\"; Get-ChildItem -Path \"C:\\\\TOLY MOLY APP\\\\lib\" -Recurse -File | ForEach-Object { $_.FullName.Replace\\(\"C:\\\\TOLY MOLY APP\\\\\", \"\"\\) }; Write-Output \"=== devices ===\"; flutter devices)",
+      "Bash(flutter test *)",
+      "Bash(tee /tmp/test_out.log)",
+      "Bash(flutter analyze *)",
+      "Bash(flutter devices *)",
+      "Bash(flutter run *)",
+      "Bash(echo \"started with pid $!\")",
+      "Bash(kill 336)",
+      "Bash(pkill -f \"flutter run\")"
     ]
   }
 }

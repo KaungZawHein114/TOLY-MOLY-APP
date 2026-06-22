@@ -36,6 +36,7 @@ class AppSizes {
   AppSizes._();
 
   static const double buttonHeight = 58;
+  static const double avatarSm = 40;
   static const double avatar = 54;
   static const double avatarLarge = 96;
   static const double iconSm = 16;

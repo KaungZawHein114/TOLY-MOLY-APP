@@ -41,14 +41,10 @@ class SkillTile extends StatelessWidget {
                 ? AppColors.teal.withValues(alpha: 0.14)
                 : theme.cardColor,
             borderRadius: radius,
-            border: Border.all(
-              color: selected ? AppColors.teal : theme.dividerColor,
-              width: selected ? 2 : 1,
-            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 10,
+                color: selected ? AppColors.teal.withValues(alpha: 0.25) : AppColors.cardShadow,
+                blurRadius: selected ? 14 : 10,
                 offset: const Offset(0, 4),
               ),
             ],
