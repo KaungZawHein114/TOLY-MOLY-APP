@@ -185,13 +185,14 @@ void main() {
       ),
     );
     // No pump-forward needed — content should be visible on the very first
-    // frame when animations are disabled.
+    // frame when animations are disabled, with no Opacity/Transform wrapper
+    // (the child is returned directly, not animated).
     await tester.pump();
     expect(find.text('instant'), findsOneWidget);
-    final opacity = tester.widget<Opacity>(
-      find.ancestor(of: find.text('instant'), matching: find.byType(Opacity)).first,
+    expect(
+      find.ancestor(of: find.text('instant'), matching: find.byType(Opacity)),
+      findsNothing,
     );
-    expect(opacity.opacity, 1.0);
   });
 }
 ```
@@ -235,7 +236,10 @@ class _StaggeredEntranceState extends State<StaggeredEntrance>
   @override
   void initState() {
     super.initState();
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    // MediaQuery.of(context) is not safe to call before the first build
+    // completes — read the platform's accessibility flag directly instead.
+    final reduceMotion =
+        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
     _controller = AnimationController(
       vsync: this,
       duration: reduceMotion ? Duration.zero : AppMotion.medium,
@@ -320,9 +324,11 @@ import '../../theme/app_spacing.dart';
 ```
 
 Add a second controller + animation alongside the existing `_idleController`/`_float`.
-`MediaQuery.of(context)` is only safe to call from `initState` onward (not from
-a `late final` field initializer), so declare these two fields without
-initializers and assign them in `initState`:
+`MediaQuery.of(context)` cannot be called from a `late final` field
+initializer, and is also unsafe to call directly from `initState`
+(`dependOnInheritedWidgetOfExactType` throws if called before the first
+build completes) — read the platform's accessibility flag directly via
+`WidgetsBinding.instance.platformDispatcher` instead:
 
 ```dart
   late final AnimationController _entranceController;
@@ -331,7 +337,8 @@ initializers and assign them in `initState`:
   @override
   void initState() {
     super.initState();
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final reduceMotion =
+        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
     _entranceController = AnimationController(
       vsync: this,
       duration: reduceMotion ? Duration.zero : AppMotion.slow,
@@ -480,7 +487,8 @@ class _MascotMessageCardState extends State<MascotMessageCard>
   @override
   void initState() {
     super.initState();
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final reduceMotion =
+        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
     _controller = AnimationController(
       vsync: this,
       duration: reduceMotion ? Duration.zero : AppMotion.fast,
@@ -770,7 +778,8 @@ class _LargeButtonState extends State<LargeButton> with SingleTickerProviderStat
   @override
   void initState() {
     super.initState();
-    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    final reduceMotion =
+        WidgetsBinding.instance.platformDispatcher.accessibilityFeatures.disableAnimations;
     _popController = AnimationController(
       vsync: this,
       duration: reduceMotion ? Duration.zero : AppMotion.slow,
