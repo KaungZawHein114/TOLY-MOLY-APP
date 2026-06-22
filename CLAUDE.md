@@ -12,7 +12,7 @@ TOLY MOLY — an on-demand service marketplace for Myanmar (Yangon-first) connec
 flutter pub get      # install dependencies
 flutter run           # run on a connected device/emulator
 flutter test          # run the widget test suite (test/widget_test.dart)
-flutter test test/widget_test.dart --name "App boots to splash screen"  # run a single test
+flutter test test/widget_test.dart --name "App boots to the onboarding Welcome screen"  # run a single test
 flutter analyze       # static analysis — must be clean before considering work done
 ```
 
@@ -31,17 +31,18 @@ lib/
 │   ├── theme/              # color/text/spacing tokens + ThemeData (light/dark)
 │   └── widgets/             # theme-driven shared widgets (button, tile, card)
 │       └── mascot/          # shared PhoWaYoke state, renderer, and message card
-└── features/                # one folder per area: auth, customer, worker, chatbot
+└── features/                # one folder per area: onboarding, customer, worker, chatbot
                               # UI + routing + local Riverpod state only
 ```
 
 **Guiding seam:** all data flows through `demo_data.dart` and all "AI" flows through `ai_mock.dart` — these are the two files Phase 2 (real backend/AI) will swap behind the same shapes/signatures. Everything in `features/` is presentation + local state; it must not contain its own data or AI logic.
 
 ### Routing (`core/routing/app_router.dart`)
-- One `ShellRoute` wraps every route group (`_authRoutes`, `_customerRoutes`, `_workerRoutes`, `_chatbotRoutes`) in `_RootBackHandler`, which owns Android back-button behavior globally — **no screen overrides back itself**.
-- Verb rules: `context.push()` for all forward navigation; `context.pop()`/system back to go back; `context.go()` only for sanctioned stack resets (Splash→Role, "switch role", onboarding-complete→Dashboard, booking-done→Home).
-- Unknown/errored routes fall back to `RoleSelectionScreen` via `errorBuilder` — no route may ever render blank/null.
-- Route paths are namespaced by feature (`/auth/*`, `/customer/*`, `/worker/*`, `/chatbot`) and always referenced via `Routes.*` constants, never raw strings.
+- One `ShellRoute` wraps every route group (`_onboardingRoutes`, `_customerRoutes`, `_workerRoutes`, `_chatbotRoutes`) in `_RootBackHandler`, which owns Android back-button behavior globally — **no screen overrides back itself**.
+- There is no splash screen — `initialLocation` is the onboarding Welcome screen, which renders fully on the first frame (no async, no timer).
+- Verb rules: `context.push()` for all forward navigation; `context.pop()`/system back to go back; `context.go()` only for sanctioned stack resets ("switch role", onboarding-complete→Dashboard, booking-done→Home).
+- Unknown/errored routes fall back to the onboarding `WelcomeScreen` via `errorBuilder` — no route may ever render blank/null.
+- Route paths are namespaced by feature (`/onboarding/*`, `/customer/*`, `/worker/*`, `/chatbot`) and always referenced via `Routes.*` constants, never raw strings.
 
 ### State management
 - Riverpod, but **local-only**: every `StateProvider`/`Provider` is declared inside the screen file that uses it. There are no global/shared provider files and no repository/notifier layers in Phase 1.
@@ -202,14 +203,14 @@ MascotMessageCard(
 `PhoWaYokeState` is the single source of truth:
 
 - `idle` — home, dashboard, and empty states
-- `happy` — splash, welcome, and onboarding
+- `happy` — welcome and onboarding
 - `thinking` — AI search, budget suggestions, and recommendations
 - `pointing` — forms, task posting, and tutorials
 - `success` — posted tasks, confirmed bookings, and completed profiles
 
 ### Product and content rules
 
-- Prioritize the mascot on splash/welcome, role selection, onboarding, AI task
+- Prioritize the mascot on welcome, role selection, onboarding, AI task
   search, task posting, and success screens.
 - Use it selectively for empty states, profile completion, and verification.
 - Do not place it on worker cards, task cards, navigation bars, or every header;
@@ -221,3 +222,7 @@ MascotMessageCard(
 - Current implementation uses five static PNGs with simple Flutter transitions.
   Screens depend only on `PhoWaYoke`, allowing a future PNG → SVG → Rive
   migration without feature-level changes.
+
+
+###Skills
+_use skills accordingly, mainly for UI/UX

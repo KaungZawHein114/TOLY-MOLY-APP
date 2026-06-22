@@ -32,10 +32,27 @@ class _PhoWaYokeState extends State<PhoWaYoke> with SingleTickerProviderStateMix
   late final AnimationController _idleController = AnimationController(
     vsync: this,
     duration: const Duration(milliseconds: 1600),
-  )..repeat(reverse: true);
+  );
 
   late final Animation<double> _float =
       CurvedAnimation(parent: _idleController, curve: Curves.easeInOut);
+
+  bool _reduceMotion = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // Respect system reduced-motion: hold the idle breathing still instead of
+    // looping it forever, since it's movement-only and serves no function.
+    final reduceMotion = MediaQuery.of(context).disableAnimations;
+    if (reduceMotion) {
+      _idleController.stop();
+      _idleController.value = 0;
+    } else if (!_idleController.isAnimating) {
+      _idleController.repeat(reverse: true);
+    }
+    _reduceMotion = reduceMotion;
+  }
 
   @override
   void dispose() {
@@ -70,13 +87,20 @@ class _PhoWaYokeState extends State<PhoWaYoke> with SingleTickerProviderStateMix
         },
         child: AnimatedSwitcher(
           duration: widget.animationDuration,
-          switchInCurve: Curves.elasticOut,
+          // Only the celebratory "success" state earns the bouncy entrance;
+          // calmer states (thinking, pointing, idle) use a settled ease-out
+          // so frequent transitions don't feel jumpy or off-brand.
+          switchInCurve: widget.state == PhoWaYokeState.success
+              ? Curves.elasticOut
+              : Curves.easeOutCubic,
           switchOutCurve: Curves.easeIn,
           transitionBuilder: (child, animation) {
             return FadeTransition(
               opacity: animation,
               child: ScaleTransition(
-                scale: Tween<double>(begin: 0.7, end: 1).animate(animation),
+                // Reduced motion keeps the fade but drops the pop/scale.
+                scale: Tween<double>(begin: _reduceMotion ? 1 : 0.92, end: 1)
+                    .animate(animation),
                 child: child,
               ),
             );

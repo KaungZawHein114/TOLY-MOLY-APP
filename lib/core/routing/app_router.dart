@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/auth/splash_screen.dart';
 import '../../features/customer/home_screen.dart';
 import '../../features/customer/worker_list_screen.dart';
 import '../../features/customer/worker_profile_screen.dart';
@@ -29,9 +28,6 @@ import '../data/demo_data.dart';
 /// independently. Screens reference these constants — never raw path strings.
 class Routes {
   Routes._();
-
-  // ── auth ────────────────────────────────────────────────────────────────
-  static const String splash = '/auth/splash';
 
   // ── onboarding ──────────────────────────────────────────────────────────
   static const String onboardingWelcome = '/onboarding/welcome';
@@ -66,13 +62,6 @@ class Routes {
 // FEATURE ROUTE GROUPS
 // To add a screen: drop it in the right group list below. Nothing else changes.
 // ============================================================================
-
-final List<RouteBase> _authRoutes = [
-  GoRoute(
-    path: Routes.splash,
-    builder: (context, state) => const SplashScreen(),
-  ),
-];
 
 final List<RouteBase> _onboardingRoutes = [
   GoRoute(
@@ -181,14 +170,13 @@ final List<RouteBase> _chatbotRoutes = [
 /// FAIL-SAFE: any unknown / errored route renders the onboarding WelcomeScreen
 /// (still wrapped in the back-handler) instead of a blank screen or app exit.
 final GoRouter appRouter = GoRouter(
-  initialLocation: Routes.splash,
+  initialLocation: Routes.onboardingWelcome,
   errorBuilder: (context, state) =>
       const _RootBackHandler(child: WelcomeScreen()),
   routes: [
     ShellRoute(
       builder: (context, state, child) => _RootBackHandler(child: child),
       routes: [
-        ..._authRoutes,
         ..._onboardingRoutes,
         ..._customerRoutes,
         ..._workerRoutes,
@@ -217,7 +205,6 @@ Worker _findWorker(String? rawId) {
 //
 //   Screen type      Back button behaviour
 //   ───────────────  ───────────────────────────────────────────────
-//   Splash           ignored (swallowed) — prevents exit mid-launch
 //   Stack root       "Exit app?" confirmation dialog (e.g. onboarding Welcome)
 //   Any other screen normal back navigation (pops the stack)
 // ============================================================================
@@ -240,10 +227,6 @@ class _RootBackHandler extends StatelessWidget {
 
   void _handleBack(BuildContext context) {
     final router = GoRouter.of(context);
-    final location = router.routeInformationProvider.value.uri.path;
-
-    // Splash: swallow back entirely (it auto-advances in 1.5s anyway).
-    if (location == Routes.splash) return;
 
     // Mid-stack: normal back navigation.
     if (router.canPop()) {

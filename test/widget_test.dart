@@ -1,7 +1,8 @@
 // Smoke + navigation tests.
-//   1. App boots to the splash screen (renders on first frame, no async).
+//   1. App boots directly to the onboarding Welcome screen (renders on first
+//      frame, no async).
 //   2. Forward navigation builds a real back stack (the critical fix): after
-//      Splash -> Welcome -> Create account, the router can pop back to Welcome.
+//      Welcome -> Create account, the router can pop back to Welcome.
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,9 +12,10 @@ import 'package:toly_moly/core/constants/onboarding_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 
 void main() {
-  testWidgets('App boots to splash screen', (tester) async {
+  testWidgets('App boots to the onboarding Welcome screen', (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     expect(find.text('TOLY MOLY'), findsOneWidget);
+    expect(find.text(OnboardingStrings.getStarted), findsOneWidget);
   });
 
   testWidgets('Forward navigation builds a back stack', (tester) async {
@@ -24,13 +26,10 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
-
-    // Advance past the 1.5s splash timer -> the onboarding Welcome screen.
     // Pho Wa Yoke's idle "breathing" animation repeats forever, so
     // pumpAndSettle (which waits for animations to stop) would time out —
     // a bare pump (registers the route change) plus a bounded duration pump
     // (finishes the page transition) are used instead.
-    await tester.pump(const Duration(milliseconds: 1600));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(find.text(OnboardingStrings.getStarted), findsOneWidget);
