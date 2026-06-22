@@ -31,4 +31,33 @@ void main() {
 
     expect(tester.takeException(), isNull);
   });
+
+  testWidgets(
+      'OnboardingScaffold moment layout (bigger centered mascot) does not overflow on a short, narrow viewport',
+      (tester) async {
+    await tester.binding.setSurfaceSize(const Size(320, 480));
+    addTearDown(() => tester.binding.setSurfaceSize(null));
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MediaQuery(
+          data: const MediaQueryData(
+            size: Size(320, 480),
+            textScaler: TextScaler.linear(1.6),
+          ),
+          child: OnboardingScaffold(
+            mascotState: PhoWaYokeState.success,
+            mascotMessage: 'Test message',
+            title: 'Test title',
+            layout: OnboardingLayoutMode.moment,
+            body: const SizedBox(),
+            bottomBar: const SizedBox(),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+
+    expect(tester.takeException(), isNull);
+  });
 }

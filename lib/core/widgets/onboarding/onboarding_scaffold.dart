@@ -101,54 +101,76 @@ class OnboardingScaffold extends StatelessWidget {
                     // ever overflow a short screen — only the pinned bottomBar
                     // below is guaranteed on-screen without scrolling.
                     Expanded(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(
-                            AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.md),
-                        child: StaggeredEntrance(
-                          children: [
-                            if (progress != null && layout == OnboardingLayoutMode.form) ...[
-                              OnboardingProgressHeader(progress: progress!),
-                              const SizedBox(height: AppSpacing.lg),
-                            ],
-                            MascotMessageCard(
-                              state: mascotState,
-                              message: mascotMessage,
-                              mascotSize: layout == OnboardingLayoutMode.moment ? 96 : 64,
-                              centered: layout == OnboardingLayoutMode.moment,
-                            ),
-                            const SizedBox(height: AppSpacing.lg),
-                            if (title != null || readAloudText != null) ...[
-                              Row(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  if (title != null)
-                                    Expanded(
-                                      child: Column(
-                                        crossAxisAlignment: CrossAxisAlignment.start,
-                                        children: [
-                                          Text(title!, style: theme.textTheme.headlineSmall),
-                                          if (subtitle != null) ...[
-                                            const SizedBox(height: AppSpacing.xs),
-                                            Text(
-                                              subtitle!,
-                                              style: theme.textTheme.bodyMedium
-                                                  ?.copyWith(color: AppColors.textSecondary),
-                                            ),
-                                          ],
-                                        ],
-                                      ),
-                                    )
-                                  else
-                                    const Spacer(),
-                                  if (readAloudText != null)
-                                    ReadAloudButton(textToRead: readAloudText!),
-                                ],
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          const verticalPadding = AppSpacing.xl + AppSpacing.md;
+                          final content = StaggeredEntrance(
+                            children: [
+                              if (progress != null && layout == OnboardingLayoutMode.form) ...[
+                                OnboardingProgressHeader(progress: progress!),
+                                const SizedBox(height: AppSpacing.lg),
+                              ],
+                              MascotMessageCard(
+                                state: mascotState,
+                                message: mascotMessage,
+                                mascotSize: layout == OnboardingLayoutMode.moment ? 160 : 64,
+                                centered: layout == OnboardingLayoutMode.moment,
                               ),
                               const SizedBox(height: AppSpacing.lg),
+                              if (title != null || readAloudText != null) ...[
+                                Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (title != null)
+                                      Expanded(
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(title!, style: theme.textTheme.headlineSmall),
+                                            if (subtitle != null) ...[
+                                              const SizedBox(height: AppSpacing.xs),
+                                              Text(
+                                                subtitle!,
+                                                style: theme.textTheme.bodyMedium
+                                                    ?.copyWith(color: AppColors.textSecondary),
+                                              ),
+                                            ],
+                                          ],
+                                        ),
+                                      )
+                                    else
+                                      const Spacer(),
+                                    if (readAloudText != null)
+                                      ReadAloudButton(textToRead: readAloudText!),
+                                  ],
+                                ),
+                                const SizedBox(height: AppSpacing.lg),
+                              ],
+                              body,
                             ],
-                            body,
-                          ],
-                        ),
+                          );
+
+                          return SingleChildScrollView(
+                            padding: const EdgeInsets.fromLTRB(
+                                AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.md),
+                            // Moment screens (Welcome/completion) center their
+                            // content vertically when it fits the viewport,
+                            // matching the entry WelcomeScreen's greeting feel;
+                            // form screens keep the natural top-aligned scroll.
+                            child: layout == OnboardingLayoutMode.moment
+                                ? ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      minHeight:
+                                          (constraints.maxHeight - verticalPadding).clamp(0, double.infinity),
+                                    ),
+                                    child: Column(
+                                      mainAxisAlignment: MainAxisAlignment.center,
+                                      children: [content],
+                                    ),
+                                  )
+                                : content,
+                          );
+                        },
                       ),
                     ),
                     Padding(
