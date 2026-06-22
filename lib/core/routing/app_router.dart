@@ -23,6 +23,7 @@ import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
 import '../../features/worker/dashboard_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../data/demo_data.dart';
+import '../theme/app_spacing.dart';
 
 /// Centralized route names, grouped by feature so each group can grow
 /// independently. Screens reference these constants — never raw path strings.
@@ -63,18 +64,49 @@ class Routes {
 // To add a screen: drop it in the right group list below. Nothing else changes.
 // ============================================================================
 
+/// Combined fade + subtle slide-up used for the redesigned onboarding screens,
+/// instead of the platform-default horizontal slide — used only by the
+/// routes in [_onboardingRoutes] that opt in via `pageBuilder`.
+Page<void> _onboardingTransitionPage({required String path, required Widget child}) {
+  return CustomTransitionPage<void>(
+    key: ValueKey(path),
+    transitionDuration: AppMotion.medium,
+    reverseTransitionDuration: AppMotion.medium,
+    child: child,
+    transitionsBuilder: (context, animation, secondaryAnimation, transitionChild) {
+      final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter);
+      return FadeTransition(
+        opacity: curved,
+        child: Transform.translate(
+          offset: Offset(0, (1 - curved.value) * 24),
+          child: transitionChild,
+        ),
+      );
+    },
+  );
+}
+
 final List<RouteBase> _onboardingRoutes = [
   GoRoute(
     path: Routes.onboardingWelcome,
-    builder: (context, state) => const WelcomeScreen(),
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.onboardingWelcome,
+      child: const WelcomeScreen(),
+    ),
   ),
   GoRoute(
     path: Routes.onboardingCreateAccount,
-    builder: (context, state) => const CreateAccountScreen(),
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.onboardingCreateAccount,
+      child: const CreateAccountScreen(),
+    ),
   ),
   GoRoute(
     path: Routes.onboardingBasicInfo,
-    builder: (context, state) => const BasicInfoScreen(),
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.onboardingBasicInfo,
+      child: const BasicInfoScreen(),
+    ),
   ),
   GoRoute(
     path: Routes.clientPersonal,
