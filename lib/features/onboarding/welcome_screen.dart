@@ -58,7 +58,7 @@ class WelcomeScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadius.lg),
                         ),
                         child: Text(
-                          OnboardingStrings.welcomeMessage,
+                          OnboardingStrings.welcomeMessageV2,
                           textAlign: TextAlign.center,
                           style: theme.textTheme.bodyLarge?.copyWith(
                             color: AppColors.purple700,

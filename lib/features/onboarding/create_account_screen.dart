@@ -59,7 +59,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
     return OnboardingScaffold(
       mascotState: PhoWaYokeState.pointing,
-      mascotMessage: OnboardingStrings.chooseRolePrompt,
+      mascotMessage: OnboardingStrings.chooseRolePromptV2,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -235,21 +235,39 @@ class _TabToggle extends StatelessWidget {
         color: AppColors.blue100,
         borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
-      child: Row(
+      child: Stack(
         children: [
-          Expanded(
-            child: _TabButton(
-              label: OnboardingStrings.createAccountTab,
-              selected: !isLogin,
-              onTap: () => onChanged(false),
+          AnimatedAlign(
+            duration: AppMotion.fast,
+            curve: AppMotion.press,
+            alignment: isLogin ? Alignment.centerRight : Alignment.centerLeft,
+            child: FractionallySizedBox(
+              widthFactor: 0.5,
+              child: Container(
+                decoration: BoxDecoration(
+                  color: AppColors.purple700,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
             ),
           ),
-          Expanded(
-            child: _TabButton(
-              label: OnboardingStrings.loginTab,
-              selected: isLogin,
-              onTap: () => onChanged(true),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: _TabButton(
+                  label: OnboardingStrings.createAccountTab,
+                  selected: !isLogin,
+                  onTap: () => onChanged(false),
+                ),
+              ),
+              Expanded(
+                child: _TabButton(
+                  label: OnboardingStrings.loginTab,
+                  selected: isLogin,
+                  onTap: () => onChanged(true),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -266,21 +284,20 @@ class _TabButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadius.pill);
     return Material(
-      color: selected ? AppColors.purple700 : Colors.transparent,
-      borderRadius: radius,
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: radius,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
         onTap: onTap,
         child: Container(
           alignment: Alignment.center,
-          child: Text(
-            label,
+          child: AnimatedDefaultTextStyle(
+            duration: AppMotion.fast,
             style: TextStyle(
               fontWeight: FontWeight.w700,
               color: selected ? AppColors.onBrand : AppColors.textSecondary,
             ),
+            child: Text(label),
           ),
         ),
       ),

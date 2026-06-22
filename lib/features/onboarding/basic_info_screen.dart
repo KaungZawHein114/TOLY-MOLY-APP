@@ -83,7 +83,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
 
     return OnboardingScaffold(
       mascotState: PhoWaYokeState.pointing,
-      mascotMessage: OnboardingStrings.basicInfoMascotMessage,
+      mascotMessage: OnboardingStrings.basicInfoMascotMessageV2,
       title: OnboardingStrings.basicInfoTitle,
       onBack: () => context.pop(),
       body: Column(
