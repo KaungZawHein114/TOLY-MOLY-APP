@@ -1,3 +1,5 @@
+import 'package:flutter/animation.dart';
+
 /// Spacing + radius + sizing tokens — the ONLY place layout magic-numbers live.
 /// Screens must use these instead of raw doubles so the whole app can be
 /// re-spaced (denser, airier, different radius language) from one file.
@@ -42,4 +44,18 @@ class AppSizes {
   static const double iconSm = 16;
   static const double iconMd = 22;
   static const double iconLg = 28;
+}
+
+/// Motion tokens — the ONLY place animation durations/curves live, so every
+/// onboarding animation speaks the same timing language instead of ad-hoc
+/// literals scattered through widget files.
+class AppMotion {
+  AppMotion._();
+
+  static const Duration fast = Duration(milliseconds: 150);
+  static const Duration medium = Duration(milliseconds: 250);
+  static const Duration slow = Duration(milliseconds: 400);
+
+  static const Curve enter = Curves.easeOutCubic;
+  static const Curve press = Curves.easeOut;
 }
