@@ -7,6 +7,12 @@ import '../mascot/mascot_message_card.dart';
 import '../mascot/mascot_state.dart';
 import 'onboarding_progress_header.dart';
 import 'read_aloud_button.dart';
+import 'staggered_entrance.dart';
+
+/// Distinguishes celebratory/greeting screens (Welcome, completion) from
+/// ordinary form steps. `moment` gives the mascot more room and drops the
+/// progress chrome; `form` keeps today's shape.
+enum OnboardingLayoutMode { form, moment }
 
 /// Shared visual shell for every onboarding step: a branded gradient header
 /// with a rounded white panel overlapping it (per the wireframe reference),
@@ -22,6 +28,7 @@ class OnboardingScaffold extends StatelessWidget {
   final Widget bottomBar;
   final VoidCallback? onBack;
   final String? readAloudText;
+  final OnboardingLayoutMode layout;
 
   const OnboardingScaffold({
     super.key,
@@ -34,6 +41,7 @@ class OnboardingScaffold extends StatelessWidget {
     this.subtitle,
     this.onBack,
     this.readAloudText,
+    this.layout = OnboardingLayoutMode.form,
   });
 
   @override
@@ -96,17 +104,16 @@ class OnboardingScaffold extends StatelessWidget {
                       child: SingleChildScrollView(
                         padding: const EdgeInsets.fromLTRB(
                             AppSpacing.xl, AppSpacing.xl, AppSpacing.xl, AppSpacing.md),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                        child: StaggeredEntrance(
                           children: [
-                            if (progress != null) ...[
+                            if (progress != null && layout == OnboardingLayoutMode.form) ...[
                               OnboardingProgressHeader(progress: progress!),
                               const SizedBox(height: AppSpacing.lg),
                             ],
                             MascotMessageCard(
                               state: mascotState,
                               message: mascotMessage,
-                              mascotSize: 64,
+                              mascotSize: layout == OnboardingLayoutMode.moment ? 96 : 64,
                             ),
                             const SizedBox(height: AppSpacing.lg),
                             if (title != null || readAloudText != null) ...[
