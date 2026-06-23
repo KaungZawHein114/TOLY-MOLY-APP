@@ -6,6 +6,7 @@ import '../../core/theme/app_colors.dart';
 import 'activity_placeholder_screen.dart';
 import 'home_screen.dart';
 import 'profile_placeholder_screen.dart';
+import '../customer/activity_screen.dart';
 
 // Which bottom-nav tab is active. Public (not file-private) because the
 // task-posting flow's success modal switches to the Activity tab after
@@ -29,7 +30,7 @@ class CustomerHomeShell extends ConsumerWidget {
         index: index,
         children: const [
           CustomerHomeScreen(),
-          ActivityPlaceholderScreen(),
+          ActivityScreen(),
           ProfilePlaceholderScreen(),
         ],
       ),

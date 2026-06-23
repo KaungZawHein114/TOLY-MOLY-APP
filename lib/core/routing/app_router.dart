@@ -32,6 +32,7 @@ import '../../features/worker/task_execution_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../data/demo_data.dart';
 import '../theme/app_spacing.dart';
+import '../../features/customer/activity_screen.dart';
 
 /// Centralized route names, grouped by feature so each group can grow
 /// independently. Screens reference these constants — never raw path strings.
@@ -73,7 +74,11 @@ class Routes {
 
   // ── chatbot ─────────────────────────────────────────────────────────────
   static const String chatbot = '/chatbot';
+
+  static const String activity = '/customer/activity';
 }
+
+
 
 // ============================================================================
 // FEATURE ROUTE GROUPS
@@ -167,6 +172,10 @@ final List<RouteBase> _onboardingRoutes = [
   GoRoute(
     path: Routes.taskerWelcome,
     builder: (context, state) => const TaskerWelcomeScreen(),
+  ),
+  GoRoute(
+    path: Routes.activity,
+    builder: (context, state) => const ActivityScreen(),
   ),
 ];
 
