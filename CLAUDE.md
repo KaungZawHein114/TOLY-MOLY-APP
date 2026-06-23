@@ -225,4 +225,4 @@ MascotMessageCard(
 
 
 ###Skills
-_use skills accordingly, mainly for UI/UX
+_use skills only for UI/UX and frontend design.

@@ -10,8 +10,13 @@ import '../../theme/app_spacing.dart';
 /// A brief one-shot pulse on tap stands in for "speaking" feedback.
 class ReadAloudButton extends StatefulWidget {
   final String textToRead;
+  // Smaller footprint for tight grid cells (e.g. category cards). The tap
+  // target is kept at 44px (just under the usual 48px minimum) rather than
+  // shrinking with the visible circle, since this only fires in contexts
+  // where a full 56px button would dominate a small card.
+  final bool compact;
 
-  const ReadAloudButton({super.key, required this.textToRead});
+  const ReadAloudButton({super.key, required this.textToRead, this.compact = false});
 
   @override
   State<ReadAloudButton> createState() => _ReadAloudButtonState();
@@ -53,6 +58,8 @@ class _ReadAloudButtonState extends State<ReadAloudButton>
 
   @override
   Widget build(BuildContext context) {
+    final dimension = widget.compact ? 44.0 : 56.0;
+    final iconSize = widget.compact ? AppSizes.iconMd : AppSizes.iconLg;
     return Tooltip(
       message: OnboardingStrings.readAloudButton,
       child: Semantics(
@@ -68,11 +75,11 @@ class _ReadAloudButtonState extends State<ReadAloudButton>
               animation: _scale,
               builder: (context, child) =>
                   Transform.scale(scale: _scale.value, child: child),
-              child: const SizedBox(
-                width: 56,
-                height: 56,
+              child: SizedBox(
+                width: dimension,
+                height: dimension,
                 child: Icon(Icons.volume_up_rounded,
-                    color: AppColors.purple700, size: AppSizes.iconLg),
+                    color: AppColors.purple700, size: iconSize),
               ),
             ),
           ),

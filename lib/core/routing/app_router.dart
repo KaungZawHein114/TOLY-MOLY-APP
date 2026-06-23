@@ -2,7 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../features/customer/home_screen.dart';
+import '../../features/customer/customer_home_shell.dart';
+import '../../features/customer/task_posting/ai_category_screen.dart';
+import '../../features/customer/task_posting/budget_screen.dart';
+import '../../features/customer/task_posting/date_time_screen.dart';
+import '../../features/customer/task_posting/review_publish_screen.dart';
+import '../../features/customer/task_posting/task_description_screen.dart';
+import '../../features/customer/task_posting/task_type_location_screen.dart';
+import '../../features/customer/task_posting/workers_tier_urgency_screen.dart';
 import '../../features/customer/worker_list_screen.dart';
 import '../../features/customer/worker_profile_screen.dart';
 import '../../features/customer/booking_screen.dart';
@@ -20,7 +27,8 @@ import '../../features/onboarding/tasker/tasker_skills_screen.dart';
 import '../../features/onboarding/tasker/tasker_basic_profile_screen.dart';
 import '../../features/onboarding/tasker/tasker_rules_screen.dart';
 import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
-import '../../features/worker/dashboard_screen.dart';
+import '../../features/worker/worker_home_shell.dart';
+import '../../features/worker/task_execution_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../data/demo_data.dart';
 import '../theme/app_spacing.dart';
@@ -48,12 +56,20 @@ class Routes {
 
   // ── customer ────────────────────────────────────────────────────────────
   static const String customerHome = '/customer/home';
+  static const String postTask = '/customer/post-task';
+  static const String postTaskTypeLocation = '/customer/post-task/type-location';
+  static const String postTaskDateTime = '/customer/post-task/date-time';
+  static const String postTaskWorkersTier = '/customer/post-task/workers-tier';
+  static const String postTaskDescription = '/customer/post-task/description';
+  static const String postTaskBudget = '/customer/post-task/budget';
+  static const String postTaskReview = '/customer/post-task/review';
   static const String workerList = '/customer/workers';
   static const String workerProfile = '/customer/worker'; // + /:id
   static const String booking = '/customer/booking'; // + /:id
 
   // ── worker ──────────────────────────────────────────────────────────────
   static const String dashboard = '/worker/dashboard';
+  static const String taskExecution = '/worker/task-execution'; // + /:id
 
   // ── chatbot ─────────────────────────────────────────────────────────────
   static const String chatbot = '/chatbot';
@@ -64,9 +80,9 @@ class Routes {
 // To add a screen: drop it in the right group list below. Nothing else changes.
 // ============================================================================
 
-/// Combined fade + subtle slide-up used for the redesigned onboarding screens,
-/// instead of the platform-default horizontal slide — used only by the
-/// routes in [_onboardingRoutes] that opt in via `pageBuilder`.
+/// Combined fade + subtle slide-up used for the redesigned onboarding screens
+/// and the task-posting flow, instead of the platform-default horizontal
+/// slide — used only by routes that opt in via `pageBuilder`.
 Page<void> _onboardingTransitionPage({required String path, required Widget child}) {
   return CustomTransitionPage<void>(
     key: ValueKey(path),
@@ -157,7 +173,56 @@ final List<RouteBase> _onboardingRoutes = [
 final List<RouteBase> _customerRoutes = [
   GoRoute(
     path: Routes.customerHome,
-    builder: (context, state) => const CustomerHomeScreen(),
+    builder: (context, state) => const CustomerHomeShell(),
+  ),
+  GoRoute(
+    path: Routes.postTask,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTask,
+      child: const AiCategoryScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.postTaskTypeLocation,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTaskTypeLocation,
+      child: const TaskTypeLocationScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.postTaskDateTime,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTaskDateTime,
+      child: const DateTimeScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.postTaskWorkersTier,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTaskWorkersTier,
+      child: const WorkersTierUrgencyScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.postTaskDescription,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTaskDescription,
+      child: const TaskDescriptionScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.postTaskBudget,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTaskBudget,
+      child: const BudgetScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.postTaskReview,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      path: Routes.postTaskReview,
+      child: const ReviewPublishScreen(),
+    ),
   ),
   GoRoute(
     path: Routes.workerList,
@@ -182,7 +247,12 @@ final List<RouteBase> _customerRoutes = [
 final List<RouteBase> _workerRoutes = [
   GoRoute(
     path: Routes.dashboard,
-    builder: (context, state) => const WorkerDashboardScreen(),
+    builder: (context, state) => const WorkerHomeShell(),
+  ),
+  GoRoute(
+    path: '${Routes.taskExecution}/:id',
+    builder: (context, state) =>
+        TaskExecutionScreen(booking: _findBooking(state.pathParameters['id'])),
   ),
 ];
 
@@ -228,6 +298,19 @@ Worker _findWorker(String? rawId) {
     }
   }
   return workers.isNotEmpty ? workers.first : fallbackWorker;
+}
+
+/// Always returns a valid Booking — falls back to the first booking if the
+/// id is missing or not found (this app has no fallbackBooking; bookings
+/// is never empty in Phase 1 demo data).
+Booking _findBooking(String? rawId) {
+  final id = int.tryParse(rawId ?? '');
+  if (id != null) {
+    for (final b in bookings) {
+      if (b.id == id) return b;
+    }
+  }
+  return bookings.first;
 }
 
 // ============================================================================

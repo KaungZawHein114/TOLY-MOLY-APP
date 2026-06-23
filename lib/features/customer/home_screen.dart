@@ -6,12 +6,14 @@ import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/widgets/demo_card.dart';
-import '../../core/widgets/skill_tile.dart';
+import '../../core/widgets/large_button.dart';
+import '../../core/widgets/onboarding/staggered_entrance.dart';
+import '../../core/widgets/service_category_card.dart';
 
-/// Customer landing: category grid + nearby workers.
-/// Fully data-driven — the grid and list size themselves to the demo_data
-/// lists, so adding categories/workers later needs no screen changes.
+/// Customer landing (Home tab of [CustomerHomeShell]): greeting/logo/bell
+/// header, two quick-action buttons, and a browse-services category grid.
+/// Fully data-driven — the grid sizes itself to demo_data's category list,
+/// so adding categories later needs no screen changes.
 class CustomerHomeScreen extends StatelessWidget {
   const CustomerHomeScreen({super.key});
 
@@ -19,146 +21,104 @@ class CustomerHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    // Fail-safe: fall back to hardcoded constants if a list is ever empty.
+    // Fail-safe: fall back to hardcoded constants if the list is ever empty.
     final cats = categories.isNotEmpty ? categories : fallbackCategories;
-    final all = workers.isNotEmpty ? workers : fallbackWorkers;
-    final nearby = (List<Worker>.from(all)
-          ..sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles)))
-        .take(5)
-        .toList();
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.appName),
-        leading: IconButton(
-          icon: const Icon(Icons.swap_horiz),
-          tooltip: "Switch role",
-          onPressed: () => context.go(Routes.onboardingWelcome),
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
+          children: [
+            const _HomeHeader(),
+            const SizedBox(height: AppSpacing.lg),
+            StaggeredEntrance(
+              children: [
+                LargeButton(
+                  label: AppStrings.homePostTaskAction,
+                  icon: Icons.add_circle_outline,
+                  gradient: AppColors.purpleGradient,
+                  onTap: () => context.push(Routes.postTask),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                LargeButton(
+                  label: AppStrings.homeFindWorkerAction,
+                  icon: Icons.search,
+                  filled: false,
+                  outlineColor: AppColors.purple700,
+                  onTap: () => context.push(Routes.workerList),
+                ),
+                const SizedBox(height: AppSpacing.xl),
+                Text(AppStrings.homeBrowseServicesTitle, style: theme.textTheme.titleLarge),
+                const SizedBox(height: AppSpacing.md),
+                GridView.builder(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: cats.length,
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 3,
+                    mainAxisSpacing: AppSpacing.lg,
+                    crossAxisSpacing: AppSpacing.lg,
+                    childAspectRatio: 0.95,
+                  ),
+                  itemBuilder: (context, i) {
+                    final c = cats[i];
+                    return ServiceCategoryCard(
+                      emoji: c.icon,
+                      label: c.burmese,
+                      onTap: () {
+                        final skills = categoryToSkills[c.name] ?? const [];
+                        context.push(skills.isEmpty
+                            ? Routes.workerList
+                            : '${Routes.workerList}?skill=${skills.first}');
+                      },
+                    );
+                  },
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          IconButton(
-            icon: const Text("💬", style: TextStyle(fontSize: 20)),
-            tooltip: "Assistant",
-            onPressed: () => context.push(Routes.chatbot),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(
-            AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.xxl),
-        children: [
-          _Greeting(theme: theme),
-          const SizedBox(height: AppSpacing.lg),
-          _SearchBar(onTap: () => context.push(Routes.workerList)),
-          const SizedBox(height: AppSpacing.xl + 2),
-          Text(AppStrings.categories, style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.md),
-          GridView.builder(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: cats.length,
-            gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount: 4,
-              mainAxisSpacing: AppSpacing.md,
-              crossAxisSpacing: AppSpacing.md,
-              childAspectRatio: 0.82,
-            ),
-            itemBuilder: (context, i) {
-              final c = cats[i];
-              return SkillTile(
-                emoji: c.icon,
-                label: c.name,
-                sublabel: c.burmese,
-                onTap: () {
-                  final skills = categoryToSkills[c.name] ?? const [];
-                  context.push(skills.isEmpty
-                      ? Routes.workerList
-                      : '${Routes.workerList}?skill=${skills.first}');
-                },
-              );
-            },
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Expanded(
-                child: Text(AppStrings.nearbyWorkers,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleLarge),
-              ),
-              TextButton(
-                onPressed: () => context.push(Routes.workerList),
-                child: const Text("See all"),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xs),
-          ...nearby.map(
-            (w) => WorkerCard(
-              worker: w,
-              onTap: () => context.push('${Routes.workerProfile}/${w.id}'),
-            ),
-          ),
-        ],
       ),
     );
   }
 }
 
-class _Greeting extends StatelessWidget {
-  final ThemeData theme;
-  const _Greeting({required this.theme});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text("Mingalaba 👋", style: theme.textTheme.headlineSmall),
-        const SizedBox(height: AppSpacing.xxs),
-        Text("What do you need done today?",
-            style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
-      ],
-    );
-  }
-}
-
-class _SearchBar extends StatelessWidget {
-  final VoidCallback onTap;
-  const _SearchBar({required this.onTap});
+class _HomeHeader extends StatelessWidget {
+  const _HomeHeader();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Material(
-      color: theme.cardColor,
-      borderRadius: BorderRadius.circular(AppRadius.md),
-      elevation: 1,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.md),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-              horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
-          child: Row(
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.search, color: theme.hintColor),
-              const SizedBox(width: AppSpacing.sm + 2),
-              Expanded(
-                child: Text("Search plumbers, cleaners…",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyLarge?.copyWith(
-                        color: theme.hintColor, fontSize: 15)),
+              Text(AppStrings.homeGreeting, style: theme.textTheme.headlineSmall),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                AppStrings.homeDemoClientName,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
               ),
-              const SizedBox(width: AppSpacing.sm),
-              const Icon(Icons.tune, color: AppColors.teal),
             ],
           ),
         ),
-      ),
+        Image.asset("assets/logo_circle.png", width: 36, height: 36),
+        const SizedBox(width: AppSpacing.md),
+        Semantics(
+          label: AppStrings.homeNotificationsEmpty,
+          button: true,
+          child: IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.purple700),
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppStrings.homeNotificationsEmpty)),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

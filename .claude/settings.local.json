@@ -10,7 +10,13 @@
       "Bash(flutter run *)",
       "Bash(echo \"started with pid $!\")",
       "Bash(kill 336)",
-      "Bash(pkill -f \"flutter run\")"
+      "Bash(pkill -f \"flutter run\")",
+      "Bash(git branch *)",
+      "Bash(git checkout *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(python3 -c ' *)"
     ]
   }
 }

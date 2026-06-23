@@ -4,7 +4,10 @@ import '../data/demo_data.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 
-/// A horizontal worker card: emoji avatar, name, skill, rating, distance, rate.
+/// A horizontal worker card: emoji avatar, name, trust badge, rating,
+/// distance, completed tasks, verification, availability. No pricing —
+/// Toly Moly is a task-based, not a time-based, marketplace; clients pick
+/// workers on trust/skill/availability, never on an hourly rate.
 /// Data-driven: it renders whatever [Worker] it is given. Tapping is delegated
 /// to the caller, and all styling comes from theme tokens.
 class WorkerCard extends StatelessWidget {
@@ -16,6 +19,7 @@ class WorkerCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final distanceKm = (worker.distanceMiles * 1.609).toStringAsFixed(1);
     return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 2),
       clipBehavior: Clip.antiAlias,
@@ -51,33 +55,37 @@ class WorkerCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
-                      "${worker.skill} • ${worker.experience}",
+                      worker.skill,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.hintColor),
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
                     ),
+                    const SizedBox(height: AppSpacing.xs + 2),
+                    TrustBadgePill(tier: worker.currentTier),
                     const SizedBox(height: AppSpacing.xs + 2),
                     Row(
                       children: [
                         Icon(Icons.location_on,
                             size: 14, color: theme.hintColor),
                         const SizedBox(width: AppSpacing.xxs),
-                        Text("${worker.distanceMiles} mi",
+                        Text("$distanceKm km",
                             style: theme.textTheme.bodySmall
                                 ?.copyWith(color: theme.hintColor)),
                         const SizedBox(width: AppSpacing.md),
                         Flexible(
                           child: Text(
-                            "${worker.hourlyRateMmk} MMK/hr",
+                            "${worker.completedTasks} Tasks",
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: AppColors.orange,
-                              fontWeight: FontWeight.w700,
-                            ),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: theme.hintColor),
                           ),
                         ),
+                        if (worker.isVerified) ...[
+                          const SizedBox(width: AppSpacing.xs),
+                          const Icon(Icons.verified,
+                              size: 14, color: AppColors.success),
+                        ],
                       ],
                     ),
                   ],
@@ -88,6 +96,32 @@ class WorkerCard extends StatelessWidget {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Client-facing trust badge pill — derives its label from [trustBadgeFor];
+/// never shows the raw tier number.
+class TrustBadgePill extends StatelessWidget {
+  final int tier;
+  const TrustBadgePill({super.key, required this.tier});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+      decoration: BoxDecoration(
+        color: AppColors.purple100,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        "🏅 ${trustBadgeFor(tier)}",
+        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+              color: AppColors.purple700,
+              fontWeight: FontWeight.w600,
+            ),
       ),
     );
   }
@@ -106,7 +140,7 @@ class _Avatar extends StatelessWidget {
           width: AppSizes.avatar,
           height: AppSizes.avatar,
           decoration: BoxDecoration(
-            color: AppColors.teal.withValues(alpha: 0.12),
+            color: AppColors.purple100,
             shape: BoxShape.circle,
           ),
           alignment: Alignment.center,

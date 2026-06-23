@@ -6,6 +6,7 @@ import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/demo_card.dart';
 import '../../core/widgets/large_button.dart';
 
 /// Worker profile. The router guarantees a non-null Worker; if anything is off
@@ -23,11 +24,11 @@ class WorkerProfileScreen extends StatelessWidget {
           SliverAppBar(
             expandedHeight: 220,
             pinned: true,
-            backgroundColor: AppColors.teal,
+            backgroundColor: AppColors.purple700,
             foregroundColor: AppColors.onBrand,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
-                decoration: const BoxDecoration(gradient: AppColors.tealGradient),
+                decoration: const BoxDecoration(gradient: AppColors.purpleGradient),
                 child: Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -55,6 +56,8 @@ class WorkerProfileScreen extends StatelessWidget {
                         style: theme.textTheme.bodyMedium
                             ?.copyWith(color: AppColors.onBrandMuted),
                       ),
+                      const SizedBox(height: AppSpacing.xs),
+                      TrustBadgePill(tier: worker.currentTier),
                     ],
                   ),
                 ),
@@ -75,15 +78,15 @@ class WorkerProfileScreen extends StatelessWidget {
                     ),
                     _Stat(
                       icon: Icons.location_on,
-                      iconColor: AppColors.teal,
-                      value: "${worker.distanceMiles} mi",
+                      iconColor: AppColors.purple700,
+                      value: "${(worker.distanceMiles * 1.609).toStringAsFixed(1)} km",
                       label: "away",
                     ),
                     _Stat(
-                      icon: Icons.work_history,
-                      iconColor: AppColors.orange,
-                      value: worker.experience.split(' ').first,
-                      label: "years exp.",
+                      icon: Icons.assignment_turned_in,
+                      iconColor: AppColors.success,
+                      value: "${worker.completedTasks}",
+                      label: AppStrings.tasksCompletedSuffix,
                     ),
                   ],
                 ),
@@ -93,13 +96,11 @@ class WorkerProfileScreen extends StatelessWidget {
                 Text("About", style: theme.textTheme.titleMedium),
                 const SizedBox(height: AppSpacing.xs + 2),
                 Text(worker.bio, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: AppSpacing.xl),
-                _RateRow(rate: worker.hourlyRateMmk),
                 const SizedBox(height: AppSpacing.xxl + 4),
                 LargeButton(
-                  label: "${AppStrings.bookNow} • ${worker.hourlyRateMmk} MMK/hr",
+                  label: AppStrings.scheduleWorkerCta,
                   icon: Icons.calendar_month,
-                  gradient: AppColors.orangeGradient,
+                  gradient: AppColors.purpleGradient,
                   onTap: () => context.push('${Routes.booking}/${worker.id}'),
                 ),
                 const SizedBox(height: AppSpacing.md),
@@ -167,7 +168,7 @@ class _AvailabilityBanner extends StatelessWidget {
           Icon(available ? Icons.check_circle : Icons.schedule, color: color),
           const SizedBox(width: AppSpacing.sm + 2),
           Text(
-            available ? "Available now" : "Available later today",
+            available ? AppStrings.availableNowLabel : AppStrings.availableLaterLabel,
             style: theme.textTheme.bodyMedium
                 ?.copyWith(color: color, fontWeight: FontWeight.w700),
           ),
@@ -177,33 +178,3 @@ class _AvailabilityBanner extends StatelessWidget {
   }
 }
 
-class _RateRow extends StatelessWidget {
-  final int rate;
-  const _RateRow({required this.rate});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg, vertical: AppSpacing.md + 2),
-      decoration: BoxDecoration(
-        border: Border.all(color: theme.dividerColor),
-        borderRadius: BorderRadius.circular(AppRadius.md - 2),
-      ),
-      child: Row(
-        children: [
-          const Text("💰", style: TextStyle(fontSize: 22)),
-          const SizedBox(width: AppSpacing.md),
-          const Text("Hourly rate"),
-          const Spacer(),
-          Text("$rate MMK",
-              style: theme.textTheme.titleMedium?.copyWith(
-                color: AppColors.orange,
-                fontWeight: FontWeight.w900,
-              )),
-        ],
-      ),
-    );
-  }
-}
