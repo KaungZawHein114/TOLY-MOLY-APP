@@ -18,7 +18,8 @@ enum WorkerSort { recommended, distance, rating, tier, completedTasks }
 const List<String> _townships = ["လှိုင်", "ကမာရွတ်", "မရမ်းကုန်း", "အင်းစိန်"];
 
 // LOCAL UI STATE (Riverpod) — declared in this screen file, not a shared file.
-final workerSortProvider = StateProvider<WorkerSort>((ref) => WorkerSort.recommended);
+final workerSortProvider =
+    StateProvider<WorkerSort>((ref) => WorkerSort.recommended);
 final availableOnlyProvider = StateProvider<bool>((ref) => false);
 final trustFilterProvider = StateProvider<WorkerTier?>((ref) => null);
 final ratingFilterProvider = StateProvider<double?>((ref) => null);
@@ -29,7 +30,10 @@ double _matchingScore(Worker w) {
   final ratingScore = w.rating / 5 * 100;
   final distanceScore = (100 - w.distanceMiles * 1.609 * 10).clamp(0, 100);
   final completionScore = (w.completedTasks / 2).clamp(0, 100);
-  return trustScore * 0.4 + ratingScore * 0.3 + distanceScore * 0.2 + completionScore * 0.1;
+  return trustScore * 0.4 +
+      ratingScore * 0.3 +
+      distanceScore * 0.2 +
+      completionScore * 0.1;
 }
 
 class WorkerListScreen extends ConsumerStatefulWidget {
@@ -63,7 +67,8 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
     var list = source.where((w) {
       if (_skill != null && w.skill != _skill) return false;
       if (availableOnly && !w.isAvailableNow) return false;
-      if (trustFilter != null && tierBucketFor(w.currentTier) != trustFilter) return false;
+      if (trustFilter != null && tierBucketFor(w.currentTier) != trustFilter)
+        return false;
       if (ratingFilter != null && w.rating < ratingFilter) return false;
       if (townshipFilter != null && w.township != townshipFilter) return false;
       return true;
@@ -132,13 +137,15 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                 _Chip(
                   label: "All ${AppStrings.exploreFilterTrustLevel}",
                   selected: trustFilter == null,
-                  onTap: () => ref.read(trustFilterProvider.notifier).state = null,
+                  onTap: () =>
+                      ref.read(trustFilterProvider.notifier).state = null,
                 ),
                 for (final tier in WorkerTier.values)
                   _Chip(
                     label: tier.label,
                     selected: trustFilter == tier,
-                    onTap: () => ref.read(trustFilterProvider.notifier).state = tier,
+                    onTap: () =>
+                        ref.read(trustFilterProvider.notifier).state = tier,
                   ),
               ],
             ),
@@ -163,15 +170,17 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                   _Chip(
                     label: t,
                     selected: townshipFilter == t,
-                    onTap: () => ref.read(townshipFilterProvider.notifier).state =
-                        townshipFilter == t ? null : t,
+                    onTap: () => ref
+                        .read(townshipFilterProvider.notifier)
+                        .state = townshipFilter == t ? null : t,
                   ),
               ],
             ),
           ),
           // Sort + availability row
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.xs + 2),
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.xs + 2),
             child: Row(
               children: [
                 Icon(Icons.sort, size: 18, color: theme.hintColor),
@@ -180,23 +189,34 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                   value: sort,
                   underline: const SizedBox.shrink(),
                   onChanged: (v) {
-                    if (v != null) ref.read(workerSortProvider.notifier).state = v;
+                    if (v != null)
+                      ref.read(workerSortProvider.notifier).state = v;
                   },
                   items: [
-                    const DropdownMenuItem(value: WorkerSort.recommended, child: Text("Recommended")),
-                    DropdownMenuItem(value: WorkerSort.distance, child: Text(AppStrings.exploreSortNearest)),
-                    DropdownMenuItem(value: WorkerSort.rating, child: Text(AppStrings.exploreSortTopRated)),
-                    DropdownMenuItem(value: WorkerSort.tier, child: Text(AppStrings.exploreSortTrustTier)),
+                    const DropdownMenuItem(
+                        value: WorkerSort.recommended,
+                        child: Text("Recommended")),
                     DropdownMenuItem(
-                        value: WorkerSort.completedTasks, child: Text(AppStrings.exploreSortMostCompleted)),
+                        value: WorkerSort.distance,
+                        child: Text(AppStrings.exploreSortNearest)),
+                    DropdownMenuItem(
+                        value: WorkerSort.rating,
+                        child: Text(AppStrings.exploreSortTopRated)),
+                    DropdownMenuItem(
+                        value: WorkerSort.tier,
+                        child: Text(AppStrings.exploreSortTrustTier)),
+                    DropdownMenuItem(
+                        value: WorkerSort.completedTasks,
+                        child: Text(AppStrings.exploreSortMostCompleted)),
                   ],
                 ),
                 const Spacer(),
                 Text(AppStrings.exploreAvailableNow),
                 Switch(
                   value: availableOnly,
-                  activeColor: AppColors.purple700,
-                  onChanged: (v) => ref.read(availableOnlyProvider.notifier).state = v,
+                  activeThumbColor: AppColors.purple700,
+                  onChanged: (v) =>
+                      ref.read(availableOnlyProvider.notifier).state = v,
                 ),
               ],
             ),
@@ -211,12 +231,13 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                     ref.read(townshipFilterProvider.notifier).state = null;
                   })
                 : ListView.builder(
-                    padding: const EdgeInsets.fromLTRB(
-                        AppSpacing.md, AppSpacing.xs, AppSpacing.md, AppSpacing.xxl),
+                    padding: const EdgeInsets.fromLTRB(AppSpacing.md,
+                        AppSpacing.xs, AppSpacing.md, AppSpacing.xxl),
                     itemCount: list.length,
                     itemBuilder: (context, i) => WorkerCard(
                       worker: list[i],
-                      onTap: () => context.push('${Routes.workerProfile}/${list[i].id}'),
+                      onTap: () =>
+                          context.push('${Routes.workerProfile}/${list[i].id}'),
                     ),
                   ),
           ),
@@ -230,7 +251,8 @@ class _Chip extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
-  const _Chip({required this.label, required this.selected, required this.onTap});
+  const _Chip(
+      {required this.label, required this.selected, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -265,7 +287,8 @@ class _EmptyState extends StatelessWidget {
           const SizedBox(height: AppSpacing.sm),
           Text(AppStrings.exploreNoResults),
           const SizedBox(height: AppSpacing.sm),
-          TextButton(onPressed: onReset, child: Text(AppStrings.exploreResetFilters)),
+          TextButton(
+              onPressed: onReset, child: Text(AppStrings.exploreResetFilters)),
         ],
       ),
     );
