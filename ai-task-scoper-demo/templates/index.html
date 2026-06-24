@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AI Task Scoper</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}" />
+</head>
+<body>
+  <div class="page">
+    <header class="hero">
+      <div class="badge">AI Task Scoper</div>
+      <h1>Turn a rough task into a clear, well-scoped request</h1>
+      <p class="subtitle">
+        Paste what you need done and let AI improve the description, spot missing
+        details, and estimate a fair budget, time, and match score.
+      </p>
+    </header>
+
+    <main class="layout">
+      <!-- Input panel -->
+      <section class="card input-card">
+        <label class="field-label" for="task-input">Your task posting</label>
+        <textarea
+          id="task-input"
+          placeholder="e.g. Need someone to fix a leaking kitchen tap this weekend. Budget around $30."
+          rows="8"
+        ></textarea>
+
+        <div class="actions">
+          <button id="analyze-btn" class="btn-primary">
+            <span class="btn-label">Analyze Task</span>
+          </button>
+          <button id="sample-btn" class="btn-ghost" type="button">Use example</button>
+        </div>
+
+        <p id="error-box" class="error-box" hidden></p>
+      </section>
+
+      <!-- Loading state -->
+      <section id="loading" class="card loading" hidden>
+        <div class="spinner" aria-hidden="true"></div>
+        <p>Analyzing your task…</p>
+      </section>
+
+      <!-- Results -->
+      <section id="results" class="results" hidden>
+        <!-- Improved description -->
+        <div class="card">
+          <div class="card-head">
+            <h2>Improved description</h2>
+            <button id="copy-btn" class="btn-copy" type="button">Copy</button>
+          </div>
+          <p id="improved-description" class="improved-text"></p>
+        </div>
+
+        <!-- Score + budget row -->
+        <div class="grid-two">
+          <div class="card">
+            <h2>Tasker match score</h2>
+            <div class="score-row">
+              <span id="score-value" class="score-value">0</span>
+              <span class="score-max">/ 100</span>
+            </div>
+            <div class="progress-track">
+              <div id="score-bar" class="progress-fill" style="width:0%"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <h2>Budget assessment</h2>
+            <span id="budget-badge" class="badge-status">—</span>
+            <p id="budget-explanation" class="muted"></p>
+            <div class="kv">
+              <span class="kv-label">Suggested range</span>
+              <span id="budget-range" class="kv-value">—</span>
+            </div>
+            <div class="kv">
+              <span class="kv-label">Estimated time</span>
+              <span id="completion-time" class="kv-value">—</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Missing info -->
+        <div class="card">
+          <h2>Missing information</h2>
+          <ul id="missing-list" class="missing-list"></ul>
+        </div>
+
+        <!-- Reasoning -->
+        <div class="card reasoning-card">
+          <h2>Reasoning</h2>
+          <p id="reasoning" class="muted"></p>
+        </div>
+      </section>
+    </main>
+
+    <footer class="foot">Demo app · Flask + OpenAI</footer>
+  </div>
+
+  <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>
