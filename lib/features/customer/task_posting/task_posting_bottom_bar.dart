@@ -13,6 +13,7 @@ class TaskPostingBottomBar extends StatelessWidget {
   final VoidCallback onContinue;
   final bool celebratory;
   final String continueLabel;
+  final IconData continueIcon;
 
   const TaskPostingBottomBar({
     super.key,
@@ -20,13 +21,14 @@ class TaskPostingBottomBar extends StatelessWidget {
     this.onPrevious,
     this.celebratory = false,
     this.continueLabel = TaskPostingStrings.continueButton,
+    this.continueIcon = Icons.arrow_forward,
   });
 
   @override
   Widget build(BuildContext context) {
     final continueButton = LargeButton(
       label: continueLabel,
-      icon: Icons.arrow_forward,
+      icon: continueIcon,
       gradient: AppColors.purpleGradient,
       celebratory: celebratory,
       onTap: onContinue,

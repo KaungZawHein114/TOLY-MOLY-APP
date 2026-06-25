@@ -13,10 +13,9 @@ import '../../onboarding/onboarding_models.dart';
 import 'task_posting_bottom_bar.dart';
 import 'task_posting_state.dart';
 
-/// Step 3 of 7: Date & Time. The client always picks an exact date/time via
-/// the native pickers; "Urgent" is an independent checkbox (extra pay, more
-/// visible/prioritized to workers) rather than a shortcut that overrides
-/// the chosen time.
+/// Step 3 of 7: Date, Time & Urgent Task. The client picks an exact date/time;
+/// the urgent option is a prominent, benefits-explaining card (extra fee, more
+/// visibility, operational team follow-up) rather than an easy-to-miss tick.
 class DateTimeScreen extends ConsumerStatefulWidget {
   const DateTimeScreen({super.key});
 
@@ -26,6 +25,9 @@ class DateTimeScreen extends ConsumerStatefulWidget {
 
 class _DateTimeScreenState extends ConsumerState<DateTimeScreen> {
   String? _error;
+
+  bool get _editMode =>
+      GoRouterState.of(context).uri.queryParameters['edit'] == '1';
 
   Future<void> _pickDate() async {
     final now = DateTime.now();
@@ -43,7 +45,8 @@ class _DateTimeScreenState extends ConsumerState<DateTimeScreen> {
   }
 
   Future<void> _pickTime() async {
-    final picked = await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    final picked =
+        await showTimePicker(context: context, initialTime: TimeOfDay.now());
     if (picked != null) {
       final formatted =
           "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
@@ -68,7 +71,11 @@ class _DateTimeScreenState extends ConsumerState<DateTimeScreen> {
               : null;
     });
     if (_error != null) return;
-    context.push(Routes.postTaskWorkersTier);
+    if (_editMode) {
+      context.pop();
+    } else {
+      context.push(Routes.postTaskWorkersTier);
+    }
   }
 
   @override
@@ -104,60 +111,128 @@ class _DateTimeScreenState extends ConsumerState<DateTimeScreen> {
           ),
           if (_error != null) ...[
             const SizedBox(height: AppSpacing.sm),
-            Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
+            Text(_error!,
+                style:
+                    theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
           ],
           const SizedBox(height: AppSpacing.xl),
-          Material(
-            color: AppColors.blue100,
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              onTap: () => _setUrgent(!draft.urgent),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: AppSpacing.md, vertical: AppSpacing.md),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Checkbox(
-                      value: draft.urgent,
-                      activeColor: AppColors.purple700,
-                      onChanged: (v) => _setUrgent(v ?? false),
-                    ),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              const Text("⚡", style: TextStyle(fontSize: 18)),
-                              const SizedBox(width: AppSpacing.xs),
-                              Flexible(
-                                child: Text(TaskPostingStrings.urgentToggleLabel,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: theme.textTheme.titleMedium),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          Text(
-                            TaskPostingStrings.urgentExplanation,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
+          _UrgentCard(urgent: draft.urgent, onChanged: _setUrgent),
         ],
       ),
       bottomBar: TaskPostingBottomBar(
-        onPrevious: () => context.pop(),
+        onPrevious: _editMode ? null : () => context.pop(),
         onContinue: _continue,
+        continueLabel: _editMode
+            ? TaskPostingStrings.saveButton
+            : TaskPostingStrings.continueButton,
+        continueIcon: _editMode ? Icons.check : Icons.arrow_forward,
+      ),
+    );
+  }
+}
+
+/// Prominent, benefits-explaining urgent-task card with a switch, a benefits
+/// list, the extra fee, and the operational-team note.
+class _UrgentCard extends StatelessWidget {
+  final bool urgent;
+  final ValueChanged<bool> onChanged;
+
+  const _UrgentCard({required this.urgent, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedContainer(
+      duration: AppMotion.fast,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: urgent ? AppColors.guidanceSurfaceGradient : null,
+        color: urgent ? null : AppColors.blue100,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: urgent ? AppColors.purple700 : AppColors.onboardingDivider,
+          width: urgent ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text("⚡", style: TextStyle(fontSize: 22)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(TaskPostingStrings.urgentToggleLabel,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: AppColors.brandPurple)),
+              ),
+              Switch(
+                value: urgent,
+                activeThumbColor: AppColors.purple700,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(TaskPostingStrings.urgentCardSubtitle,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          Text(TaskPostingStrings.urgentBenefitsTitle,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: AppColors.brandPurple)),
+          const SizedBox(height: AppSpacing.xs),
+          ...[
+            TaskPostingStrings.urgentBenefit1,
+            TaskPostingStrings.urgentBenefit2,
+            TaskPostingStrings.urgentBenefit3,
+            TaskPostingStrings.urgentBenefit4,
+          ].map((b) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.check_circle,
+                        size: AppSizes.iconSm, color: AppColors.success),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(b, style: theme.textTheme.bodyMedium),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.payments_outlined,
+                    size: AppSizes.iconMd, color: AppColors.warning),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(TaskPostingStrings.urgentFeeLabel,
+                      style: theme.textTheme.bodyMedium),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Text(TaskPostingStrings.urgentFeeValue,
+                      textAlign: TextAlign.right,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(color: AppColors.brandPurple)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(TaskPostingStrings.urgentStaffNote,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textSecondary)),
+        ],
       ),
     );
   }

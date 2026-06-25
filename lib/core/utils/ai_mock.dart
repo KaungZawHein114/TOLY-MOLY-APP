@@ -80,52 +80,13 @@ String generateTaskDescription(String category, String userInput) {
   return templates[category] ?? "အကူအညီတစ်ခု လိုအပ်ပါသည်။ အသေးစိတ် ဖော်ပြပေးပါ။";
 }
 
-/// Deterministic mock budget suggestion for the task-posting flow's budget
-/// screen. No randomness — the same inputs always reproduce the same numbers
-/// across a demo run.
-({int low, int high, int marketPercent}) suggestBudget(
-  String category,
-  bool urgent,
-  WorkerTier tier,
-  int workersNeeded,
-) {
-  const baseRanges = {
-    "Plumber": (10000, 15000),
-    "Electrician": (10000, 15000),
-    "AC Technician": (15000, 25000),
-    "Cleaner": (8000, 12000),
-    "Carpenter": (15000, 25000),
-    "Tutor": (10000, 15000),
-    "Gardener": (8000, 12000),
-    "Delivery": (5000, 8000),
-    "Handyman": (10000, 15000),
-  };
-  const marketPercentByCategory = {
-    "Plumber": 82,
-    "Electrician": 79,
-    "AC Technician": 75,
-    "Cleaner": 88,
-    "Carpenter": 74,
-    "Tutor": 85,
-    "Gardener": 80,
-    "Delivery": 90,
-    "Handyman": 77,
-  };
-
-  final (baseLow, baseHigh) = baseRanges[category] ?? (10000, 15000);
-  final tierMultiplier = switch (tier) {
-    WorkerTier.basic => 1.0,
-    WorkerTier.trusted => 1.3,
-    WorkerTier.expert => 1.7,
-  };
-  final urgentMultiplier = urgent ? 1.2 : 1.0;
-  final totalMultiplier = tierMultiplier * urgentMultiplier * workersNeeded;
-
-  return (
-    low: (baseLow * totalMultiplier).round(),
-    high: (baseHigh * totalMultiplier).round(),
-    marketPercent: marketPercentByCategory[category] ?? 78,
-  );
+/// Evaluates a client-entered budget against the demo reference price
+/// ([kBudgetReferenceMmk]). The client always keeps the final price — this is
+/// advisory only. Deterministic: same amount always yields the same verdict.
+BudgetVerdict evaluateBudget(int amountMmk) {
+  if (amountMmk < kBudgetReferenceMmk) return BudgetVerdict.low;
+  if (amountMmk == kBudgetReferenceMmk) return BudgetVerdict.reasonable;
+  return BudgetVerdict.high;
 }
 
 // ----------------------------------------------------------------------------
@@ -141,7 +102,8 @@ String _skillForQuery(String query) {
     ],
     "Electrician": [
       "light", "wire", "power", "fan", "electric", "socket", "breaker", "solar",
-      "မီး", "လျှပ်စစ်", "ဖန်ပြာ",
+      "ceiling fan", "install",
+      "မီး", "လျှပ်စစ်", "ပန်ကာ", "မီးပန်ကာ", "ခလုတ်",
     ],
     "AC Technician": [
       "ac", "air con", "aircon", "cooling", "cold", "gas refill",
@@ -164,12 +126,12 @@ String _skillForQuery(String query) {
       "ဥယျာဉ်", "သစ်ပင်",
     ],
     "Delivery": [
-      "deliver", "parcel", "package", "send", "courier",
-      "ပို့ဆောင်", "ပါဆယ်",
+      "deliver", "parcel", "package", "send", "courier", "grocer", "groceries",
+      "ပို့ဆောင်", "ပါဆယ်", "ကုန်ပစ္စည်း", "ပို့ပေး",
     ],
     "Handyman": [
-      "fix", "repair", "mount", "paint", "handy", "odd job",
-      "ပြင်ဆင်", "ဆေးသုတ်",
+      "fix", "repair", "mount", "paint", "handy", "odd job", "move", "furniture",
+      "ပြင်ဆင်", "ဆေးသုတ်", "ပြောင်းရွှေ့", "သယ်ပို့", "ပရိဘောဂ ရွှေ့",
     ],
   };
 

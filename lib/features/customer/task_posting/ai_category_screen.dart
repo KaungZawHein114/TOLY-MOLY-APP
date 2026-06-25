@@ -19,10 +19,9 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 1 of 7: AI Task Assistant + Category Selection. The user either
-/// describes the task in free text (Option A — categorizeJob detects a
-/// skill) or picks a category card directly (Option B), using the same
-/// categories/icons as the customer Home screen.
+/// Step 1 of 7: Task Title + Category Selection. The user names the task in
+/// the title field (free text — AI detects a category from it) or picks a
+/// category card directly. "Other" reveals a free-text "specify category" box.
 class AiCategoryScreen extends ConsumerStatefulWidget {
   const AiCategoryScreen({super.key});
 
@@ -31,17 +30,31 @@ class AiCategoryScreen extends ConsumerStatefulWidget {
 }
 
 class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
-  final TextEditingController _inputController = TextEditingController();
+  final TextEditingController _titleController = TextEditingController();
+  late final TextEditingController _customCategoryController;
   String? _aiSuggestion;
   String? _categoryError;
+  String? _customCategoryError;
+
+  @override
+  void initState() {
+    super.initState();
+    final draft = ref.read(taskDraftProvider);
+    _customCategoryController =
+        TextEditingController(text: draft.customCategory);
+  }
 
   @override
   void dispose() {
-    _inputController.dispose();
+    _titleController.dispose();
+    _customCategoryController.dispose();
     super.dispose();
   }
 
-  void _onInputChanged(String text) {
+  bool get _editMode =>
+      GoRouterState.of(context).uri.queryParameters['edit'] == '1';
+
+  void _onTitleChanged(String text) {
     setState(() {
       _aiSuggestion = text.trim().isEmpty ? null : categorizeJob(text);
     });
@@ -60,9 +73,25 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
     setState(() => _categoryError = null);
   }
 
+  void _selectOther() {
+    ref.read(taskDraftProvider.notifier).state =
+        ref.read(taskDraftProvider).copyWith(category: kOtherCategory);
+    setState(() => _categoryError = null);
+  }
+
+  void _pickByVoice(String spoken) {
+    final skill = categorizeJob(spoken);
+    _selectCategory(skill);
+  }
+
   Future<void> _handleBack() async {
+    if (_editMode) {
+      context.pop();
+      return;
+    }
     final draft = ref.read(taskDraftProvider);
-    final isDirty = draft.category != null || _inputController.text.trim().isNotEmpty;
+    final isDirty =
+        draft.category != null || _titleController.text.trim().isNotEmpty;
     if (!isDirty) {
       context.pop();
       return;
@@ -92,11 +121,25 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
 
   void _continue() {
     final category = ref.read(taskDraftProvider).category;
+    final isOther = category == kOtherCategory;
+    final customCategory = _customCategoryController.text.trim();
     setState(() {
-      _categoryError = category == null ? TaskPostingStrings.categoryRequiredError : null;
+      _categoryError =
+          category == null ? TaskPostingStrings.categoryRequiredError : null;
+      _customCategoryError = (isOther && customCategory.isEmpty)
+          ? TaskPostingStrings.specifyCategoryRequiredError
+          : null;
     });
-    if (category == null) return;
-    context.push(Routes.postTaskTypeLocation);
+    if (_categoryError != null || _customCategoryError != null) return;
+
+    ref.read(taskDraftProvider.notifier).state =
+        ref.read(taskDraftProvider).copyWith(customCategory: customCategory);
+
+    if (_editMode) {
+      context.pop();
+    } else {
+      context.push(Routes.postTaskTypeLocation);
+    }
   }
 
   @override
@@ -104,6 +147,7 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
     final theme = Theme.of(context);
     final category = ref.watch(taskDraftProvider).category;
     final cats = categories.isNotEmpty ? categories : fallbackCategories;
+    final isOther = category == kOtherCategory;
 
     return OnboardingScaffold(
       progress: const OnboardingProgress(step: 1, totalSteps: 7),
@@ -114,16 +158,29 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Task title ──────────────────────────────────────────────────
+          Row(
+            children: [
+              Expanded(
+                child: Text(TaskPostingStrings.taskTitleLabel,
+                    style: theme.textTheme.titleMedium),
+              ),
+              ReadAloudButton(textToRead: TaskPostingStrings.taskTitleLabel),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
                 child: TextField(
-                  controller: _inputController,
-                  onChanged: _onInputChanged,
+                  controller: _titleController,
+                  onChanged: _onTitleChanged,
+                  textInputAction: TextInputAction.done,
                   style: theme.textTheme.bodyLarge,
                   decoration: InputDecoration(
-                    hintText: TaskPostingStrings.aiInputHint,
-                    contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                    hintText: TaskPostingStrings.taskTitleHint,
+                    contentPadding:
+                        const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       borderSide: BorderSide.none,
@@ -133,11 +190,11 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
               ),
               const SizedBox(width: AppSpacing.sm),
               SpeechToTextButton(
-                semanticPrompt: TaskPostingStrings.aiInputHint,
-                mockTranscript: "ရေယိုနေတယ်",
+                semanticPrompt: TaskPostingStrings.taskTitleHint,
+                mockTranscript: "ပန်ကာ တပ်ဆင်ရန်",
                 onResult: (v) {
-                  _inputController.text = v;
-                  _onInputChanged(v);
+                  _titleController.text = v;
+                  _onTitleChanged(v);
                 },
               ),
             ],
@@ -148,7 +205,8 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
               emoji: "🤖",
               label: "${TaskPostingStrings.aiSuggestionPrefix}$_aiSuggestion",
               selected: category == _aiSuggestion,
-              semanticLabel: "${TaskPostingStrings.aiSuggestionPrefix}$_aiSuggestion",
+              semanticLabel:
+                  "${TaskPostingStrings.aiSuggestionPrefix}$_aiSuggestion",
               onTap: _confirmAiSuggestion,
             ),
           ],
@@ -157,14 +215,17 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
             children: [
               const Expanded(child: Divider(color: AppColors.onboardingDivider)),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
                 child: Text(TaskPostingStrings.orDivider,
-                    style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.textSecondary)),
               ),
               const Expanded(child: Divider(color: AppColors.onboardingDivider)),
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
+          // ── Choose category: ONE voice control + one read-aloud control ──
           Row(
             children: [
               Expanded(
@@ -172,13 +233,19 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
                     style: theme.textTheme.titleMedium),
               ),
               ReadAloudButton(textToRead: TaskPostingStrings.manualCategoryPrompt),
+              const SizedBox(width: AppSpacing.xs),
+              SpeechToTextButton(
+                semanticPrompt: TaskPostingStrings.categoryVoicePrompt,
+                mockTranscript: "သန့်ရှင်းရေး",
+                onResult: _pickByVoice,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
           GridView.builder(
             shrinkWrap: true,
             physics: const NeverScrollableScrollPhysics(),
-            itemCount: cats.length,
+            itemCount: cats.length + 1, // + the "Other" card
             gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: 4,
               mainAxisSpacing: AppSpacing.md,
@@ -186,12 +253,22 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
               childAspectRatio: 0.72,
             ),
             itemBuilder: (context, i) {
+              if (i == cats.length) {
+                return ServiceCategoryCard(
+                  emoji: "➕",
+                  label: TaskPostingStrings.otherCategoryLabel,
+                  showListen: false,
+                  selected: isOther,
+                  onTap: _selectOther,
+                );
+              }
               final c = cats[i];
               final skills = categoryToSkills[c.name] ?? const [];
               final skill = skills.isEmpty ? null : skills.first;
               return ServiceCategoryCard(
                 emoji: c.icon,
                 label: c.burmese,
+                showListen: false,
                 selected: skill != null && category == skill,
                 onTap: skill == null ? () {} : () => _selectCategory(skill),
               );
@@ -200,11 +277,57 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
           if (_categoryError != null) ...[
             const SizedBox(height: AppSpacing.sm),
             Text(_categoryError!,
-                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppColors.error)),
+          ],
+          // ── "Other" → specify category (text + voice) ───────────────────
+          if (isOther) ...[
+            const SizedBox(height: AppSpacing.lg),
+            Text(TaskPostingStrings.specifyCategoryLabel,
+                style: theme.textTheme.titleMedium),
+            const SizedBox(height: AppSpacing.sm),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _customCategoryController,
+                    style: theme.textTheme.bodyLarge,
+                    onChanged: (_) {
+                      if (_customCategoryError != null) {
+                        setState(() => _customCategoryError = null);
+                      }
+                    },
+                    decoration: InputDecoration(
+                      hintText: TaskPostingStrings.specifyCategoryHint,
+                      errorText: _customCategoryError,
+                      contentPadding:
+                          const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                SpeechToTextButton(
+                  semanticPrompt: TaskPostingStrings.specifyCategoryLabel,
+                  mockTranscript: "အိမ်ပြောင်းရွှေ့ခြင်း",
+                  onResult: (v) =>
+                      setState(() => _customCategoryController.text = v),
+                ),
+              ],
+            ),
           ],
         ],
       ),
-      bottomBar: TaskPostingBottomBar(onContinue: _continue),
+      bottomBar: TaskPostingBottomBar(
+        onContinue: _continue,
+        continueLabel: _editMode
+            ? TaskPostingStrings.saveButton
+            : TaskPostingStrings.continueButton,
+        continueIcon: _editMode ? Icons.check : Icons.arrow_forward,
+      ),
     );
   }
 }

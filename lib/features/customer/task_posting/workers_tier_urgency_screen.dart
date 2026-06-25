@@ -15,27 +15,23 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 4 of 7: Workers Needed + Trust Level + Urgency. Tier labels are
-/// always the friendly Burmese names/descriptions — no tier numbers appear
-/// anywhere in this UI.
+/// Step 4 of 7: Tasker Tier Selection. Only the trust tier is chosen here —
+/// clients needing more than one worker create more tasks. Cards show friendly
+/// labels; the literal "Tier N" mapping lives in the info sheet.
 class WorkersTierUrgencyScreen extends ConsumerStatefulWidget {
   const WorkersTierUrgencyScreen({super.key});
 
   @override
-  ConsumerState<WorkersTierUrgencyScreen> createState() => _WorkersTierUrgencyScreenState();
+  ConsumerState<WorkersTierUrgencyScreen> createState() =>
+      _WorkersTierUrgencyScreenState();
 }
 
-class _WorkersTierUrgencyScreenState extends ConsumerState<WorkersTierUrgencyScreen> {
-  static const int _minWorkers = 1;
-  static const int _maxWorkers = 10;
-
+class _WorkersTierUrgencyScreenState
+    extends ConsumerState<WorkersTierUrgencyScreen> {
   String? _tierError;
 
-  void _setWorkers(int delta) {
-    final draft = ref.read(taskDraftProvider);
-    final next = (draft.workersNeeded + delta).clamp(_minWorkers, _maxWorkers);
-    ref.read(taskDraftProvider.notifier).state = draft.copyWith(workersNeeded: next);
-  }
+  bool get _editMode =>
+      GoRouterState.of(context).uri.queryParameters['edit'] == '1';
 
   void _selectTier(WorkerTier tier) {
     ref.read(taskDraftProvider.notifier).state =
@@ -43,13 +39,89 @@ class _WorkersTierUrgencyScreenState extends ConsumerState<WorkersTierUrgencyScr
     setState(() => _tierError = null);
   }
 
+  void _showTierInfo() {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(TaskPostingStrings.workerTierInfoSheetTitle,
+                    style: theme.textTheme.titleMedium),
+                const SizedBox(height: AppSpacing.md),
+                Flexible(
+                  child: SingleChildScrollView(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        for (final tier in WorkerTier.values)
+                          Padding(
+                            padding:
+                                const EdgeInsets.only(bottom: AppSpacing.md),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(tier.emoji,
+                                    style: const TextStyle(fontSize: 20)),
+                                const SizedBox(width: AppSpacing.sm),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Text("Tier ${tier.number} · ${tier.label}",
+                                          style: theme.textTheme.titleSmall
+                                              ?.copyWith(
+                                                  color: AppColors.brandPurple)),
+                                      Text(tier.description,
+                                          style: theme.textTheme.bodyMedium
+                                              ?.copyWith(
+                                                  color:
+                                                      AppColors.textSecondary)),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.sm),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () => Navigator.of(ctx).pop(),
+                    child: const Text(TaskPostingStrings.workerTierInfoSheetClose),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   void _continue() {
     final tier = ref.read(taskDraftProvider).workerTier;
     setState(() {
-      _tierError = tier == null ? TaskPostingStrings.workerTierRequiredError : null;
+      _tierError =
+          tier == null ? TaskPostingStrings.workerTierRequiredError : null;
     });
     if (tier == null) return;
-    context.push(Routes.postTaskDescription);
+    if (_editMode) {
+      context.pop();
+    } else {
+      context.push(Routes.postTaskDescription);
+    }
   }
 
   @override
@@ -66,97 +138,59 @@ class _WorkersTierUrgencyScreenState extends ConsumerState<WorkersTierUrgencyScr
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(TaskPostingStrings.workersNeededLabel, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.md),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              _StepperButton(
-                icon: Icons.remove,
-                onTap: draft.workersNeeded > _minWorkers ? () => _setWorkers(-1) : null,
-              ),
-              SizedBox(
-                width: 64,
-                child: Text(
-                  "${draft.workersNeeded}",
-                  textAlign: TextAlign.center,
-                  style: theme.textTheme.headlineSmall,
-                ),
-              ),
-              _StepperButton(
-                icon: Icons.add,
-                onTap: draft.workersNeeded < _maxWorkers ? () => _setWorkers(1) : null,
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.xl),
           Row(
             children: [
               Expanded(
                 child: Text(TaskPostingStrings.workerTierSectionTitle,
                     style: theme.textTheme.titleMedium),
               ),
-              ReadAloudButton(textToRead: TaskPostingStrings.workerTierSectionTitle),
+              ReadAloudButton(
+                  textToRead: TaskPostingStrings.workerTierSectionTitle),
+              const SizedBox(width: AppSpacing.xs),
+              Semantics(
+                label: TaskPostingStrings.workerTierInfoButton,
+                button: true,
+                child: Material(
+                  color: AppColors.purple100,
+                  shape: const CircleBorder(),
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: _showTierInfo,
+                    child: const SizedBox(
+                      width: 48,
+                      height: 48,
+                      child: Icon(Icons.info_outline,
+                          color: AppColors.purple700, size: AppSizes.iconMd),
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          OnboardingSelectionCard(
-            emoji: "🧰",
-            label: TaskPostingStrings.workerTierBasicLabel,
-            sublabel: TaskPostingStrings.workerTierBasicDescription,
-            selected: draft.workerTier == WorkerTier.basic,
-            onTap: () => _selectTier(WorkerTier.basic),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          OnboardingSelectionCard(
-            emoji: "🛡️",
-            label: TaskPostingStrings.workerTierTrustedLabel,
-            sublabel: TaskPostingStrings.workerTierTrustedDescription,
-            selected: draft.workerTier == WorkerTier.trusted,
-            onTap: () => _selectTier(WorkerTier.trusted),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          OnboardingSelectionCard(
-            emoji: "🎓",
-            label: TaskPostingStrings.workerTierExpertLabel,
-            sublabel: TaskPostingStrings.workerTierExpertDescription,
-            selected: draft.workerTier == WorkerTier.expert,
-            onTap: () => _selectTier(WorkerTier.expert),
-          ),
-          if (_tierError != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(_tierError!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
+          for (final tier in WorkerTier.values) ...[
+            OnboardingSelectionCard(
+              emoji: tier.emoji,
+              label: tier.label,
+              sublabel: tier.description,
+              selected: draft.workerTier == tier,
+              onTap: () => _selectTier(tier),
+            ),
+            const SizedBox(height: AppSpacing.md),
           ],
+          if (_tierError != null)
+            Text(_tierError!,
+                style:
+                    theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
         ],
       ),
       bottomBar: TaskPostingBottomBar(
-        onPrevious: () => context.pop(),
+        onPrevious: _editMode ? null : () => context.pop(),
         onContinue: _continue,
-      ),
-    );
-  }
-}
-
-class _StepperButton extends StatelessWidget {
-  final IconData icon;
-  final VoidCallback? onTap;
-
-  const _StepperButton({required this.icon, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    return Material(
-      color: enabled ? AppColors.purple100 : AppColors.onboardingDivider,
-      shape: const CircleBorder(),
-      child: InkWell(
-        customBorder: const CircleBorder(),
-        onTap: onTap,
-        child: SizedBox(
-          width: 48,
-          height: 48,
-          child: Icon(icon, color: enabled ? AppColors.purple700 : AppColors.textSecondary),
-        ),
+        continueLabel: _editMode
+            ? TaskPostingStrings.saveButton
+            : TaskPostingStrings.continueButton,
+        continueIcon: _editMode ? Icons.check : Icons.arrow_forward,
       ),
     );
   }

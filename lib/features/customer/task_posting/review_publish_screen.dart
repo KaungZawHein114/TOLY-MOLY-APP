@@ -11,17 +11,39 @@ import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
+import '../../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../../onboarding/onboarding_models.dart';
 import '../customer_home_shell.dart';
 import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 7 of 7: Review & Publish. Each summary row's "Edit" link pushes back
-/// to the screen that owns that field — the shared draft provider means the
-/// target screen pre-fills from the same data, no separate edit-mode needed.
-class ReviewPublishScreen extends ConsumerWidget {
+/// Step 7 of 7: Review & Submit. Each summary row's "Edit" link pushes back to
+/// the owning screen in edit mode (`?edit=1`) — that screen pre-fills from the
+/// shared draft and, on save, pops straight back here with data preserved.
+class ReviewPublishScreen extends ConsumerStatefulWidget {
   const ReviewPublishScreen({super.key});
+
+  @override
+  ConsumerState<ReviewPublishScreen> createState() =>
+      _ReviewPublishScreenState();
+}
+
+class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
+  late final TextEditingController _notesController;
+
+  @override
+  void initState() {
+    super.initState();
+    _notesController =
+        TextEditingController(text: ref.read(taskDraftProvider).notes);
+  }
+
+  @override
+  void dispose() {
+    _notesController.dispose();
+    super.dispose();
+  }
 
   String _formatDate(DateTime? date) {
     if (date == null) return "-";
@@ -29,26 +51,36 @@ class ReviewPublishScreen extends ConsumerWidget {
   }
 
   String _formatLocation(TaskDraft draft) {
-    if (draft.taskType == TaskType.remote) return TaskPostingStrings.remoteLocationValue;
+    if (draft.taskType == TaskType.remote) {
+      return TaskPostingStrings.remoteLocationValue;
+    }
     if (draft.township.isEmpty && draft.address.isEmpty) return "-";
     return "${draft.township} ${draft.address}".trim();
   }
 
-  void _publish(BuildContext context, WidgetRef ref) {
-    final draft = ref.read(taskDraftProvider);
+  void _editAt(String route) {
+    // Persist any typed notes before navigating away to edit a step.
+    ref.read(taskDraftProvider.notifier).state =
+        ref.read(taskDraftProvider).copyWith(notes: _notesController.text);
+    context.push('$route?edit=1');
+  }
+
+  void _publish() {
+    final draft = ref.read(taskDraftProvider).copyWith(notes: _notesController.text);
+    ref.read(taskDraftProvider.notifier).state = draft;
     final task = TaskPost(
       id: DateTime.now().millisecondsSinceEpoch,
-      category: draft.category ?? "",
+      category: draft.effectiveCategory,
       taskType: draft.taskType ?? TaskType.onSite,
       township: draft.township,
       address: draft.address,
       date: draft.date ?? DateTime.now(),
       timeSlot: draft.timeSlot ?? "",
       urgent: draft.urgent,
-      workersNeeded: draft.workersNeeded,
-      workerTier: draft.workerTier ?? WorkerTier.basic,
+      workerTier: draft.workerTier ?? WorkerTier.tier1,
       description: draft.description,
-      budgetMmk: draft.resolvedBudgetMmk ?? 0,
+      budgetMmk: draft.budgetMmk ?? 0,
+      notes: draft.notes,
       createdAt: DateTime.now(),
     );
     ref.read(postedTasksProvider.notifier).state = [
@@ -63,8 +95,10 @@ class ReviewPublishScreen extends ConsumerWidget {
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final draft = ref.watch(taskDraftProvider);
+    final isRemote = draft.taskType == TaskType.remote;
 
     return OnboardingScaffold(
       progress: const OnboardingProgress(step: 7, totalSteps: 7),
@@ -72,64 +106,113 @@ class ReviewPublishScreen extends ConsumerWidget {
       mascotMessage: TaskPostingStrings.reviewTitle,
       title: TaskPostingStrings.reviewTitle,
       onBack: () => context.pop(),
-      body: Container(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        decoration: BoxDecoration(
-          color: AppColors.blue100,
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _SummaryRow(
-              label: TaskPostingStrings.reviewCategoryLabel,
-              value: draft.category ?? "-",
-              onEdit: () => context.push(Routes.postTask),
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.lg),
+            decoration: BoxDecoration(
+              color: AppColors.blue100,
+              borderRadius: BorderRadius.circular(AppRadius.lg),
             ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewLocationLabel,
-              value: _formatLocation(draft),
-              onEdit: () => context.push(Routes.postTaskTypeLocation),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewCategoryLabel,
+                  value: draft.effectiveCategory.isEmpty
+                      ? "-"
+                      : draft.effectiveCategory,
+                  onEdit: () => _editAt(Routes.postTask),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewLocationLabel,
+                  value: _formatLocation(draft),
+                  onEdit: () => _editAt(Routes.postTaskTypeLocation),
+                ),
+                if (isRemote && draft.remoteWorkMethod != null)
+                  _SummaryRow(
+                    label: TaskPostingStrings.reviewWorkMethodLabel,
+                    value: draft.remoteWorkMethod!.label,
+                    onEdit: () => _editAt(Routes.postTaskTypeLocation),
+                  ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewDateLabel,
+                  value: _formatDate(draft.date),
+                  onEdit: () => _editAt(Routes.postTaskDateTime),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewTimeLabel,
+                  value: draft.timeSlot ?? "-",
+                  onEdit: () => _editAt(Routes.postTaskDateTime),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewUrgentLabel,
+                  value: draft.urgent
+                      ? TaskPostingStrings.reviewUrgentYes
+                      : TaskPostingStrings.reviewUrgentNo,
+                  onEdit: () => _editAt(Routes.postTaskDateTime),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewTierLabel,
+                  value: draft.workerTier?.label ?? "-",
+                  onEdit: () => _editAt(Routes.postTaskWorkersTier),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewBudgetLabel,
+                  value: draft.budgetMmk == null
+                      ? "-"
+                      : "${draft.budgetMmk} ${TaskPostingStrings.budgetCurrency}",
+                  onEdit: () => _editAt(Routes.postTaskBudget),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewDescriptionLabel,
+                  value: draft.description.isEmpty ? "-" : draft.description,
+                  onEdit: () => _editAt(Routes.postTaskDescription),
+                  isLast: true,
+                ),
+              ],
             ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewDateLabel,
-              value: _formatDate(draft.date),
-              onEdit: () => context.push(Routes.postTaskDateTime),
-            ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewTimeLabel,
-              value: draft.timeSlot ?? "-",
-              onEdit: () => context.push(Routes.postTaskDateTime),
-            ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewWorkersLabel,
-              value: "${draft.workersNeeded}",
-              onEdit: () => context.push(Routes.postTaskWorkersTier),
-            ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewTierLabel,
-              value: draft.workerTier?.label ?? "-",
-              onEdit: () => context.push(Routes.postTaskWorkersTier),
-            ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewBudgetLabel,
-              value: "${draft.resolvedBudgetMmk ?? 0} ${TaskPostingStrings.budgetCurrency}",
-              onEdit: () => context.push(Routes.postTaskBudget),
-            ),
-            _SummaryRow(
-              label: TaskPostingStrings.reviewDescriptionLabel,
-              value: draft.description.isEmpty ? "-" : draft.description,
-              onEdit: () => context.push(Routes.postTaskDescription),
-              isLast: true,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          // ── Optional voice/text notes ───────────────────────────────────
+          Text(TaskPostingStrings.reviewNotesLabel,
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _notesController,
+                  maxLines: 3,
+                  style: theme.textTheme.bodyLarge,
+                  decoration: InputDecoration(
+                    hintText: TaskPostingStrings.reviewNotesHint,
+                    contentPadding: const EdgeInsets.all(AppSpacing.lg),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              SpeechToTextButton(
+                semanticPrompt: TaskPostingStrings.reviewNotesHint,
+                mockTranscript: "ညနေပိုင်း လာပေးပါ",
+                onResult: (v) => setState(() => _notesController.text = v),
+              ),
+            ],
+          ),
+        ],
       ),
       bottomBar: TaskPostingBottomBar(
         onPrevious: () => context.pop(),
-        onContinue: () => _publish(context, ref),
+        onContinue: _publish,
         celebratory: true,
         continueLabel: TaskPostingStrings.publishButton,
+        continueIcon: Icons.check_circle,
       ),
     );
   }
@@ -161,9 +244,12 @@ class _SummaryRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(label,
-                    style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary)),
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.textSecondary)),
                 const SizedBox(height: AppSpacing.xxs),
-                Text(value, style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600)),
+                Text(value,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(fontWeight: FontWeight.w600)),
               ],
             ),
           ),

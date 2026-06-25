@@ -40,6 +40,9 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
     super.dispose();
   }
 
+  bool get _editMode =>
+      GoRouterState.of(context).uri.queryParameters['edit'] == '1';
+
   void _generateWithAi() {
     final draft = ref.read(taskDraftProvider);
     final generated = generateTaskDescription(draft.category ?? "", _controller.text);
@@ -54,7 +57,11 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
     if (description.isEmpty) return;
     ref.read(taskDraftProvider.notifier).state =
         ref.read(taskDraftProvider).copyWith(description: description);
-    context.push(Routes.postTaskBudget);
+    if (_editMode) {
+      context.pop();
+    } else {
+      context.push(Routes.postTaskBudget);
+    }
   }
 
   @override
@@ -108,8 +115,12 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
         ],
       ),
       bottomBar: TaskPostingBottomBar(
-        onPrevious: () => context.pop(),
+        onPrevious: _editMode ? null : () => context.pop(),
         onContinue: _continue,
+        continueLabel: _editMode
+            ? TaskPostingStrings.saveButton
+            : TaskPostingStrings.continueButton,
+        continueIcon: _editMode ? Icons.check : Icons.arrow_forward,
       ),
     );
   }

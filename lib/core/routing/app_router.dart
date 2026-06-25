@@ -92,9 +92,14 @@ class Routes {
 /// Combined fade + subtle slide-up used for the redesigned onboarding screens
 /// and the task-posting flow, instead of the platform-default horizontal
 /// slide — used only by routes that opt in via `pageBuilder`.
-Page<void> _onboardingTransitionPage({required String path, required Widget child}) {
+// NOTE: keyed with `state.pageKey` (unique per stack entry), NOT the static
+// route path. The task-posting "Edit" links re-push a route that is already in
+// the back stack (e.g. editing Screen 2 from the Screen 7 review), so a
+// path-derived key would collide with the existing page and crash the
+// Navigator with a duplicate-key error.
+Page<void> _onboardingTransitionPage({required LocalKey key, required Widget child}) {
   return CustomTransitionPage<void>(
-    key: ValueKey(path),
+    key: key,
     transitionDuration: AppMotion.medium,
     reverseTransitionDuration: AppMotion.medium,
     child: child,
@@ -115,21 +120,21 @@ final List<RouteBase> _onboardingRoutes = [
   GoRoute(
     path: Routes.onboardingWelcome,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.onboardingWelcome,
+      key: state.pageKey,
       child: const WelcomeScreen(),
     ),
   ),
   GoRoute(
     path: Routes.onboardingCreateAccount,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.onboardingCreateAccount,
+      key: state.pageKey,
       child: const CreateAccountScreen(),
     ),
   ),
   GoRoute(
     path: Routes.onboardingBasicInfo,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.onboardingBasicInfo,
+      key: state.pageKey,
       child: const BasicInfoScreen(),
     ),
   ),
@@ -191,49 +196,49 @@ final List<RouteBase> _customerRoutes = [
   GoRoute(
     path: Routes.postTask,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTask,
+      key: state.pageKey,
       child: const AiCategoryScreen(),
     ),
   ),
   GoRoute(
     path: Routes.postTaskTypeLocation,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTaskTypeLocation,
+      key: state.pageKey,
       child: const TaskTypeLocationScreen(),
     ),
   ),
   GoRoute(
     path: Routes.postTaskDateTime,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTaskDateTime,
+      key: state.pageKey,
       child: const DateTimeScreen(),
     ),
   ),
   GoRoute(
     path: Routes.postTaskWorkersTier,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTaskWorkersTier,
+      key: state.pageKey,
       child: const WorkersTierUrgencyScreen(),
     ),
   ),
   GoRoute(
     path: Routes.postTaskDescription,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTaskDescription,
+      key: state.pageKey,
       child: const TaskDescriptionScreen(),
     ),
   ),
   GoRoute(
     path: Routes.postTaskBudget,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTaskBudget,
+      key: state.pageKey,
       child: const BudgetScreen(),
     ),
   ),
   GoRoute(
     path: Routes.postTaskReview,
     pageBuilder: (context, state) => _onboardingTransitionPage(
-      path: Routes.postTaskReview,
+      key: state.pageKey,
       child: const ReviewPublishScreen(),
     ),
   ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -14,42 +15,68 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 6 of 7: Budget Suggestion. The price is set by the platform's
-/// supply/demand model — the client cannot override it here; negotiation
-/// happens with the matched worker via chat later (a future feature). This
-/// screen is read-only: it computes the suggestion once (deterministic —
-/// same draft inputs always reproduce the same numbers) and just explains it.
-class BudgetScreen extends ConsumerWidget {
+/// Step 6 of 7: Budget & AI Price Evaluation. The client enters their desired
+/// budget first; the AI then evaluates it against a reference price and gives
+/// advisory feedback only — the client always keeps the final price.
+class BudgetScreen extends ConsumerStatefulWidget {
   const BudgetScreen({super.key});
 
-  void _computeSuggestionIfNeeded(BuildContext context, WidgetRef ref) {
-    final draft = ref.read(taskDraftProvider);
-    if (draft.suggestedBudgetLowMmk != null) return;
-    // Riverpod disallows modifying a provider during the widget tree's
-    // build phase — defer to right after this frame.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!context.mounted) return;
-      final current = ref.read(taskDraftProvider);
-      if (current.suggestedBudgetLowMmk != null) return;
-      final suggestion = suggestBudget(
-        current.category ?? "",
-        current.urgent,
-        current.workerTier ?? WorkerTier.basic,
-        current.workersNeeded,
-      );
-      ref.read(taskDraftProvider.notifier).state = current.copyWith(
-        suggestedBudgetLowMmk: suggestion.low,
-        suggestedBudgetHighMmk: suggestion.high,
-        marketPercent: suggestion.marketPercent,
-      );
-    });
+  @override
+  ConsumerState<BudgetScreen> createState() => _BudgetScreenState();
+}
+
+class _BudgetScreenState extends ConsumerState<BudgetScreen> {
+  late final TextEditingController _controller;
+  int? _amount;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    final existing = ref.read(taskDraftProvider).budgetMmk;
+    _amount = existing;
+    _controller =
+        TextEditingController(text: existing == null ? "" : "$existing");
   }
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  bool get _editMode =>
+      GoRouterState.of(context).uri.queryParameters['edit'] == '1';
+
+  void _onChanged(String text) {
+    final parsed = int.tryParse(text.trim());
+    setState(() {
+      _amount = (parsed != null && parsed > 0) ? parsed : null;
+      if (_amount != null) _error = null;
+    });
+  }
+
+  void _continue() {
+    final amount = _amount;
+    setState(() {
+      _error = (amount == null || amount <= 0)
+          ? TaskPostingStrings.budgetRequiredError
+          : null;
+    });
+    if (amount == null || amount <= 0) return;
+    ref.read(taskDraftProvider.notifier).state =
+        ref.read(taskDraftProvider).copyWith(budgetMmk: amount);
+    if (_editMode) {
+      context.pop();
+    } else {
+      context.push(Routes.postTaskReview);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final draft = ref.watch(taskDraftProvider);
-    _computeSuggestionIfNeeded(context, ref);
+    final amount = _amount;
 
     return OnboardingScaffold(
       progress: const OnboardingProgress(step: 6, totalSteps: 7),
@@ -60,43 +87,110 @@ class BudgetScreen extends ConsumerWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            decoration: BoxDecoration(
-              gradient: AppColors.guidanceSurfaceGradient,
-              borderRadius: BorderRadius.circular(AppRadius.lg),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(TaskPostingStrings.budgetAnalysisTitle,
-                    style: theme.textTheme.titleMedium?.copyWith(color: AppColors.brandPurple)),
-                const SizedBox(height: AppSpacing.sm),
-                Text(TaskPostingStrings.budgetSuggestedLabel,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.brandPurple)),
-                const SizedBox(height: AppSpacing.xs),
-                Text(
-                  "${draft.suggestedBudgetLowMmk ?? 0} - ${draft.suggestedBudgetHighMmk ?? 0} ${TaskPostingStrings.budgetCurrency}",
-                  style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.brandPurple),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  "${TaskPostingStrings.budgetMarketInsightPrefix}${draft.marketPercent ?? 0}${TaskPostingStrings.budgetMarketInsightSuffix}",
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.brandPurple),
-                ),
-              ],
+          Text(TaskPostingStrings.budgetInputLabel,
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.sm),
+          TextField(
+            controller: _controller,
+            onChanged: _onChanged,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: theme.textTheme.headlineSmall,
+            decoration: InputDecoration(
+              hintText: TaskPostingStrings.budgetInputHint,
+              suffixText: TaskPostingStrings.budgetCurrency,
+              errorText: _error,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.lg),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+                borderSide: BorderSide.none,
+              ),
             ),
           ),
+          if (amount != null) ...[
+            const SizedBox(height: AppSpacing.lg),
+            _BudgetVerdictCard(verdict: evaluateBudget(amount)),
+          ],
           const SizedBox(height: AppSpacing.lg),
-          Text(
-            TaskPostingStrings.budgetAutoSetNote,
-            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Icon(Icons.info_outline,
+                  size: AppSizes.iconSm, color: AppColors.textSecondary),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(TaskPostingStrings.budgetGuidanceNote,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.textSecondary)),
+              ),
+            ],
           ),
         ],
       ),
       bottomBar: TaskPostingBottomBar(
-        onPrevious: () => context.pop(),
-        onContinue: () => context.push(Routes.postTaskReview),
+        onPrevious: _editMode ? null : () => context.pop(),
+        onContinue: _continue,
+        continueLabel: _editMode
+            ? TaskPostingStrings.saveButton
+            : TaskPostingStrings.continueButton,
+        continueIcon: _editMode ? Icons.check : Icons.arrow_forward,
+      ),
+    );
+  }
+}
+
+/// Color-coded AI feedback on the entered budget. Advisory only.
+class _BudgetVerdictCard extends StatelessWidget {
+  final BudgetVerdict verdict;
+  const _BudgetVerdictCard({required this.verdict});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final (IconData icon, Color color, String message) = switch (verdict) {
+      BudgetVerdict.low => (
+          Icons.trending_down,
+          AppColors.warning,
+          TaskPostingStrings.budgetVerdictLow,
+        ),
+      BudgetVerdict.reasonable => (
+          Icons.check_circle,
+          AppColors.success,
+          TaskPostingStrings.budgetVerdictReasonable,
+        ),
+      BudgetVerdict.high => (
+          Icons.trending_up,
+          AppColors.warning,
+          TaskPostingStrings.budgetVerdictHigh,
+        ),
+    };
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: color.withValues(alpha: 0.5)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(TaskPostingStrings.budgetEvalTitle,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: AppColors.brandPurple)),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(icon, color: color, size: AppSizes.iconLg),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(message, style: theme.textTheme.bodyLarge),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

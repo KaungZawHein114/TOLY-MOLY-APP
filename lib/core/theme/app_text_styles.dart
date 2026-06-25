@@ -23,6 +23,9 @@ class AppTextStyles {
   static const TextStyle titleMedium =
       TextStyle(fontSize: 16, fontWeight: FontWeight.w700);
 
+  static const TextStyle titleSmall =
+      TextStyle(fontSize: 14, fontWeight: FontWeight.w600);
+
   static const TextStyle bodyLarge = TextStyle(fontSize: 16, height: 1.4);
 
   static const TextStyle bodyMedium = TextStyle(fontSize: 14, height: 1.35);
@@ -43,6 +46,7 @@ class AppTextStyles {
         headlineSmall: headlineSmall.copyWith(color: color),
         titleLarge: titleLarge.copyWith(color: color),
         titleMedium: titleMedium.copyWith(color: color),
+        titleSmall: titleSmall.copyWith(color: color),
         bodyLarge: bodyLarge.copyWith(color: color),
         bodyMedium: bodyMedium.copyWith(color: color),
         bodySmall: bodySmall.copyWith(color: color),

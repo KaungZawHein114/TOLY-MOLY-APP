@@ -8,7 +8,7 @@ import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
-import 'task_posting/task_posting_models.dart' show WorkerTier, WorkerTierLabel;
+import 'task_posting/task_posting_models.dart' show WorkerTier, WorkerTierInfo;
 
 /// Sort options. [recommended] is the MVP Matching Score formula (trust 40% +
 /// rating 30% + distance 20% + completion 10%) and is the default; picking
@@ -67,8 +67,11 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
     var list = source.where((w) {
       if (_skill != null && w.skill != _skill) return false;
       if (availableOnly && !w.isAvailableNow) return false;
-      if (trustFilter != null && tierBucketFor(w.currentTier) != trustFilter)
+      // Trust filter is a minimum tier — picking "Tier N" shows tier N and up
+      // (with 7 tiers, exact-match would leave most selections empty).
+      if (trustFilter != null && w.currentTier < trustFilter.number) {
         return false;
+      }
       if (ratingFilter != null && w.rating < ratingFilter) return false;
       if (townshipFilter != null && w.township != townshipFilter) return false;
       return true;
@@ -189,8 +192,9 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                   value: sort,
                   underline: const SizedBox.shrink(),
                   onChanged: (v) {
-                    if (v != null)
+                    if (v != null) {
                       ref.read(workerSortProvider.notifier).state = v;
+                    }
                   },
                   items: [
                     const DropdownMenuItem(

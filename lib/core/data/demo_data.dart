@@ -53,12 +53,11 @@ String trustBadgeFor(int tier) {
   return "Community Ambassador";
 }
 
-/// Maps a worker's raw tier (1-7) to the same friendly trust-level bucket
-/// used by the Task Posting Flow's worker-tier filter (basic/trusted/expert).
+/// Maps a worker's raw tier (1-7) to the matching [WorkerTier] ladder value
+/// used by the Task Posting Flow and the worker-browse trust filter.
 WorkerTier tierBucketFor(int tier) {
-  if (tier <= 2) return WorkerTier.basic;
-  if (tier <= 5) return WorkerTier.trusted;
-  return WorkerTier.expert;
+  final clamped = tier.clamp(1, 7);
+  return WorkerTier.values[clamped - 1];
 }
 
 class Category {
@@ -115,10 +114,10 @@ class TaskPost {
   final DateTime date;
   final String timeSlot;
   final bool urgent;
-  final int workersNeeded;
   final WorkerTier workerTier;
   final String description;
   final int budgetMmk;
+  final String notes;
   final DateTime createdAt;
 
   const TaskPost({
@@ -130,10 +129,10 @@ class TaskPost {
     required this.date,
     required this.timeSlot,
     required this.urgent,
-    required this.workersNeeded,
     required this.workerTier,
     required this.description,
     required this.budgetMmk,
+    this.notes = "",
     required this.createdAt,
   });
 }

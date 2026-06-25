@@ -13,6 +13,10 @@ class ServiceCategoryCard extends StatelessWidget {
   final String label;
   final VoidCallback onTap;
   final bool selected;
+  // Per-card read-aloud button. On by default (the Home grid uses it); the
+  // task-posting category picker turns it off so its grid has a single voice
+  // control beside "Choose Category" instead of one button per card.
+  final bool showListen;
 
   const ServiceCategoryCard({
     super.key,
@@ -20,6 +24,7 @@ class ServiceCategoryCard extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.selected = false,
+    this.showListen = true,
   });
 
   @override
@@ -66,8 +71,10 @@ class ServiceCategoryCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
-                const SizedBox(height: AppSpacing.xxs),
-                ReadAloudButton(textToRead: label, compact: true),
+                if (showListen) ...[
+                  const SizedBox(height: AppSpacing.xxs),
+                  ReadAloudButton(textToRead: label, compact: true),
+                ],
                 if (selected) ...[
                   const SizedBox(height: AppSpacing.xxs),
                   const Icon(Icons.check_circle, color: AppColors.purple700, size: AppSizes.iconSm + 2),
