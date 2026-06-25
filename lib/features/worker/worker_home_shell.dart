@@ -5,7 +5,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
 import 'activity_placeholder_screen.dart';
 import 'dashboard_screen.dart';
-import 'profile_placeholder_screen.dart';
+import 'tasker_profile_screen.dart';
 
 /// Which bottom-nav tab is active — local state, mirrors CustomerHomeShell.
 final workerTabIndexProvider = StateProvider<int>((ref) => 0);
@@ -23,7 +23,7 @@ class WorkerHomeShell extends ConsumerWidget {
         children: const [
           WorkerDashboardScreen(),
           WorkerActivityPlaceholderScreen(),
-          WorkerProfilePlaceholderScreen(),
+          TaskerProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(

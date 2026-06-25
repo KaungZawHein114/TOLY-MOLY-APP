@@ -6,6 +6,10 @@
 // ============================================================================
 
 import '../../features/customer/task_posting/task_posting_models.dart';
+// Profile models reuse the onboarding enums (Gender, HearAboutSource,
+// TaskerSkill) so a profile and the onboarding draft that produced it speak
+// the same vocabulary — no parallel/duplicate enums to keep in sync.
+import '../../features/onboarding/onboarding_models.dart';
 
 class Worker {
   final int id;
@@ -793,3 +797,295 @@ const List<Worker> fallbackWorkers = [fallbackWorker];
 const List<Category> fallbackCategories = [
   Category(id: 1, name: "Plumbing", icon: "🔧", burmese: "ရေပိုက်ပြင်ဆင်ခြင်း"),
 ];
+
+// ============================================================================
+// USER PROFILES (static demo identities)
+// ----------------------------------------------------------------------------
+// Phase 1 has no backend, but these models are shaped the way a real API
+// would split a user record so Phase 2 can lift them out almost verbatim:
+//
+//   • PUBLIC fields           -> rendered on the profile / dashboard.
+//   • PrivateRegistration     -> auth + attribution; NEVER rendered.
+//   • Verification*           -> trust gating before posting/accepting tasks.
+//
+// They deliberately reuse the onboarding enums (Gender, HearAboutSource,
+// TaskerSkill) so the onboarding draft -> stored profile mapping is 1:1.
+// ============================================================================
+
+/// Which side of the marketplace an account belongs to. Stored privately with
+/// the rest of the registration data; the screen it renders on already implies
+/// the role, so this is never the sole signal in the UI.
+enum AccountType { client, tasker }
+
+/// Overall trust state shown on a profile. Distinct from per-document
+/// completion (an account can have every document uploaded yet still be
+/// `pending` review).
+enum VerificationState { notVerified, pending, verified }
+
+extension VerificationStateLabel on VerificationState {
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  String get label {
+    switch (this) {
+      case VerificationState.notVerified:
+        return "အတည်ပြုရန် ကျန်ရှိသည်";
+      case VerificationState.pending:
+        return "စိစစ်နေဆဲ";
+      case VerificationState.verified:
+        return "အတည်ပြုပြီး";
+    }
+  }
+}
+
+/// A single verification requirement. Clients must complete [nrc],
+/// [faceSelfie] and [permanentAddress]; taskers additionally need
+/// [pitchingVideo] (the trust-critical intro clip).
+enum VerificationDoc { nrc, faceSelfie, permanentAddress, pitchingVideo }
+
+extension VerificationDocLabel on VerificationDoc {
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  String get label {
+    switch (this) {
+      case VerificationDoc.nrc:
+        return "မှတ်ပုံတင် (NRC)";
+      case VerificationDoc.faceSelfie:
+        return "မျက်နှာ အတည်ပြုခြင်း";
+      case VerificationDoc.permanentAddress:
+        return "အမြဲတမ်း နေရပ်လိပ်စာ";
+      case VerificationDoc.pitchingVideo:
+        return "ကိုယ်ရေးမိတ်ဆက် ဗီဒီယို";
+    }
+  }
+}
+
+/// Coarse time-of-day windows a tasker can mark themselves available for.
+enum AvailabilitySlot { morning, afternoon, evening }
+
+extension AvailabilitySlotLabel on AvailabilitySlot {
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  String get label {
+    switch (this) {
+      case AvailabilitySlot.morning:
+        return "မနက်ပိုင်း";
+      case AvailabilitySlot.afternoon:
+        return "နေ့လည်ပိုင်း";
+      case AvailabilitySlot.evening:
+        return "ညနေပိုင်း";
+    }
+  }
+}
+
+/// Registration data captured at sign-up that lives behind the profile but is
+/// NEVER rendered. Mirrors the columns a real `users` table would protect
+/// (credentials + attribution). [password] is a placeholder for a server-side
+/// hash — it exists only to fix the model shape and must never be displayed.
+class PrivateRegistration {
+  final String phone;
+  final bool phoneVerified;
+  final String password; // NEVER displayed — stands in for a stored hash.
+  final HearAboutSource hearAbout; // "Where did you hear about us?"
+  final AccountType accountType;
+
+  const PrivateRegistration({
+    required this.phone,
+    required this.phoneVerified,
+    required this.password,
+    required this.hearAbout,
+    required this.accountType,
+  });
+}
+
+/// Weekly + time-of-day availability for a tasker. UI-only in Phase 1.
+class TaskerAvailability {
+  final bool weekdays;
+  final bool weekends;
+  final Set<AvailabilitySlot> slots;
+
+  const TaskerAvailability({
+    this.weekdays = false,
+    this.weekends = false,
+    this.slots = const {},
+  });
+
+  TaskerAvailability copyWith({
+    bool? weekdays,
+    bool? weekends,
+    Set<AvailabilitySlot>? slots,
+  }) =>
+      TaskerAvailability(
+        weekdays: weekdays ?? this.weekdays,
+        weekends: weekends ?? this.weekends,
+        slots: slots ?? this.slots,
+      );
+}
+
+/// A service-seeker's stored profile.
+class ClientProfile {
+  // ── Public (rendered) ──────────────────────────────────────────────────
+  final String fullName;
+  final int age;
+  final Gender gender;
+  final String? profilePicturePath; // null -> show the placeholder avatar.
+  final String location; // general area only, never the detailed address.
+
+  // ── Private (NEVER rendered — see PrivateRegistration) ──────────────────
+  final PrivateRegistration registration;
+
+  // ── Verification ────────────────────────────────────────────────────────
+  final VerificationState verificationState;
+  final Set<VerificationDoc> completedDocs;
+
+  // ── Stats (static demo values) ──────────────────────────────────────────
+  final int tasksPosted;
+  final int tasksCompleted;
+  final double? rating; // null -> shown as "N/A".
+
+  const ClientProfile({
+    required this.fullName,
+    required this.age,
+    required this.gender,
+    required this.profilePicturePath,
+    required this.location,
+    required this.registration,
+    required this.verificationState,
+    required this.completedDocs,
+    required this.tasksPosted,
+    required this.tasksCompleted,
+    required this.rating,
+  });
+
+  /// Documents a client must complete before posting tasks.
+  static const List<VerificationDoc> requiredDocs = [
+    VerificationDoc.nrc,
+    VerificationDoc.faceSelfie,
+    VerificationDoc.permanentAddress,
+  ];
+}
+
+/// A service-provider's stored profile.
+class TaskerProfile {
+  // ── Public (rendered) ──────────────────────────────────────────────────
+  final String fullName;
+  final int age;
+  final Gender gender;
+  final String? profilePicturePath;
+  final Set<TaskerSkill> skills;
+
+  // ── Private (NEVER rendered — see PrivateRegistration) ──────────────────
+  final PrivateRegistration registration;
+
+  // ── Verification ────────────────────────────────────────────────────────
+  final VerificationState verificationState;
+  final Set<VerificationDoc> completedDocs;
+
+  // ── Stats (static demo values) ──────────────────────────────────────────
+  final int tasksCompleted;
+  final double completionRate; // 0..1
+  final double? rating; // null -> shown as "N/A".
+  final String responseTime; // static placeholder, already localized.
+
+  // ── Availability ──────────────────────────────────────────────────────
+  final TaskerAvailability availability;
+
+  const TaskerProfile({
+    required this.fullName,
+    required this.age,
+    required this.gender,
+    required this.profilePicturePath,
+    required this.skills,
+    required this.registration,
+    required this.verificationState,
+    required this.completedDocs,
+    required this.tasksCompleted,
+    required this.completionRate,
+    required this.rating,
+    required this.responseTime,
+    required this.availability,
+  });
+
+  /// Documents a tasker must complete before accepting tasks — stricter than
+  /// the client set: the pitching video is mandatory.
+  static const List<VerificationDoc> requiredDocs = [
+    VerificationDoc.nrc,
+    VerificationDoc.faceSelfie,
+    VerificationDoc.permanentAddress,
+    VerificationDoc.pitchingVideo,
+  ];
+}
+
+/// Derives the overall [VerificationState] from how many required documents
+/// are complete. Shared by both profiles so the badge, progress bar and the
+/// post/accept gate always agree — and so the screens can recompute it live as
+/// the user mock-uploads documents.
+VerificationState verificationStateFor(
+  Set<VerificationDoc> completed,
+  List<VerificationDoc> required,
+) {
+  final done = required.where(completed.contains).length;
+  if (done == 0) return VerificationState.notVerified;
+  if (done < required.length) return VerificationState.pending;
+  return VerificationState.verified;
+}
+
+// ----------------------------------------------------------------------------
+// DEMO PROFILES — the two static identities the profile tabs render.
+// The client starts UNVERIFIED (0/3) to show the locked "post task" gate;
+// the tasker is fully VERIFIED (4/4) to show the unlocked, stats-rich state.
+// ----------------------------------------------------------------------------
+const ClientProfile demoClientProfile = ClientProfile(
+  fullName: "မအေးအေး",
+  age: 28,
+  gender: Gender.female,
+  profilePicturePath: null,
+  location: "ကမာရွတ်၊ ရန်ကုန်",
+  registration: PrivateRegistration(
+    phone: "09-7xx-xxx-xxx",
+    phoneVerified: true,
+    password: "********",
+    hearAbout: HearAboutSource.facebook,
+    accountType: AccountType.client,
+  ),
+  verificationState: VerificationState.notVerified,
+  completedDocs: <VerificationDoc>{},
+  tasksPosted: 0,
+  tasksCompleted: 0,
+  rating: null,
+);
+
+const TaskerProfile demoTaskerProfile = TaskerProfile(
+  fullName: "ကိုမင်း",
+  age: 32,
+  gender: Gender.male,
+  profilePicturePath: null,
+  skills: <TaskerSkill>{
+    TaskerSkill.plumbing,
+    TaskerSkill.electrical,
+    TaskerSkill.cleaning,
+  },
+  registration: PrivateRegistration(
+    phone: "09-4xx-xxx-xxx",
+    phoneVerified: true,
+    password: "********",
+    hearAbout: HearAboutSource.friend,
+    accountType: AccountType.tasker,
+  ),
+  verificationState: VerificationState.verified,
+  completedDocs: <VerificationDoc>{
+    VerificationDoc.nrc,
+    VerificationDoc.faceSelfie,
+    VerificationDoc.permanentAddress,
+    VerificationDoc.pitchingVideo,
+  },
+  tasksCompleted: 150,
+  completionRate: 0.96,
+  rating: 4.8,
+  // TODO(native-speaker-review): confirm "~15 min" phrasing with a speaker.
+  responseTime: "~၁၅ မိနစ်",
+  availability: TaskerAvailability(
+    weekdays: true,
+    weekends: false,
+    slots: <AvailabilitySlot>{
+      AvailabilitySlot.morning,
+      AvailabilitySlot.afternoon,
+    },
+  ),
+);

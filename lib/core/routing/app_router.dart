@@ -12,6 +12,7 @@ import '../../features/customer/task_posting/task_type_location_screen.dart';
 import '../../features/customer/task_posting/workers_tier_urgency_screen.dart';
 import '../../features/customer/worker_list_screen.dart';
 import '../../features/customer/worker_profile_screen.dart';
+import '../../features/customer/client_profile_screen.dart';
 import '../../features/customer/booking_screen.dart';
 import '../../features/onboarding/welcome_screen.dart';
 import '../../features/onboarding/create_account_screen.dart';
@@ -28,6 +29,7 @@ import '../../features/onboarding/tasker/tasker_basic_profile_screen.dart';
 import '../../features/onboarding/tasker/tasker_rules_screen.dart';
 import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
 import '../../features/worker/worker_home_shell.dart';
+import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../data/demo_data.dart';
@@ -66,10 +68,12 @@ class Routes {
   static const String postTaskReview = '/customer/post-task/review';
   static const String workerList = '/customer/workers';
   static const String workerProfile = '/customer/worker'; // + /:id
+  static const String clientProfileScreen = '/customer/profile'; // own profile
   static const String booking = '/customer/booking'; // + /:id
 
   // ── worker ──────────────────────────────────────────────────────────────
   static const String dashboard = '/worker/dashboard';
+  static const String taskerProfileScreen = '/worker/profile'; // own profile
   static const String taskExecution = '/worker/task-execution'; // + /:id
 
   // ── chatbot ─────────────────────────────────────────────────────────────
@@ -246,6 +250,12 @@ final List<RouteBase> _customerRoutes = [
     builder: (context, state) =>
         WorkerProfileScreen(worker: _findWorker(state.pathParameters['id'])),
   ),
+  // The client's OWN profile. Primarily rendered as a tab inside
+  // CustomerHomeShell; this route lets other flows deep-link straight to it.
+  GoRoute(
+    path: Routes.clientProfileScreen,
+    builder: (context, state) => const ClientProfileScreen(),
+  ),
   GoRoute(
     path: '${Routes.booking}/:id',
     builder: (context, state) =>
@@ -257,6 +267,12 @@ final List<RouteBase> _workerRoutes = [
   GoRoute(
     path: Routes.dashboard,
     builder: (context, state) => const WorkerHomeShell(),
+  ),
+  // The tasker's OWN profile. Primarily rendered as a tab inside
+  // WorkerHomeShell; this route lets other flows deep-link straight to it.
+  GoRoute(
+    path: Routes.taskerProfileScreen,
+    builder: (context, state) => const TaskerProfileScreen(),
   ),
   GoRoute(
     path: '${Routes.taskExecution}/:id',

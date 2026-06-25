@@ -3,9 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/theme/app_colors.dart';
-import 'activity_placeholder_screen.dart';
+import 'client_profile_screen.dart';
 import 'home_screen.dart';
-import 'profile_placeholder_screen.dart';
 import '../customer/activity_screen.dart';
 
 // Which bottom-nav tab is active. Public (not file-private) because the
@@ -31,7 +30,7 @@ class CustomerHomeShell extends ConsumerWidget {
         children: const [
           CustomerHomeScreen(),
           ActivityScreen(),
-          ProfilePlaceholderScreen(),
+          ClientProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
