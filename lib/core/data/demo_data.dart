@@ -107,6 +107,7 @@ class Booking {
 /// known worker) — a fresh task post has no worker assigned yet.
 class TaskPost {
   final int id;
+  final String title;
   final String category;
   final TaskType taskType;
   final String township;
@@ -122,6 +123,7 @@ class TaskPost {
 
   const TaskPost({
     required this.id,
+    this.title = "",
     required this.category,
     required this.taskType,
     required this.township,

@@ -10,11 +10,6 @@ import '../../../core/constants/task_posting_strings.dart';
 /// [TaskDraft.customCategory].
 const String kOtherCategory = "Other";
 
-/// Reference price the budget evaluator compares the client's entered amount
-/// against. Demo-only flat figure — a real model would derive it per
-/// category/location/tier.
-const int kBudgetReferenceMmk = 10000;
-
 /// Flat platform fee added when a task is marked urgent.
 const int kUrgentFeeMmk = 3000;
 
@@ -29,10 +24,6 @@ enum RemoteCompletionStyle { duringMeeting, beforeDeadline, flexible }
 
 /// What the remote task should produce. Shown only for [TaskType.remote].
 enum RemoteDeliverable { text, file, design, code, consultation, other }
-
-/// The AI's read on a client-entered budget (Screen 6). The AI only advises —
-/// the client always keeps the final price.
-enum BudgetVerdict { low, reasonable, high }
 
 extension RemoteWorkMethodLabel on RemoteWorkMethod {
   String get label {
@@ -154,6 +145,7 @@ extension WorkerTierInfo on WorkerTier {
 /// Mutable-by-replacement draft for the task-posting flow. A single Riverpod
 /// StateProvider holds an instance; every screen calls copyWith to update it.
 class TaskDraft {
+  final String title; // free-text task title from Screen 1 (AI input).
   final String? category; // internal skill name, e.g. "Plumber" — matches
   // demo_data's Worker.skill / categoryToSkills values, OR [kOtherCategory].
   final String customCategory; // free text when category == kOtherCategory.
@@ -173,6 +165,7 @@ class TaskDraft {
   final String notes; // optional voice/text notes from the review screen.
 
   const TaskDraft({
+    this.title = "",
     this.category,
     this.customCategory = "",
     this.taskType,
@@ -207,6 +200,7 @@ class TaskDraft {
   }
 
   TaskDraft copyWith({
+    String? title,
     String? category,
     String? customCategory,
     TaskType? taskType,
@@ -224,6 +218,7 @@ class TaskDraft {
     String? notes,
   }) {
     return TaskDraft(
+      title: title ?? this.title,
       category: category ?? this.category,
       customCategory: customCategory ?? this.customCategory,
       taskType: taskType ?? this.taskType,

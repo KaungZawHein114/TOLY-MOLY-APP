@@ -8,6 +8,8 @@ import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/ai_mock.dart';
+import '../../../core/utils/ai_service.dart';
+import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
@@ -30,9 +32,10 @@ class AiCategoryScreen extends ConsumerStatefulWidget {
 }
 
 class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
-  final TextEditingController _titleController = TextEditingController();
+  late final TextEditingController _titleController;
   late final TextEditingController _customCategoryController;
   String? _aiSuggestion;
+  bool _suggesting = false;
   String? _categoryError;
   String? _customCategoryError;
 
@@ -40,6 +43,7 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
   void initState() {
     super.initState();
     final draft = ref.read(taskDraftProvider);
+    _titleController = TextEditingController(text: draft.title);
     _customCategoryController =
         TextEditingController(text: draft.customCategory);
   }
@@ -54,9 +58,30 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
   bool get _editMode =>
       GoRouterState.of(context).uri.queryParameters['edit'] == '1';
 
-  void _onTitleChanged(String text) {
+  void _onTitleChanged(String _) {
+    // A new title invalidates any previous suggestion.
+    if (_aiSuggestion != null) setState(() => _aiSuggestion = null);
+  }
+
+  /// Live AI (Firebase → OpenAI) suggests a category from the title, falling
+  /// back to the offline keyword mock automatically. The suggestion is never
+  /// auto-applied — the user taps the card to confirm it.
+  Future<void> _suggestCategory() async {
+    final title = _titleController.text.trim();
+    if (title.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text(TaskPostingStrings.suggestCategoryNeedTitle)),
+      );
+      return;
+    }
+    setState(() => _suggesting = true);
+    final skills =
+        categoryToSkills.values.expand((s) => s).toSet().toList();
+    final suggestion = await AiService.suggestCategory(title, skills);
+    if (!mounted) return;
     setState(() {
-      _aiSuggestion = text.trim().isEmpty ? null : categorizeJob(text);
+      _aiSuggestion = suggestion;
+      _suggesting = false;
     });
   }
 
@@ -132,8 +157,10 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
     });
     if (_categoryError != null || _customCategoryError != null) return;
 
-    ref.read(taskDraftProvider.notifier).state =
-        ref.read(taskDraftProvider).copyWith(customCategory: customCategory);
+    ref.read(taskDraftProvider.notifier).state = ref.read(taskDraftProvider).copyWith(
+          title: _titleController.text.trim(),
+          customCategory: customCategory,
+        );
 
     if (_editMode) {
       context.pop();
@@ -198,6 +225,16 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
                 },
               ),
             ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          LargeButton(
+            label: _suggesting
+                ? TaskPostingStrings.aiThinking
+                : TaskPostingStrings.suggestCategoryButton,
+            icon: Icons.auto_awesome,
+            filled: false,
+            outlineColor: AppColors.indigo700,
+            onTap: _suggesting ? () {} : _suggestCategory,
           ),
           if (_aiSuggestion != null) ...[
             const SizedBox(height: AppSpacing.lg),

@@ -7,7 +7,7 @@ import 'package:toly_moly/core/constants/onboarding_strings.dart';
 import 'package:toly_moly/core/constants/task_posting_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 import 'package:toly_moly/core/utils/ai_mock.dart';
-import 'package:toly_moly/features/customer/task_posting/task_posting_models.dart';
+import 'package:toly_moly/core/utils/ai_service.dart';
 import 'package:toly_moly/features/customer/task_posting/task_posting_state.dart';
 
 Future<void> _settle(WidgetTester tester) async {
@@ -22,7 +22,10 @@ Future<void> _walkToReview(WidgetTester tester) async {
   appRouter.go(Routes.postTask);
   await _settle(tester);
 
-  // Screen 1: pick a category card manually.
+  // Screen 1: pick a category card manually (scroll it into view first — the
+  // AI "Suggest Category" button sits above the grid).
+  await tester.ensureVisible(find.text("အိမ်သန့်ရှင်းရေး"));
+  await _settle(tester);
   await tester.tap(find.text("အိမ်သန့်ရှင်းရေး"));
   await _settle(tester);
   await tester.tap(find.text(TaskPostingStrings.continueButton));
@@ -71,6 +74,9 @@ Future<void> _walkToReview(WidgetTester tester) async {
 
 void main() {
   setUp(() {
+    // Force the offline mock path so tests are instant and deterministic with
+    // no Firebase dependency. The real app leaves this true (live + fallback).
+    AiConfig.useLiveAi = false;
     appRouter.go(Routes.onboardingWelcome);
   });
 
@@ -109,6 +115,8 @@ void main() {
     // Tap the FIRST "Edit" (Task Title & Category → Screen 1). Screen 1 sits at
     // the BOTTOM of the stack, so this is the worst-case duplicate-key path —
     // it used to crash the Navigator with a red error screen.
+    await tester.ensureVisible(find.text(TaskPostingStrings.editLink).first);
+    await _settle(tester);
     await tester.tap(find.text(TaskPostingStrings.editLink).first);
     await _settle(tester);
 
@@ -130,7 +138,7 @@ void main() {
     expect(container.read(taskDraftProvider).category, "Cleaner");
   });
 
-  testWidgets('Screen 1 AI path: typing the spec example detects Plumber',
+  testWidgets('Screen 1 "Suggest Category": tapping detects Plumber (mock path)',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.postTask);
@@ -138,16 +146,38 @@ void main() {
 
     await tester.enterText(find.byType(TextField).first, "ရေယိုနေတယ်");
     await _settle(tester);
+    await tester.tap(find.text(TaskPostingStrings.suggestCategoryButton));
+    await _settle(tester);
 
     expect(categorizeJob("ရေယိုနေတယ်"), "Plumber");
     expect(find.textContaining("Plumber"), findsOneWidget);
   });
 
-  testWidgets('Screen 6 budget evaluation: low / reasonable / high verdicts',
-      (tester) async {
-    expect(evaluateBudget(5000), BudgetVerdict.low);
-    expect(evaluateBudget(10000), BudgetVerdict.reasonable);
-    expect(evaluateBudget(20000), BudgetVerdict.high);
+  test('PriceRange.statusFor classifies amount against the AI band', () {
+    const range = PriceRange(low: 10000, high: 15000, source: AiSource.mock);
+    expect(range.statusFor(5000), PriceStatus.low);
+    expect(range.statusFor(12000), PriceStatus.ok);
+    expect(range.statusFor(20000), PriceStatus.high);
+  });
+
+  test('AiService falls back to the offline mock when live AI is disabled',
+      () async {
+    AiConfig.useLiveAi = false;
+    final category = await AiService.suggestCategory(
+        "ရေယိုနေတယ်", const ["Plumber", "Cleaner"]);
+    expect(category, "Plumber");
+    final eval = await AiService.evaluateTask({
+      'category': 'Plumber',
+      'location': 'လှိုင် အမှတ် ၁၂',
+      'date': '2026-06-26',
+      'time': '10:00',
+      'tier': 'အသစ် စတင်သူ',
+      'description': 'အိမ်တွင် ရေပိုက်ယိုနေပါသည်။ ပြင်ဆင်ပေးရန် လိုအပ်ပါသည်။',
+      'budget': 12000,
+      'urgent': true,
+    });
+    expect(eval.source, AiSource.mock);
+    expect(eval.score, greaterThan(0));
   });
 
   testWidgets(

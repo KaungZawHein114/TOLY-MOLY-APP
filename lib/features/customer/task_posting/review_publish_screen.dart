@@ -7,6 +7,7 @@ import '../../../core/data/demo_data.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/ai_service.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
@@ -31,12 +32,37 @@ class ReviewPublishScreen extends ConsumerStatefulWidget {
 
 class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
   late final TextEditingController _notesController;
+  TaskEvaluation? _eval;
+  bool _loadingEval = true;
 
   @override
   void initState() {
     super.initState();
     _notesController =
         TextEditingController(text: ref.read(taskDraftProvider).notes);
+    _loadEvaluation();
+  }
+
+  /// Live AI (Firebase → OpenAI) scores the task's attractiveness to workers,
+  /// falling back to the offline completeness heuristic on any failure.
+  Future<void> _loadEvaluation() async {
+    final draft = ref.read(taskDraftProvider);
+    final eval = await AiService.evaluateTask({
+      'title': draft.title,
+      'category': draft.effectiveCategory,
+      'location': _formatLocation(draft),
+      'date': _formatDate(draft.date),
+      'time': draft.timeSlot ?? '',
+      'tier': draft.workerTier?.label ?? '',
+      'urgent': draft.urgent,
+      'description': draft.description,
+      'budget': draft.budgetMmk ?? 0,
+    });
+    if (!mounted) return;
+    setState(() {
+      _eval = eval;
+      _loadingEval = false;
+    });
   }
 
   @override
@@ -70,6 +96,7 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
     ref.read(taskDraftProvider.notifier).state = draft;
     final task = TaskPost(
       id: DateTime.now().millisecondsSinceEpoch,
+      title: draft.title,
       category: draft.effectiveCategory,
       taskType: draft.taskType ?? TaskType.onSite,
       township: draft.township,
@@ -109,6 +136,8 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _ScoreCard(loading: _loadingEval, eval: _eval),
+          const SizedBox(height: AppSpacing.lg),
           Container(
             padding: const EdgeInsets.all(AppSpacing.lg),
             decoration: BoxDecoration(
@@ -255,6 +284,173 @@ class _SummaryRow extends StatelessWidget {
           ),
           TextButton(onPressed: onEdit, child: const Text(TaskPostingStrings.editLink)),
         ],
+      ),
+    );
+  }
+}
+
+/// AI "Task Attractiveness Score" (0–100) plus a short strengths / weaknesses /
+/// missing breakdown. Additive card — it does not alter the existing summary.
+class _ScoreCard extends StatelessWidget {
+  final bool loading;
+  final TaskEvaluation? eval;
+  const _ScoreCard({required this.loading, required this.eval});
+
+  Color _scoreColor(int score) {
+    if (score >= 75) return AppColors.success;
+    if (score >= 50) return AppColors.indigo700;
+    return AppColors.warning;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: AppColors.guidanceSurfaceGradient,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.auto_awesome,
+                  size: AppSizes.iconSm, color: AppColors.indigo700),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(TaskPostingStrings.attractivenessTitle,
+                    style: theme.textTheme.titleSmall
+                        ?.copyWith(color: AppColors.indigo700)),
+              ),
+              if (eval != null && eval!.source == AiSource.mock)
+                const _OfflineBadge(),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          if (loading)
+            Row(
+              children: [
+                const SizedBox(
+                  width: 16,
+                  height: 16,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(TaskPostingStrings.aiThinking,
+                    style: theme.textTheme.bodyMedium),
+              ],
+            )
+          else if (eval != null) ...[
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                Text("${eval!.score}",
+                    style: theme.textTheme.displaySmall
+                        ?.copyWith(color: _scoreColor(eval!.score))),
+                const SizedBox(width: AppSpacing.xxs),
+                Text(TaskPostingStrings.attractivenessScoreSuffix,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: AppColors.textSecondary)),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.sm),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+              child: LinearProgressIndicator(
+                value: eval!.score / 100,
+                minHeight: 8,
+                backgroundColor: AppColors.lightSurface,
+                valueColor: AlwaysStoppedAnimation(_scoreColor(eval!.score)),
+              ),
+            ),
+            _Breakdown(
+              label: TaskPostingStrings.attractivenessStrengths,
+              items: eval!.strengths,
+              icon: Icons.check_circle,
+              color: AppColors.success,
+            ),
+            _Breakdown(
+              label: TaskPostingStrings.attractivenessWeaknesses,
+              items: eval!.weaknesses,
+              icon: Icons.error_outline,
+              color: AppColors.warning,
+            ),
+            _Breakdown(
+              label: TaskPostingStrings.attractivenessMissing,
+              items: eval!.missing,
+              icon: Icons.add_circle_outline,
+              color: AppColors.indigo700,
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _Breakdown extends StatelessWidget {
+  final String label;
+  final List<String> items;
+  final IconData icon;
+  final Color color;
+  const _Breakdown({
+    required this.label,
+    required this.items,
+    required this.icon,
+    required this.color,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (items.isEmpty) return const SizedBox.shrink();
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(top: AppSpacing.md),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label,
+              style: theme.textTheme.labelLarge
+                  ?.copyWith(color: AppColors.brandPurple)),
+          const SizedBox(height: AppSpacing.xxs),
+          ...items.map((t) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(icon, size: AppSizes.iconSm, color: color),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(child: Text(t, style: theme.textTheme.bodyMedium)),
+                  ],
+                ),
+              )),
+        ],
+      ),
+    );
+  }
+}
+
+class _OfflineBadge extends StatelessWidget {
+  const _OfflineBadge();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+      decoration: BoxDecoration(
+        color: AppColors.lightSurface,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Text(
+        TaskPostingStrings.aiOfflineBadge,
+        style: Theme.of(context)
+            .textTheme
+            .labelSmall
+            ?.copyWith(color: AppColors.textSecondary),
       ),
     );
   }

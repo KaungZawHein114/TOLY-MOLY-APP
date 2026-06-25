@@ -6,7 +6,6 @@
 // hardcoded demo data so the demo always feels "smart" and never blocks.
 // ============================================================================
 
-import '../../features/customer/task_posting/task_posting_models.dart';
 import '../data/demo_data.dart';
 
 /// Suggests a service category + a couple of nearby workers for a free-text
@@ -78,15 +77,6 @@ String generateTaskDescription(String category, String userInput) {
     "Handyman": "အိမ်တွင်း ပြင်ဆင်စရာများအတွက် အကူအညီ လိုအပ်ပါသည်။",
   };
   return templates[category] ?? "အကူအညီတစ်ခု လိုအပ်ပါသည်။ အသေးစိတ် ဖော်ပြပေးပါ။";
-}
-
-/// Evaluates a client-entered budget against the demo reference price
-/// ([kBudgetReferenceMmk]). The client always keeps the final price — this is
-/// advisory only. Deterministic: same amount always yields the same verdict.
-BudgetVerdict evaluateBudget(int amountMmk) {
-  if (amountMmk < kBudgetReferenceMmk) return BudgetVerdict.low;
-  if (amountMmk == kBudgetReferenceMmk) return BudgetVerdict.reasonable;
-  return BudgetVerdict.high;
 }
 
 // ----------------------------------------------------------------------------

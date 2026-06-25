@@ -30,6 +30,11 @@ class AppColors {
   static const Color blue500 = communityBlue;
   static const Color blue300 = Color(0xFFDCEAFF);
   static const Color blue100 = Color(0xFFF2F7FF);
+  // Indigo — the design system's "AI / intelligence" accent (CLAUDE.md color
+  // table). Used by the AI Task Scoper controls/cards in the Task Posting flow.
+  static const Color indigo700 = Color(0xFF2B3990);
+  static const Color indigo500 = Color(0xFF4C5CC7);
+  static const Color indigo100 = Color(0xFFE4E8FF);
   static const Color warning = Color(0xFFF59E0B);
   static const Color error = Color(0xFFEF4444);
   static const Color textPrimary = Color(0xFF1F1F1F);

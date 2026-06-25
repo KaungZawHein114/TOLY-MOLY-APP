@@ -158,6 +158,30 @@ class TaskPostingStrings {
   static const String successGoToActivity = "လုပ်ဆောင်ချက်များ သို့ သွားမည်";
   static const String successGoHome = "ပင်မသို့ ပြန်မည်";
 
+  // ── AI Task Scoper (live OpenAI via Firebase, offline-mock fallback) ─────
+  static const String aiOfflineBadge = "အော့ဖ်လိုင်း";
+  static const String aiThinking = "AI စဉ်းစားနေသည်...";
+  // Screen 1
+  static const String suggestCategoryButton = "AI ဖြင့် အမျိုးအစား ရှာမည်";
+  static const String suggestCategoryNeedTitle = "အလုပ် ခေါင်းစဉ် အရင် ထည့်ပါနော်";
+  // Screen 6 — AI price band
+  static const String aiPriceRangeTitle = "AI အကြံပြု ဈေးနှုန်း";
+  static const String aiPriceRangeRetry = "ပြန်ကြိုးစားမည်";
+  // Review — Task Attractiveness Score
+  static const String attractivenessTitle = "အလုပ် ဆွဲဆောင်မှု ရမှတ်";
+  static const String attractivenessScoreSuffix = "/၁၀၀";
+  static const String attractivenessStrengths = "အားသာချက်များ";
+  static const String attractivenessWeaknesses = "အားနည်းချက်များ";
+  static const String attractivenessMissing = "ဖြည့်သင့်သည်များ";
+  // Mock evaluation phrases (offline fallback).
+  static const String evalStrengthLocation = "နေရာ အချက်အလက် ပြည့်စုံသည်";
+  static const String evalStrengthBudget = "ဈေးနှုန်း သတ်မှတ်ထားသည်";
+  static const String evalStrengthUrgent = "အရေးပေါ်ဖြစ်၍ မြန်ဆန်စွာ တွဲဖက်နိုင်သည်";
+  static const String evalStrengthGeneric = "အခြေခံ အချက်အလက်များ ပြည့်စုံသည်";
+  static const String evalWeaknessShortDesc = "အသေးစိတ်ဖော်ပြချက် တိုလွန်းသည်";
+  static const String evalMissingBudget = "ဈေးနှုန်း ထည့်သွင်းပါ";
+  static const String evalMissingSchedule = "ရက်စွဲနှင့် အချိန် ထည့်သွင်းပါ";
+
   // ── Yangon townships (on-site location dropdown) ─────────────────────────
   static const List<String> yangonTownships = [
     "လှိုင်",
