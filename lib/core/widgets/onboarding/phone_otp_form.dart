@@ -126,8 +126,6 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
               ),
             ),
             hintText: "09•••••••••",
-            filled: true,
-            fillColor: AppColors.blue100,
             contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(AppRadius.md),
@@ -177,8 +175,6 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
               decoration: InputDecoration(
                 counterText: "",
                 hintText: "12345",
-                filled: true,
-                fillColor: AppColors.blue100,
                 errorText: _otpError,
                 contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 border: OutlineInputBorder(

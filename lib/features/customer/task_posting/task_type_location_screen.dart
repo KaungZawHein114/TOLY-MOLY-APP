@@ -118,8 +118,6 @@ class _TaskTypeLocationScreenState extends ConsumerState<TaskTypeLocationScreen>
               style: theme.textTheme.bodyLarge,
               decoration: InputDecoration(
                 hintText: TaskPostingStrings.townshipPlaceholder,
-                filled: true,
-                fillColor: AppColors.blue100,
                 contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
@@ -135,8 +133,6 @@ class _TaskTypeLocationScreenState extends ConsumerState<TaskTypeLocationScreen>
               style: theme.textTheme.bodyLarge,
               decoration: InputDecoration(
                 hintText: TaskPostingStrings.addressPlaceholder,
-                filled: true,
-                fillColor: AppColors.blue100,
                 contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),

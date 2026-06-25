@@ -167,8 +167,6 @@ class WorkerDashboardScreen extends ConsumerWidget {
               decoration: InputDecoration(
                 hintText: AppStrings.dashboardJobSearchHint,
                 prefixIcon: const Icon(Icons.search),
-                filled: true,
-                fillColor: AppColors.blue100,
                 contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),

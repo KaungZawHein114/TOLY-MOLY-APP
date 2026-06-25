@@ -81,8 +81,6 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
                   decoration: InputDecoration(
                     hintText: TaskPostingStrings.descriptionPlaceholder,
                     errorText: _error,
-                    filled: true,
-                    fillColor: AppColors.blue100,
                     contentPadding: const EdgeInsets.all(AppSpacing.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),

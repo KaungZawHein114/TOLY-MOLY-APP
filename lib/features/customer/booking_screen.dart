@@ -160,8 +160,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             controller: _townshipController,
             decoration: InputDecoration(
               hintText: AppStrings.scheduleTownshipPlaceholder,
-              filled: true,
-              fillColor: AppColors.blue100,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -174,8 +172,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
             controller: _addressController,
             decoration: InputDecoration(
               hintText: AppStrings.scheduleAddressPlaceholder,
-              filled: true,
-              fillColor: AppColors.blue100,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -211,8 +207,6 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                   maxLines: 4,
                   decoration: InputDecoration(
                     hintText: AppStrings.scheduleDescriptionPlaceholder,
-                    filled: true,
-                    fillColor: AppColors.blue100,
                     contentPadding: const EdgeInsets.all(AppSpacing.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),

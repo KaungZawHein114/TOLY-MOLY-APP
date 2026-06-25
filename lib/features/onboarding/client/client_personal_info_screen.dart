@@ -102,8 +102,6 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
                   decoration: InputDecoration(
                     hintText: OnboardingStrings.namePlaceholder,
                     errorText: _nameError,
-                    filled: true,
-                    fillColor: AppColors.blue100,
                     contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),
@@ -151,8 +149,6 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
             decoration: InputDecoration(
               hintText: OnboardingStrings.agePlaceholder,
               errorText: _ageError,
-              filled: true,
-              fillColor: AppColors.blue100,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),

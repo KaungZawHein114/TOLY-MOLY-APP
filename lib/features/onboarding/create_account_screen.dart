@@ -190,8 +190,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
             ),
           ),
           hintText: "09•••••••••",
-          filled: true,
-          fillColor: AppColors.blue100,
           contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),
@@ -207,8 +205,6 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
           hintText: OnboardingStrings.passwordPlaceholder,
-          filled: true,
-          fillColor: AppColors.blue100,
           contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(AppRadius.md),

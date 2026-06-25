@@ -109,8 +109,6 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
                   onChanged: (v) => notifier.state = notifier.state.copyWith(customSkill: v),
                   decoration: InputDecoration(
                     hintText: OnboardingStrings.customSkillLabel,
-                    filled: true,
-                    fillColor: AppColors.blue100,
                     contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),

@@ -123,8 +123,6 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
                   style: theme.textTheme.bodyLarge,
                   decoration: InputDecoration(
                     hintText: TaskPostingStrings.aiInputHint,
-                    filled: true,
-                    fillColor: AppColors.blue100,
                     contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),

@@ -116,8 +116,6 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
             decoration: InputDecoration(
               hintText: OnboardingStrings.namePlaceholder,
               errorText: _nameError,
-              filled: true,
-              fillColor: AppColors.blue100,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -142,8 +140,6 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
               ),
               hintText: "09•••••••••",
               errorText: _phoneError,
-              filled: true,
-              fillColor: AppColors.blue100,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
@@ -161,8 +157,6 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
             decoration: InputDecoration(
               hintText: OnboardingStrings.passwordPlaceholder,
               errorText: _passwordError,
-              filled: true,
-              fillColor: AppColors.blue100,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(AppRadius.md),
