@@ -27,15 +27,25 @@ class ClientProfileScreen extends StatefulWidget {
 
 class _ClientProfileScreenState extends State<ClientProfileScreen> {
   // Source of truth for this screen. Verification is mutable locally so the
-  // mock document uploads can flip the gate live; everything else is static.
+  // mock document captures can advance status and flip the gate live;
+  // everything else is static.
   final ClientProfile _profile = demoClientProfile;
-  late final Set<VerificationDoc> _completedDocs = {..._profile.completedDocs};
+  late final Map<VerificationDoc, VerificationDocStatus> _docStatuses = {
+    ..._profile.docStatuses,
+  };
 
   VerificationState get _state =>
-      verificationStateFor(_completedDocs, ClientProfile.requiredDocs);
+      verificationStateFor(_docStatuses, ClientProfile.requiredDocs);
 
-  void _toggleDoc(VerificationDoc doc) {
-    setState(() => _completedDocs.add(doc));
+  // Mock capture: advance the document one step (notStarted -> pending ->
+  // completed) so the demo can walk through every status.
+  void _advanceDoc(VerificationDoc doc) {
+    setState(() {
+      final current = _docStatuses[doc] ?? VerificationDocStatus.notStarted;
+      _docStatuses[doc] = current == VerificationDocStatus.notStarted
+          ? VerificationDocStatus.pending
+          : VerificationDocStatus.completed;
+    });
   }
 
   void _editNotSupported() {
@@ -87,20 +97,17 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
                 label: OnboardingStrings.genderLabel,
                 value: _profile.gender.label,
               ),
-              ProfileInfoRow(
-                icon: Icons.location_on_outlined,
-                label: ProfileStrings.locationLabel,
-                value: _profile.location,
-              ),
+              // NOTE: no address row — location is captured in the Address
+              // verification step (GPS), not stored as profile info.
             ],
           ),
         ),
 
         // ── Verification (gates task posting) ──
-        VerificationStatusCard(
+        VerificationSection(
           requiredDocs: ClientProfile.requiredDocs,
-          completedDocs: _completedDocs,
-          onToggleDoc: _toggleDoc,
+          docStatuses: _docStatuses,
+          onAction: _advanceDoc,
           hint: ProfileStrings.verificationClientHint,
           ctaLabel: ProfileStrings.postTaskCta,
           ctaLockedHint: ProfileStrings.postTaskLockedHint,
@@ -135,6 +142,12 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               ),
             ],
           ),
+        ),
+
+        // ── Logout ──
+        const SizedBox(height: AppSpacing.sm),
+        ProfileLogoutButton(
+          onConfirm: () => context.go(Routes.onboardingWelcome),
         ),
       ],
     );

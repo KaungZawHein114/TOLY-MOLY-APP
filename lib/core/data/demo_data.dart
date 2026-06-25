@@ -857,6 +857,26 @@ extension VerificationDocLabel on VerificationDoc {
   }
 }
 
+/// Per-document progress, distinct from the account-wide [VerificationState].
+/// Each required document walks notStarted -> pending (submitted, under review)
+/// -> completed (approved), and the UI tints the step grey / yellow / green
+/// respectively.
+enum VerificationDocStatus { notStarted, pending, completed }
+
+extension VerificationDocStatusLabel on VerificationDocStatus {
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  String get label {
+    switch (this) {
+      case VerificationDocStatus.notStarted:
+        return "မစတင်ရသေး";
+      case VerificationDocStatus.pending:
+        return "စိစစ်နေဆဲ";
+      case VerificationDocStatus.completed:
+        return "ပြီးစီးပြီ";
+    }
+  }
+}
+
 /// Coarse time-of-day windows a tasker can mark themselves available for.
 enum AvailabilitySlot { morning, afternoon, evening }
 
@@ -925,14 +945,16 @@ class ClientProfile {
   final int age;
   final Gender gender;
   final String? profilePicturePath; // null -> show the placeholder avatar.
-  final String location; // general area only, never the detailed address.
+  // NOTE: no address/location field here by design — the user's location is
+  // captured (GPS) and surfaced only inside the Address verification step, so
+  // it never lives in the public/private profile info.
 
   // ── Private (NEVER rendered — see PrivateRegistration) ──────────────────
   final PrivateRegistration registration;
 
   // ── Verification ────────────────────────────────────────────────────────
-  final VerificationState verificationState;
-  final Set<VerificationDoc> completedDocs;
+  /// Per-document status. Documents not present default to notStarted.
+  final Map<VerificationDoc, VerificationDocStatus> docStatuses;
 
   // ── Stats (static demo values) ──────────────────────────────────────────
   final int tasksPosted;
@@ -944,10 +966,8 @@ class ClientProfile {
     required this.age,
     required this.gender,
     required this.profilePicturePath,
-    required this.location,
     required this.registration,
-    required this.verificationState,
-    required this.completedDocs,
+    required this.docStatuses,
     required this.tasksPosted,
     required this.tasksCompleted,
     required this.rating,
@@ -974,8 +994,8 @@ class TaskerProfile {
   final PrivateRegistration registration;
 
   // ── Verification ────────────────────────────────────────────────────────
-  final VerificationState verificationState;
-  final Set<VerificationDoc> completedDocs;
+  /// Per-document status. Documents not present default to notStarted.
+  final Map<VerificationDoc, VerificationDocStatus> docStatuses;
 
   // ── Stats (static demo values) ──────────────────────────────────────────
   final int tasksCompleted;
@@ -993,8 +1013,7 @@ class TaskerProfile {
     required this.profilePicturePath,
     required this.skills,
     required this.registration,
-    required this.verificationState,
-    required this.completedDocs,
+    required this.docStatuses,
     required this.tasksCompleted,
     required this.completionRate,
     required this.rating,
@@ -1012,18 +1031,29 @@ class TaskerProfile {
   ];
 }
 
-/// Derives the overall [VerificationState] from how many required documents
-/// are complete. Shared by both profiles so the badge, progress bar and the
-/// post/accept gate always agree — and so the screens can recompute it live as
-/// the user mock-uploads documents.
+/// Number of required documents marked completed.
+int completedDocCount(
+  Map<VerificationDoc, VerificationDocStatus> statuses,
+  List<VerificationDoc> required,
+) =>
+    required
+        .where((d) => statuses[d] == VerificationDocStatus.completed)
+        .length;
+
+/// Derives the overall [VerificationState] from the per-document statuses.
+/// Shared by both profiles so the badge, progress bar and the post/accept gate
+/// always agree — and so the screens can recompute it live as the user
+/// mock-progresses each document.
 VerificationState verificationStateFor(
-  Set<VerificationDoc> completed,
+  Map<VerificationDoc, VerificationDocStatus> statuses,
   List<VerificationDoc> required,
 ) {
-  final done = required.where(completed.contains).length;
-  if (done == 0) return VerificationState.notVerified;
-  if (done < required.length) return VerificationState.pending;
-  return VerificationState.verified;
+  final done = completedDocCount(statuses, required);
+  if (done == required.length) return VerificationState.verified;
+  final anyStarted = required.any((d) =>
+      (statuses[d] ?? VerificationDocStatus.notStarted) !=
+      VerificationDocStatus.notStarted);
+  return anyStarted ? VerificationState.pending : VerificationState.notVerified;
 }
 
 // ----------------------------------------------------------------------------
@@ -1036,7 +1066,6 @@ const ClientProfile demoClientProfile = ClientProfile(
   age: 28,
   gender: Gender.female,
   profilePicturePath: null,
-  location: "ကမာရွတ်၊ ရန်ကုန်",
   registration: PrivateRegistration(
     phone: "09-7xx-xxx-xxx",
     phoneVerified: true,
@@ -1044,8 +1073,13 @@ const ClientProfile demoClientProfile = ClientProfile(
     hearAbout: HearAboutSource.facebook,
     accountType: AccountType.client,
   ),
-  verificationState: VerificationState.notVerified,
-  completedDocs: <VerificationDoc>{},
+  // Mixed statuses so the screen shows all three indicators at once: NRC
+  // submitted (yellow), the rest not started (grey). Gate stays locked.
+  docStatuses: <VerificationDoc, VerificationDocStatus>{
+    VerificationDoc.nrc: VerificationDocStatus.pending,
+    VerificationDoc.faceSelfie: VerificationDocStatus.notStarted,
+    VerificationDoc.permanentAddress: VerificationDocStatus.notStarted,
+  },
   tasksPosted: 0,
   tasksCompleted: 0,
   rating: null,
@@ -1068,12 +1102,12 @@ const TaskerProfile demoTaskerProfile = TaskerProfile(
     hearAbout: HearAboutSource.friend,
     accountType: AccountType.tasker,
   ),
-  verificationState: VerificationState.verified,
-  completedDocs: <VerificationDoc>{
-    VerificationDoc.nrc,
-    VerificationDoc.faceSelfie,
-    VerificationDoc.permanentAddress,
-    VerificationDoc.pitchingVideo,
+  // Fully verified — every step green, so the accept-task gate is unlocked.
+  docStatuses: <VerificationDoc, VerificationDocStatus>{
+    VerificationDoc.nrc: VerificationDocStatus.completed,
+    VerificationDoc.faceSelfie: VerificationDocStatus.completed,
+    VerificationDoc.permanentAddress: VerificationDocStatus.completed,
+    VerificationDoc.pitchingVideo: VerificationDocStatus.completed,
   },
   tasksCompleted: 150,
   completionRate: 0.96,

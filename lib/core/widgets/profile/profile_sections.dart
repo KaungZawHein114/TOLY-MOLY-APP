@@ -236,26 +236,76 @@ IconData _docIcon(VerificationDoc doc) {
   }
 }
 
-/// The trust section: a progress indicator over the required documents, an
-/// upload placeholder per document, and a gated primary action (Post Task /
-/// Accept Task) that unlocks only once every required document is complete.
+Color _docStatusColor(VerificationDocStatus status) {
+  switch (status) {
+    case VerificationDocStatus.notStarted:
+      return AppColors.textSecondary; // grey
+    case VerificationDocStatus.pending:
+      return AppColors.warning; // yellow
+    case VerificationDocStatus.completed:
+      return AppColors.success; // green
+  }
+}
+
+String _docDescription(VerificationDoc doc) {
+  switch (doc) {
+    case VerificationDoc.nrc:
+      return ProfileStrings.descNrc;
+    case VerificationDoc.faceSelfie:
+      return ProfileStrings.descFace;
+    case VerificationDoc.permanentAddress:
+      return ProfileStrings.descAddress;
+    case VerificationDoc.pitchingVideo:
+      return ProfileStrings.descPitchingVideo;
+  }
+}
+
+String _docActionLabel(VerificationDoc doc) {
+  switch (doc) {
+    case VerificationDoc.nrc:
+      return ProfileStrings.actionNrc;
+    case VerificationDoc.faceSelfie:
+      return ProfileStrings.actionFace;
+    case VerificationDoc.permanentAddress:
+      return ProfileStrings.actionAddress;
+    case VerificationDoc.pitchingVideo:
+      return ProfileStrings.actionPitchingVideo;
+  }
+}
+
+IconData _docActionIcon(VerificationDoc doc) {
+  switch (doc) {
+    case VerificationDoc.nrc:
+      return Icons.file_upload_outlined;
+    case VerificationDoc.faceSelfie:
+      return Icons.camera_alt_outlined;
+    case VerificationDoc.permanentAddress:
+      return Icons.my_location; // GPS, not manual entry
+    case VerificationDoc.pitchingVideo:
+      return Icons.videocam_outlined;
+  }
+}
+
+/// The full trust section: an overview header (account-wide state badge +
+/// progress bar), one structured [VerificationStepCard] per required document,
+/// and the gated primary action that unlocks only once every step is complete.
 ///
-/// Uploads are mock: tapping a pending document calls [onToggleDoc] so the
-/// hosting screen can mark it complete and the gate can flip live.
-class VerificationStatusCard extends StatelessWidget {
+/// Captures are mock: tapping a step's action calls [onAction], which advances
+/// that document's status so the badge, progress and gate flip live.
+class VerificationSection extends StatelessWidget {
   final List<VerificationDoc> requiredDocs;
-  final Set<VerificationDoc> completedDocs;
-  final ValueChanged<VerificationDoc> onToggleDoc;
+  final Map<VerificationDoc, VerificationDocStatus> docStatuses;
+  final ValueChanged<VerificationDoc> onAction;
   final String hint;
   final String ctaLabel;
   final String ctaLockedHint;
   final VoidCallback onCtaWhenUnlocked;
 
-  const VerificationStatusCard({
+  const VerificationSection({
     super.key,
     required this.requiredDocs,
-    required this.completedDocs,
-    required this.onToggleDoc,
+    required this.docStatuses,
+    required this.onAction,
     required this.hint,
     required this.ctaLabel,
     required this.ctaLockedHint,
@@ -265,148 +315,344 @@ class VerificationStatusCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final state = verificationStateFor(completedDocs, requiredDocs);
-    final doneCount = requiredDocs.where(completedDocs.contains).length;
+    final state = verificationStateFor(docStatuses, requiredDocs);
+    final done = completedDocCount(docStatuses, requiredDocs);
     final total = requiredDocs.length;
     final verified = state == VerificationState.verified;
     final stateColor = _stateColor(state);
 
-    return ProfileSectionCard(
-      title: ProfileStrings.verificationTitle,
-      icon: Icons.verified_user_outlined,
-      trailing: Container(
-        padding: const EdgeInsets.symmetric(
-            horizontal: AppSpacing.sm + 2, vertical: AppSpacing.xxs),
-        decoration: BoxDecoration(
-          color: stateColor.withValues(alpha: 0.15),
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-        ),
-        child: Text(
-          state.label,
-          style: theme.textTheme.bodySmall
-              ?.copyWith(color: stateColor, fontWeight: FontWeight.w700),
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            hint,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: AppColors.textSecondary),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // ── Overview header (state badge + progress) ──
+        ProfileSectionCard(
+          title: ProfileStrings.verificationTitle,
+          icon: Icons.verified_user_outlined,
+          trailing: Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.sm + 2, vertical: AppSpacing.xxs),
+            decoration: BoxDecoration(
+              color: stateColor.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppRadius.pill),
+            ),
+            child: Text(
+              state.label,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: stateColor, fontWeight: FontWeight.w700),
+            ),
           ),
-          const SizedBox(height: AppSpacing.md),
-          // Progress: "X / N ပြီးစီး" + bar.
-          Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
+                hint,
+                style: theme.textTheme.bodyMedium
+                    ?.copyWith(color: AppColors.textSecondary),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(
                 ProfileStrings.progressLabel(
-                  toBurmeseDigits(doneCount),
+                  toBurmeseDigits(done),
                   toBurmeseDigits(total),
                 ),
                 style: theme.textTheme.labelMedium
                     ?.copyWith(color: AppColors.purple700),
               ),
+              const SizedBox(height: AppSpacing.sm),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+                child: LinearProgressIndicator(
+                  value: total == 0 ? 0 : done / total,
+                  minHeight: 8,
+                  backgroundColor: AppColors.purple100,
+                  valueColor:
+                      const AlwaysStoppedAnimation<Color>(AppColors.purple500),
+                ),
+              ),
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: LinearProgressIndicator(
-              value: total == 0 ? 0 : doneCount / total,
-              minHeight: 8,
-              backgroundColor: AppColors.purple100,
-              valueColor: const AlwaysStoppedAnimation<Color>(AppColors.purple500),
-            ),
+        ),
+
+        // ── One structured card per required document ──
+        for (final doc in requiredDocs)
+          VerificationStepCard(
+            doc: doc,
+            status: docStatuses[doc] ?? VerificationDocStatus.notStarted,
+            onAction: () => onAction(doc),
           ),
-          const SizedBox(height: AppSpacing.md),
-          for (final doc in requiredDocs)
-            _VerificationStepRow(
-              doc: doc,
-              done: completedDocs.contains(doc),
-              onUpload: () => onToggleDoc(doc),
-            ),
-          const SizedBox(height: AppSpacing.md),
-          _GatedCta(
-            label: ctaLabel,
-            lockedHint: ctaLockedHint,
-            unlocked: verified,
-            onTap: onCtaWhenUnlocked,
-          ),
-        ],
-      ),
+
+        const SizedBox(height: AppSpacing.xs),
+        _GatedCta(
+          label: ctaLabel,
+          lockedHint: ctaLockedHint,
+          unlocked: verified,
+          onTap: onCtaWhenUnlocked,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+      ],
     );
   }
 }
 
-class _VerificationStepRow extends StatelessWidget {
+/// One verification requirement as a full, guided card: leading icon + title +
+/// status badge, an instruction line, a typed preview placeholder, and a clear
+/// action button (or a completed confirmation). The card's accent border is
+/// tinted by [status] — grey / yellow / green.
+class VerificationStepCard extends StatelessWidget {
   final VerificationDoc doc;
-  final bool done;
-  final VoidCallback onUpload;
+  final VerificationDocStatus status;
+  final VoidCallback onAction;
 
-  const _VerificationStepRow({
+  const VerificationStepCard({
+    super.key,
     required this.doc,
-    required this.done,
-    required this.onUpload,
+    required this.status,
+    required this.onAction,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 1),
-      child: Row(
+    final color = _docStatusColor(status);
+    final completed = status == VerificationDocStatus.completed;
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.lightBg,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: color.withValues(alpha: 0.45), width: 1.4),
+        boxShadow: [
+          BoxShadow(color: AppColors.shadowSm, blurRadius: 12, offset: const Offset(0, 4)),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: done
-                  ? AppColors.success.withValues(alpha: 0.15)
-                  : AppColors.purple100,
-              borderRadius: BorderRadius.circular(AppRadius.md - 2),
-            ),
-            child: Icon(
-              done ? Icons.check_rounded : _docIcon(doc),
-              size: AppSizes.iconMd,
-              color: done ? AppColors.success : AppColors.purple700,
-            ),
+          // 1. Title row + status indicator.
+          Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: 0.14),
+                  borderRadius: BorderRadius.circular(AppRadius.md - 2),
+                ),
+                child: Icon(_docIcon(doc), size: AppSizes.iconMd, color: color),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(doc.label, style: theme.textTheme.titleMedium),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              _StatusBadge(status: status),
+            ],
           ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(doc.label, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.md),
+          // 2. Instruction.
+          Text(
+            _docDescription(doc),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
           ),
-          const SizedBox(width: AppSpacing.sm),
-          if (done)
+          const SizedBox(height: AppSpacing.md),
+          // 3. Typed preview placeholder (image / face / map / video).
+          _PlaceholderPreview(doc: doc, completed: completed),
+          const SizedBox(height: AppSpacing.md),
+          // 4. Action (or a completed confirmation).
+          if (completed)
             Row(
               children: [
-                const Icon(Icons.verified,
-                    size: AppSizes.iconSm, color: AppColors.success),
-                const SizedBox(width: AppSpacing.xxs),
+                const Icon(Icons.check_circle,
+                    size: AppSizes.iconMd, color: AppColors.success),
+                const SizedBox(width: AppSpacing.sm),
                 Text(
-                  ProfileStrings.uploadedLabel,
-                  style: theme.textTheme.bodySmall?.copyWith(
+                  VerificationDocStatus.completed.label,
+                  style: theme.textTheme.bodyMedium?.copyWith(
                       color: AppColors.success, fontWeight: FontWeight.w700),
                 ),
               ],
             )
           else
-            _UploadButton(onTap: onUpload),
+            _VerificationActionButton(
+              label: _docActionLabel(doc),
+              icon: _docActionIcon(doc),
+              onTap: onAction,
+            ),
         ],
       ),
     );
   }
 }
 
-class _UploadButton extends StatelessWidget {
-  final VoidCallback onTap;
-  const _UploadButton({required this.onTap});
+/// Small status pill (colored dot + label) shown on each step card.
+class _StatusBadge extends StatelessWidget {
+  final VerificationDocStatus status;
+  const _StatusBadge({required this.status});
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadius.sm);
+    final color = _docStatusColor(status);
+    return Container(
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(AppRadius.pill),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 8,
+            height: 8,
+            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Text(
+            status.label,
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: color,
+                  fontWeight: FontWeight.w700,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Renders the right preview placeholder for a document type. NRC shows two
+/// image slots (front/back); face/address/video each show a single typed
+/// frame. A completed step reads as "captured" (green).
+class _PlaceholderPreview extends StatelessWidget {
+  final VerificationDoc doc;
+  final bool completed;
+  const _PlaceholderPreview({required this.doc, required this.completed});
+
+  @override
+  Widget build(BuildContext context) {
+    switch (doc) {
+      case VerificationDoc.nrc:
+        return Row(
+          children: [
+            Expanded(
+              child: _PreviewFrame(
+                height: 92,
+                icon: Icons.image_outlined,
+                caption: ProfileStrings.placeholderNrcFront,
+                completed: completed,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _PreviewFrame(
+                height: 92,
+                icon: Icons.image_outlined,
+                caption: ProfileStrings.placeholderNrcBack,
+                completed: completed,
+              ),
+            ),
+          ],
+        );
+      case VerificationDoc.faceSelfie:
+        return _PreviewFrame(
+          height: 132,
+          icon: Icons.face_outlined,
+          caption: ProfileStrings.placeholderFace,
+          completed: completed,
+        );
+      case VerificationDoc.permanentAddress:
+        return _PreviewFrame(
+          height: 132,
+          icon: Icons.pin_drop_outlined,
+          caption: ProfileStrings.placeholderMap,
+          completed: completed,
+        );
+      case VerificationDoc.pitchingVideo:
+        return _PreviewFrame(
+          height: 150,
+          icon: Icons.play_circle_outline,
+          caption: ProfileStrings.placeholderVideo,
+          completed: completed,
+        );
+    }
+  }
+}
+
+/// A single rounded preview frame: a centered typed icon + caption, or a green
+/// "captured" state once the step is completed.
+class _PreviewFrame extends StatelessWidget {
+  final double height;
+  final IconData icon;
+  final String caption;
+  final bool completed;
+
+  const _PreviewFrame({
+    required this.height,
+    required this.icon,
+    required this.caption,
+    required this.completed,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final accent = completed ? AppColors.success : AppColors.purple500;
+    final fill =
+        completed ? AppColors.success.withValues(alpha: 0.10) : AppColors.blue100;
+    return Container(
+      height: height,
+      width: double.infinity,
+      decoration: BoxDecoration(
+        color: fill,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(color: accent.withValues(alpha: 0.40), width: 1.4),
+      ),
+      alignment: Alignment.center,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            completed ? Icons.check_circle_outline : icon,
+            size: AppSizes.iconLg + 6,
+            color: accent,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            completed ? ProfileStrings.placeholderCaptured : caption,
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: completed ? AppColors.success : AppColors.textSecondary,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Full-width, clearly-labeled action button for a verification step
+/// (onboarding "pick" styling). The capture itself is mock.
+class _VerificationActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _VerificationActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final radius = BorderRadius.circular(AppRadius.md);
     return Semantics(
-      label: ProfileStrings.uploadCta,
+      label: label,
       button: true,
       child: Material(
         color: AppColors.blue100,
@@ -420,19 +666,22 @@ class _UploadButton extends StatelessWidget {
             );
             onTap();
           },
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+          child: Container(
+            height: 56,
+            alignment: Alignment.center,
+            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
             child: Row(
-              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.upload_outlined,
-                    size: AppSizes.iconSm, color: AppColors.purple700),
-                const SizedBox(width: AppSpacing.xs),
-                Text(
-                  ProfileStrings.uploadCta,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: AppColors.purple700, fontWeight: FontWeight.w700),
+                Icon(icon, size: AppSizes.iconMd, color: AppColors.purple700),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Text(
+                    label,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(color: AppColors.purple700),
+                  ),
                 ),
               ],
             ),
@@ -625,6 +874,51 @@ class _ToggleChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+// ============================================================================
+// LOGOUT
+// ============================================================================
+
+/// Outlined, error-colored logout action shared by both profile screens. Asks
+/// for confirmation first, then runs [onConfirm] (which resets navigation back
+/// to onboarding). Phase 1 has no session to clear — this is navigation only.
+class ProfileLogoutButton extends StatelessWidget {
+  final VoidCallback onConfirm;
+  const ProfileLogoutButton({super.key, required this.onConfirm});
+
+  Future<void> _confirm(BuildContext context) async {
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(ProfileStrings.logoutConfirmTitle),
+        content: const Text(ProfileStrings.logoutConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(ProfileStrings.logoutCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(ProfileStrings.logoutConfirmCta),
+          ),
+        ],
+      ),
+    );
+    if (shouldLogout == true) onConfirm();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LargeButton(
+      label: ProfileStrings.logoutButton,
+      icon: Icons.logout,
+      filled: false,
+      outlineColor: AppColors.error,
+      onTap: () => _confirm(context),
     );
   }
 }

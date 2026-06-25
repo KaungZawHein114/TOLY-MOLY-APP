@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/onboarding_strings.dart';
 import '../../core/constants/profile_strings.dart';
 import '../../core/data/demo_data.dart';
+import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/mascot/mascot_message_card.dart';
@@ -28,13 +30,22 @@ class TaskerProfileScreen extends ConsumerStatefulWidget {
 
 class _TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
   final TaskerProfile _profile = demoTaskerProfile;
-  late final Set<VerificationDoc> _completedDocs = {..._profile.completedDocs};
+  late final Map<VerificationDoc, VerificationDocStatus> _docStatuses = {
+    ..._profile.docStatuses,
+  };
 
   VerificationState get _state =>
-      verificationStateFor(_completedDocs, TaskerProfile.requiredDocs);
+      verificationStateFor(_docStatuses, TaskerProfile.requiredDocs);
 
-  void _toggleDoc(VerificationDoc doc) {
-    setState(() => _completedDocs.add(doc));
+  // Mock capture: advance the document one step (notStarted -> pending ->
+  // completed) so the demo can walk through every status.
+  void _advanceDoc(VerificationDoc doc) {
+    setState(() {
+      final current = _docStatuses[doc] ?? VerificationDocStatus.notStarted;
+      _docStatuses[doc] = current == VerificationDocStatus.notStarted
+          ? VerificationDocStatus.pending
+          : VerificationDocStatus.completed;
+    });
   }
 
   void _editNotSupported() {
@@ -102,10 +113,10 @@ class _TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
         ),
 
         // ── Verification (gates task acceptance) ──
-        VerificationStatusCard(
+        VerificationSection(
           requiredDocs: TaskerProfile.requiredDocs,
-          completedDocs: _completedDocs,
-          onToggleDoc: _toggleDoc,
+          docStatuses: _docStatuses,
+          onAction: _advanceDoc,
           hint: ProfileStrings.verificationTaskerHint,
           ctaLabel: ProfileStrings.acceptTaskCta,
           ctaLockedHint: ProfileStrings.acceptTaskLockedHint,
@@ -163,6 +174,12 @@ class _TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
           title: ProfileStrings.availabilityTitle,
           icon: Icons.event_available_outlined,
           child: AvailabilityEditor(initial: _profile.availability),
+        ),
+
+        // ── Logout ──
+        const SizedBox(height: AppSpacing.sm),
+        ProfileLogoutButton(
+          onConfirm: () => context.go(Routes.onboardingWelcome),
         ),
       ],
     );

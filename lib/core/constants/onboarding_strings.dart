@@ -37,6 +37,13 @@ class OnboardingStrings {
   static const String googleSignup = "Google ဖြင့် ဝင်ရောက်မည်";
   static const String loginNotSupported =
       "Demo အတွက် အကောင့်ဝင်ရောက်ခြင်းကို ပံ့ပိုးမထားပါသေးပါ။ အကောင့်အသစ်ဖွင့်ပါ။";
+  // Dev shortcut login (Phase 1 has no auth): fill the two fields, then pick a
+  // role to jump straight into that shell.
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  static const String loginFieldsRequiredError =
+      "ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါနော်";
+  static const String loginAsClientButton = "ဝန်ဆောင်မှု ရယူသူ အဖြစ် ဝင်မည်";
+  static const String loginAsTaskerButton = "ဝန်ဆောင်မှု ပေးသူ အဖြစ် ဝင်မည်";
   static const String googleNotSupported =
       "Demo အတွက် Google ဖြင့်ဝင်ရောက်ခြင်းကို ပံ့ပိုးမထားပါသေးပါ။";
   static const String nameRequiredError = "အမည် ထည့်ပေးပါနော်";

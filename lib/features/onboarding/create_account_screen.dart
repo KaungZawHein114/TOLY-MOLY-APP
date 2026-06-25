@@ -29,11 +29,14 @@ class CreateAccountScreen extends ConsumerStatefulWidget {
 
 class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final TextEditingController _loginPhoneController = TextEditingController();
+  final TextEditingController _loginPasswordController = TextEditingController();
   String? _roleError;
+  String? _loginError;
 
   @override
   void dispose() {
     _loginPhoneController.dispose();
+    _loginPasswordController.dispose();
     super.dispose();
   }
 
@@ -49,6 +52,21 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     });
     if (role == null) return;
     context.push(Routes.onboardingBasicInfo);
+  }
+
+  /// Dev shortcut (Phase 1 has no auth): require the two fields to be filled,
+  /// then jump straight into the chosen role's shell — no validation beyond
+  /// "not empty", no backend.
+  void _login(UserRole role) {
+    final filled = _loginPhoneController.text.trim().isNotEmpty &&
+        _loginPasswordController.text.isNotEmpty;
+    setState(() {
+      _loginError = filled ? null : OnboardingStrings.loginFieldsRequiredError;
+    });
+    if (!filled) return;
+    context.go(
+      role == UserRole.client ? Routes.customerHome : Routes.dashboard,
+    );
   }
 
   @override
@@ -97,12 +115,24 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ],
       ),
       bottomBar: isLogin
-          ? LargeButton(
-              label: OnboardingStrings.continueButton,
-              gradient: AppColors.purpleGradient,
-              onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(OnboardingStrings.loginNotSupported)),
-              ),
+          ? Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                LargeButton(
+                  label: OnboardingStrings.loginAsClientButton,
+                  icon: Icons.login,
+                  gradient: AppColors.purpleGradient,
+                  onTap: () => _login(UserRole.client),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                LargeButton(
+                  label: OnboardingStrings.loginAsTaskerButton,
+                  icon: Icons.login,
+                  filled: false,
+                  outlineColor: AppColors.purple700,
+                  onTap: () => _login(UserRole.tasker),
+                ),
+              ],
             )
           : LargeButton(
               label: OnboardingStrings.continueButton,
@@ -201,6 +231,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       Text(OnboardingStrings.passwordLabel, style: theme.textTheme.titleMedium),
       const SizedBox(height: AppSpacing.sm),
       TextField(
+        controller: _loginPasswordController,
         obscureText: true,
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
@@ -212,6 +243,11 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           ),
         ),
       ),
+      if (_loginError != null) ...[
+        const SizedBox(height: AppSpacing.sm),
+        Text(_loginError!,
+            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
+      ],
     ];
   }
 }
