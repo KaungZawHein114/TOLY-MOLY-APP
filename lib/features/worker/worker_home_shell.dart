@@ -22,7 +22,7 @@ class WorkerHomeShell extends ConsumerWidget {
         index: index,
         children: const [
           WorkerDashboardScreen(),
-          WorkerActivityPlaceholderScreen(),
+          ActivityScreen(),
           TaskerProfileScreen(),
         ],
       ),
