@@ -87,8 +87,9 @@ class AiService {
         return data.map((key, value) => MapEntry(key.toString(), value));
       }
       return null;
-    } catch (_) {
-      // Firebase not set up, offline, timeout, server error — fall back.
+    } catch (e) {
+      // ignore: avoid_print
+      print('AiService._call($name) failed: $e');
       return null;
     }
   }
