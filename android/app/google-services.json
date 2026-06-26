@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "544025019893",
+    "project_id": "tolymolyapp-94594",
+    "storage_bucket": "tolymolyapp-94594.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:544025019893:android:bb4aaa71e4260b47dbccbc",
+        "android_client_info": {
+          "package_name": "com.tolymoly.toly_moly"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCZpHDUXs2Bx49rIGzwoflNRNo6uuguylQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

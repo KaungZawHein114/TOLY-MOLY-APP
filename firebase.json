@@ -1,15 +1,1 @@
-{
-  "functions": [
-    {
-      "source": "functions",
-      "codebase": "default",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "*.local"
-      ]
-    }
-  ]
-}
+{"functions":[{"source":"functions","codebase":"default","ignore":["node_modules",".git","firebase-debug.log","firebase-debug.*.log","*.local"]}],"flutter":{"platforms":{"android":{"default":{"projectId":"tolymolyapp-94594","appId":"1:544025019893:android:bb4aaa71e4260b47dbccbc","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"tolymolyapp-94594","configurations":{"android":"1:544025019893:android:bb4aaa71e4260b47dbccbc","ios":"1:544025019893:ios:4a459e3b78d15e31dbccbc"}}}}}}

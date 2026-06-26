@@ -5,20 +5,16 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_strings.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   // The AI Task Scoper (Task Posting only) proxies OpenAI through Firebase.
-  // This init is best-effort and guarded: if Firebase isn't configured yet
-  // (no google-services.json / GoogleService-Info.plist), the app still runs
-  // fully offline and every AI call falls back to the synchronous mock.
-  //
-  // After running `flutterfire configure`, you may switch to the generated
-  // options for web/desktop support:
-  //   import 'firebase_options.dart';
-  //   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
+  // This init is best-effort and guarded: if Firebase isn't configured yet,
+  // the app still runs fully offline and every AI call falls back to the
+  // synchronous mock.
   try {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   } catch (_) {
     // No Firebase config present — continue in offline/mock mode.
   }
