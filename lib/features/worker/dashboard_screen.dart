@@ -30,6 +30,11 @@ class AttendanceStatus {
 
 final attendanceProvider = StateProvider<AttendanceStatus>((ref) => const AttendanceStatus());
 final jobSearchProvider = StateProvider<String>((ref) => "");
+
+/// Shared focus node for the job-search field, so the chatbot's "Find a Task"
+/// action can focus it after navigating here (best-effort; no-op when the
+/// field isn't on screen, e.g. the worker hasn't checked in yet).
+final FocusNode jobSearchFocusNode = FocusNode();
 final townshipFilterProvider = StateProvider<String?>((ref) => null);
 final urgentOnlyJobsProvider = StateProvider<bool>((ref) => false);
 final jobViewProvider = StateProvider<_JobView>((ref) => _JobView.nearby);
@@ -163,6 +168,7 @@ class WorkerDashboardScreen extends ConsumerWidget {
             _CheckInHint(message: AppStrings.dashboardCheckInToSeeJobs)
           else ...[
             TextField(
+              focusNode: jobSearchFocusNode,
               onChanged: (v) => ref.read(jobSearchProvider.notifier).state = v,
               decoration: InputDecoration(
                 hintText: AppStrings.dashboardJobSearchHint,

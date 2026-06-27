@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/chatbot_fab.dart';
 import 'client_profile_screen.dart';
 import 'home_screen.dart';
 import '../customer/activity_screen.dart';
@@ -25,6 +28,10 @@ class CustomerHomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(customerTabIndexProvider);
     return Scaffold(
+      // Floating AI assistant — only on the Home (dashboard) tab.
+      floatingActionButton: index == 0
+          ? ChatbotFab(onTap: () => context.push('${Routes.chatbot}?role=client'))
+          : null,
       body: IndexedStack(
         index: index,
         children: const [

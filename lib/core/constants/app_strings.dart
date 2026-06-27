@@ -107,5 +107,17 @@ class AppStrings {
   static const String executionArrivalLabel = "ရောက်ရှိပြီး စတင်ပြီ";
   static const String executionCompletionLabel = "ပြီးစီးပါပြီ";
 
+  // ── AI Assistant chatbot (app-scoped, intent-aware) ─────────────────────
+  static const String chatbotTitle = "TOLY MOLY အကူအညီ";
+  static const String chatbotFabLabel = "အကူအညီ မေးမည်"; // FAB tooltip / semantics
+  static const String chatbotInputHint = "မက်ဆေ့ချ် ရိုက်ထည့်ပါ…";
+  static const String chatbotWelcome =
+      "မင်္ဂလာပါ။ 👋 ကျွန်တော် TOLY MOLY အကူအညီပေးသူပါ။ "
+      "ဘာများ လိုအပ်လဲ ပြောပြပါ — ဥပမာ \"sink ပြင်ဖို့ လူရှာချင်တယ်\"။";
+  static const String chatbotTyping = "ရိုက်နေသည်…";
+  static const String chatbotPostTaskCta = "အလုပ်တင်မည် (Post a Task)";
+  static const String chatbotFindTaskCta = "အလုပ်ရှာမည် (Find a Task)";
+  static const String chatbotOfflineHint = "အော့ဖ်လိုင်း"; // shown when reply came from mock
+
   static const String currency = "MMK";
 }

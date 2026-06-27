@@ -207,7 +207,11 @@ class ChatMessage {
   final String text;
   final bool fromUser;
 
-  const ChatMessage({required this.text, required this.fromUser});
+  /// Optional assistant action that drives an inline button under a bot
+  /// message: "post_task" | "find_task" | null. Always null for user messages.
+  final String? action;
+
+  const ChatMessage({required this.text, required this.fromUser, this.action});
 }
 
 /// An open marketplace job a tasker can browse and express interest in —
