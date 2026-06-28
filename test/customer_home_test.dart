@@ -65,7 +65,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text("All Workers"), findsOneWidget);
+    expect(find.text(AppStrings.exploreAllWorkers), findsOneWidget);
   });
 
   testWidgets('Profile worker signup card opens tasker signup', (tester) async {

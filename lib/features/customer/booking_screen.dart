@@ -25,8 +25,8 @@ class BookingScreen extends ConsumerStatefulWidget {
   ConsumerState<BookingScreen> createState() => _BookingScreenState();
 }
 
-const List<String> _days = ["Today", "Tomorrow", "Fri 20", "Sat 21", "Sun 22"];
-const List<String> _slots = ["09:00 AM", "11:00 AM", "02:00 PM", "04:00 PM"];
+const List<String> _days = ["ယနေ့", "မနက်ဖြန်", "သောကြာ ၂၀", "စနေ ၂၁", "တနင်္ဂနွေ ၂၂"];
+const List<String> _slots = ["မနက် ၉:၀၀", "မနက် ၁၁:၀၀", "နေ့လည် ၂:၀၀", "ညနေ ၄:၀၀"];
 
 final _scheduleDateIndexProvider = StateProvider.autoDispose<int>((ref) => 0);
 final _scheduleTimeIndexProvider = StateProvider.autoDispose<int>((ref) => 1);
@@ -107,7 +107,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                 ),
                 const SizedBox(height: AppSpacing.xl),
                 LargeButton(
-                  label: "Done",
+                  label: "ပြီးပါပြီ",
                   onTap: () {
                     Navigator.of(ctx).pop();
                     context.go(Routes.customerHome);
@@ -119,7 +119,7 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
                     Navigator.of(ctx).pop();
                     context.push(Routes.chatbot);
                   },
-                  child: const Text("Message the worker"),
+                  child: const Text("အလုပ်သမားထံ စာပို့မည်"),
                 ),
               ],
             ),

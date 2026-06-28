@@ -8,6 +8,9 @@ import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import 'widgets/job_card.dart';
+import 'widgets/job_filter_bar.dart';
+import 'widgets/job_search_bar.dart';
 
 // ============================================================================
 // LOCAL UI STATE (Riverpod), declared in this screen file.
@@ -36,23 +39,169 @@ final jobSearchProvider = StateProvider<String>((ref) => "");
 final FocusNode jobSearchFocusNode = FocusNode();
 final townshipFilterProvider = StateProvider<String?>((ref) => null);
 final urgentOnlyJobsProvider = StateProvider<bool>((ref) => false);
-final jobViewProvider = StateProvider<_JobView>((ref) => _JobView.nearby);
+final jobSortProvider = StateProvider<_JobSort>((ref) => _JobSort.recommended);
 final jobsStateProvider = StateProvider<List<Job>>((ref) => jobs);
 final workerInterestsProvider = StateProvider<List<WorkerInterest>>((ref) => []);
 
-enum _JobView { nearby, all }
+// Additive Job Board filters (Category/Distance/Budget) — local UI-only
+// state, same pattern as the filters above; they narrow within whatever the
+// worker-skill/tier eligibility check below already allows through, they
+// never bypass it.
+final jobCategoryFilterProvider = StateProvider<String?>((ref) => null);
+final jobDistanceFilterKmProvider = StateProvider<double?>((ref) => null);
+final jobBudgetFilterProvider = StateProvider<_BudgetFilter>((ref) => _BudgetFilter.any);
 
-class WorkerDashboardScreen extends ConsumerWidget {
+enum _JobSort { recommended, nearest, highestBudget, newest, urgentFirst }
+
+enum _BudgetFilter { any, under20k, between20k50k, above50k }
+
+extension on _BudgetFilter {
+  bool matches(int budgetMmk) {
+    switch (this) {
+      case _BudgetFilter.any:
+        return true;
+      case _BudgetFilter.under20k:
+        return budgetMmk < 20000;
+      case _BudgetFilter.between20k50k:
+        return budgetMmk >= 20000 && budgetMmk <= 50000;
+      case _BudgetFilter.above50k:
+        return budgetMmk > 50000;
+    }
+  }
+
+  String get label {
+    switch (this) {
+      case _BudgetFilter.any:
+        return AppStrings.jobBoardBudgetAny;
+      case _BudgetFilter.under20k:
+        return AppStrings.jobBoardBudgetUnder20k;
+      case _BudgetFilter.between20k50k:
+        return AppStrings.jobBoardBudget20to50k;
+      case _BudgetFilter.above50k:
+        return AppStrings.jobBoardBudgetAbove50k;
+    }
+  }
+}
+
+String _jobSortLabel(_JobSort sort) {
+  switch (sort) {
+    case _JobSort.recommended:
+      return AppStrings.jobBoardSortRecommended;
+    case _JobSort.nearest:
+      return AppStrings.jobBoardSortNearest;
+    case _JobSort.highestBudget:
+      return AppStrings.jobBoardSortHighestBudget;
+    case _JobSort.newest:
+      return AppStrings.jobBoardSortNewest;
+    case _JobSort.urgentFirst:
+      return AppStrings.jobBoardSortUrgentFirst;
+  }
+}
+
+const List<double> _distanceKmOptions = [2, 5, 10];
+
+class WorkerDashboardScreen extends ConsumerStatefulWidget {
   const WorkerDashboardScreen({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<WorkerDashboardScreen> createState() => _WorkerDashboardScreenState();
+}
+
+class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  final GlobalKey _filterBarKey = GlobalKey();
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToFilters() {
+    final ctx = _filterBarKey.currentContext;
+    if (ctx != null) {
+      Scrollable.ensureVisible(ctx, duration: AppMotion.medium, curve: AppMotion.enter);
+    }
+  }
+
+  void _showJobDetails(Job job) {
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return Padding(
+          padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg + MediaQuery.of(ctx).viewPadding.bottom),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(categoryIconFor(job.category), color: AppColors.purple700),
+                  const SizedBox(width: AppSpacing.sm),
+                  Expanded(
+                    child: Text(job.category,
+                        maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleLarge),
+                  ),
+                  StatusBadge(urgent: job.isUrgent),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Text(job.description, style: theme.textTheme.bodyMedium),
+              const SizedBox(height: AppSpacing.md),
+              Row(
+                children: [
+                  Icon(Icons.location_on, size: 16, color: theme.hintColor),
+                  const SizedBox(width: AppSpacing.xxs),
+                  Text("${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.xs),
+              Row(
+                children: [
+                  Icon(Icons.verified_user_outlined, size: 16, color: theme.hintColor),
+                  const SizedBox(width: AppSpacing.xxs),
+                  Text("${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
+                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                ],
+              ),
+              const SizedBox(height: AppSpacing.lg),
+              BudgetBadge(budgetMmk: job.aiSuggestedBudgetMmk),
+              const SizedBox(height: AppSpacing.lg),
+              LargeButton(
+                label: AppStrings.dashboardMessageClientCta,
+                icon: Icons.chat_bubble_outline,
+                filled: false,
+                outlineColor: AppColors.purple700,
+                onTap: () {
+                  Navigator.of(ctx).pop();
+                  context.push(Routes.chatbot);
+                },
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final attendance = ref.watch(attendanceProvider);
     final query = ref.watch(jobSearchProvider);
     final townshipFilter = ref.watch(townshipFilterProvider);
     final urgentOnly = ref.watch(urgentOnlyJobsProvider);
-    final view = ref.watch(jobViewProvider);
+    final sort = ref.watch(jobSortProvider);
+    final categoryFilter = ref.watch(jobCategoryFilterProvider);
+    final distanceKmFilter = ref.watch(jobDistanceFilterKmProvider);
+    final budgetFilter = ref.watch(jobBudgetFilterProvider);
     final allJobsState = ref.watch(jobsStateProvider);
     final worker = loggedInWorker;
 
@@ -67,6 +216,10 @@ class WorkerDashboardScreen extends ConsumerWidget {
       return true;
     }).toList();
 
+    // Category options are derived from whatever is already eligible above —
+    // this never widens the worker-skill/tier gate, it only ever narrows it.
+    final categoryOptions = <String>{for (final j in eligible) j.category}.toList()..sort();
+
     if (query.trim().isNotEmpty) {
       final q = query.trim();
       eligible = eligible
@@ -79,13 +232,36 @@ class WorkerDashboardScreen extends ConsumerWidget {
     if (urgentOnly) {
       eligible = eligible.where((j) => j.isUrgent).toList();
     }
+    if (categoryFilter != null) {
+      eligible = eligible.where((j) => j.category == categoryFilter).toList();
+    }
+    if (distanceKmFilter != null) {
+      final milesCap = distanceKmFilter / 1.609;
+      eligible = eligible.where((j) => j.distanceMiles <= milesCap).toList();
+    }
+    eligible = eligible.where((j) => budgetFilter.matches(j.aiSuggestedBudgetMmk)).toList();
 
-    switch (view) {
-      case _JobView.nearby:
+    switch (sort) {
+      case _JobSort.recommended:
+        eligible.sort((a, b) {
+          if (a.isUrgent != b.isUrgent) return a.isUrgent ? -1 : 1;
+          return a.distanceMiles.compareTo(b.distanceMiles);
+        });
+        break;
+      case _JobSort.nearest:
         eligible.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
         break;
-      case _JobView.all:
+      case _JobSort.highestBudget:
+        eligible.sort((a, b) => b.aiSuggestedBudgetMmk.compareTo(a.aiSuggestedBudgetMmk));
+        break;
+      case _JobSort.newest:
         eligible.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case _JobSort.urgentFirst:
+        eligible.sort((a, b) {
+          if (a.isUrgent != b.isUrgent) return a.isUrgent ? -1 : 1;
+          return b.createdAt.compareTo(a.createdAt);
+        });
         break;
     }
 
@@ -98,170 +274,201 @@ class WorkerDashboardScreen extends ConsumerWidget {
     final activeBookings = bookings.where((b) => b.status == "Active").toList();
     final todaysTask = activeBookings.isEmpty ? null : activeBookings.first;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text("Worker Dashboard"),
-        leading: IconButton(
-          icon: const Icon(Icons.swap_horiz),
-          tooltip: "Switch role",
-          onPressed: () => context.go(Routes.onboardingWelcome),
+    final activeChips = <Widget>[
+      if (categoryFilter != null)
+        ActiveFilterChip(
+          label: categoryFilter,
+          onRemove: () => ref.read(jobCategoryFilterProvider.notifier).state = null,
         ),
-        actions: [
-          Semantics(
-            label: AppStrings.homeNotificationsEmpty,
-            button: true,
-            child: IconButton(
-              icon: const Icon(Icons.notifications_outlined),
-              onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text(AppStrings.homeNotificationsEmpty)),
-              ),
+      if (distanceKmFilter != null)
+        ActiveFilterChip(
+          label: "${distanceKmFilter.toStringAsFixed(0)} km",
+          onRemove: () => ref.read(jobDistanceFilterKmProvider.notifier).state = null,
+        ),
+      if (budgetFilter != _BudgetFilter.any)
+        ActiveFilterChip(
+          label: budgetFilter.label,
+          onRemove: () => ref.read(jobBudgetFilterProvider.notifier).state = _BudgetFilter.any,
+        ),
+      if (townshipFilter != null)
+        ActiveFilterChip(
+          label: townshipFilter,
+          onRemove: () => ref.read(townshipFilterProvider.notifier).state = null,
+        ),
+      if (urgentOnly)
+        ActiveFilterChip(
+          label: AppStrings.jobBoardUrgentOnlyChip,
+          onRemove: () => ref.read(urgentOnlyJobsProvider.notifier).state = false,
+        ),
+    ];
+
+    void clearAllFilters() {
+      ref.read(jobCategoryFilterProvider.notifier).state = null;
+      ref.read(jobDistanceFilterKmProvider.notifier).state = null;
+      ref.read(jobBudgetFilterProvider.notifier).state = _BudgetFilter.any;
+      ref.read(townshipFilterProvider.notifier).state = null;
+      ref.read(urgentOnlyJobsProvider.notifier).state = false;
+    }
+
+    return Scaffold(
+      body: SafeArea(
+        child: ListView(
+          padding: const EdgeInsets.all(AppSpacing.lg),
+          children: [
+            _WorkerHomeHeader(
+              onSwitchRole: () => context.go(Routes.onboardingWelcome),
             ),
-          ),
-        ],
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          _AttendanceCard(
-            attendance: attendance,
-            onCheckIn: () => ref.read(attendanceProvider.notifier).state = attendance.checkIn(),
-            onCheckOut: () => ref.read(attendanceProvider.notifier).state = attendance.checkOut(),
-          ),
-          if (todaysTask != null) ...[
             const SizedBox(height: AppSpacing.lg),
-            _DigitalCheckInCard(booking: todaysTask),
-          ],
-          const SizedBox(height: AppSpacing.lg),
-          Row(
-            children: [
-              Expanded(
-                child: _StatCard(
-                  emoji: "💰",
-                  value: monthlyIncome.toString(),
-                  unit: AppStrings.currency,
-                  label: AppStrings.dashboardMonthlyIncome,
-                  gradient: AppColors.purpleGradient,
-                ),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: _StatCard(
-                  emoji: "✅",
-                  value: "$completedJobsCount",
-                  unit: "jobs",
-                  label: AppStrings.dashboardCompletedJobs,
-                  gradient: AppColors.orangeGradient,
-                ),
-              ),
+            _AttendanceCard(
+              attendance: attendance,
+              onCheckIn: () => ref.read(attendanceProvider.notifier).state = attendance.checkIn(),
+              onCheckOut: () => ref.read(attendanceProvider.notifier).state = attendance.checkOut(),
+            ),
+            if (todaysTask != null) ...[
+              const SizedBox(height: AppSpacing.lg),
+              _DigitalCheckInCard(booking: todaysTask),
             ],
-          ),
-          const SizedBox(height: AppSpacing.xxl),
-          Text("Job Board", style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          if (!attendance.isCheckedIn)
-            _CheckInHint(message: AppStrings.dashboardCheckInToSeeJobs)
-          else ...[
-            TextField(
-              focusNode: jobSearchFocusNode,
-              onChanged: (v) => ref.read(jobSearchProvider.notifier).state = v,
-              decoration: InputDecoration(
-                hintText: AppStrings.dashboardJobSearchHint,
-                prefixIcon: const Icon(Icons.search),
-                contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.sm + 2),
-            SizedBox(
-              height: 40,
-              child: ListView(
-                scrollDirection: Axis.horizontal,
-                children: [
-                  _Chip(
-                    label: "All",
-                    selected: townshipFilter == null,
-                    onTap: () => ref.read(townshipFilterProvider.notifier).state = null,
-                  ),
-                  for (final t in _townships)
-                    _Chip(
-                      label: t,
-                      selected: townshipFilter == t,
-                      onTap: () => ref.read(townshipFilterProvider.notifier).state =
-                          townshipFilter == t ? null : t,
-                    ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.xs + 2),
-            Wrap(
-              spacing: AppSpacing.sm,
-              runSpacing: AppSpacing.xs,
-              children: [
-                ChoiceChip(
-                  label: Text(AppStrings.dashboardNearbyJobs),
-                  selected: view == _JobView.nearby,
-                  onSelected: (_) => ref.read(jobViewProvider.notifier).state = _JobView.nearby,
-                  selectedColor: AppColors.purple700,
-                  labelStyle: TextStyle(
-                      color: view == _JobView.nearby ? AppColors.onBrand : null,
-                      fontWeight: FontWeight.w600),
-                ),
-                ChoiceChip(
-                  label: Text(AppStrings.dashboardAllJobs),
-                  selected: view == _JobView.all,
-                  onSelected: (_) => ref.read(jobViewProvider.notifier).state = _JobView.all,
-                  selectedColor: AppColors.purple700,
-                  labelStyle: TextStyle(
-                      color: view == _JobView.all ? AppColors.onBrand : null,
-                      fontWeight: FontWeight.w600),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs + 2),
+            const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
-                Flexible(
-                  child: Text(AppStrings.dashboardUrgentOnly,
-                      style: theme.textTheme.bodySmall,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis),
+                Expanded(
+                  child: _StatCard(
+                    emoji: "💰",
+                    value: monthlyIncome.toString(),
+                    unit: AppStrings.currency,
+                    label: AppStrings.dashboardMonthlyIncome,
+                    gradient: AppColors.purpleGradient,
+                  ),
                 ),
-                Switch(
-                  value: urgentOnly,
-                  activeThumbColor: AppColors.purple700,
-                  onChanged: (v) => ref.read(urgentOnlyJobsProvider.notifier).state = v,
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: _StatCard(
+                    emoji: "✅",
+                    value: "$completedJobsCount",
+                    unit: "အလုပ်",
+                    label: AppStrings.dashboardCompletedJobs,
+                    gradient: AppColors.orangeGradient,
+                  ),
                 ),
               ],
             ),
+            const SizedBox(height: AppSpacing.xxl),
+            Text(AppStrings.jobBoardTitle, style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            if (eligible.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                child: Center(
-                  child: Text(AppStrings.dashboardNoJobsFound,
-                      style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
+            if (!attendance.isCheckedIn)
+              _CheckInHint(message: AppStrings.dashboardCheckInToSeeJobs)
+            else ...[
+              JobSearchBar(
+                controller: _searchController,
+                focusNode: jobSearchFocusNode,
+                onChanged: (v) => ref.read(jobSearchProvider.notifier).state = v,
+                onFilterTap: _scrollToFilters,
+              ),
+              const SizedBox(height: AppSpacing.md),
+              Container(
+                key: _filterBarKey,
+                child: JobFilterBar(
+                  dropdowns: [
+                    FilterDropdown<String?>(
+                      semanticLabel: AppStrings.jobBoardCategoryLabel,
+                      displayText: categoryFilter ?? AppStrings.jobBoardCategoryAll,
+                      isActive: categoryFilter != null,
+                      options: [
+                        FilterOption(value: null, label: AppStrings.jobBoardCategoryAll),
+                        for (final c in categoryOptions) FilterOption(value: c, label: c),
+                      ],
+                      onSelected: (v) => ref.read(jobCategoryFilterProvider.notifier).state = v,
+                    ),
+                    FilterDropdown<double?>(
+                      semanticLabel: AppStrings.jobBoardDistanceLabel,
+                      displayText: distanceKmFilter == null
+                          ? AppStrings.jobBoardDistanceNearby
+                          : "${distanceKmFilter.toStringAsFixed(0)} km",
+                      isActive: distanceKmFilter != null,
+                      options: [
+                        FilterOption(value: null, label: AppStrings.jobBoardDistanceNearby),
+                        for (final km in _distanceKmOptions)
+                          FilterOption(value: km, label: "${km.toStringAsFixed(0)} km"),
+                      ],
+                      onSelected: (v) => ref.read(jobDistanceFilterKmProvider.notifier).state = v,
+                    ),
+                    FilterDropdown<_JobSort>(
+                      semanticLabel: AppStrings.jobBoardSortLabel,
+                      displayText: _jobSortLabel(sort),
+                      isActive: sort != _JobSort.recommended,
+                      options: [
+                        for (final s in _JobSort.values) FilterOption(value: s, label: _jobSortLabel(s)),
+                      ],
+                      onSelected: (v) => ref.read(jobSortProvider.notifier).state = v,
+                    ),
+                    FilterDropdown<_BudgetFilter>(
+                      semanticLabel: AppStrings.jobBoardBudgetLabel,
+                      displayText: budgetFilter.label,
+                      isActive: budgetFilter != _BudgetFilter.any,
+                      options: [
+                        for (final b in _BudgetFilter.values) FilterOption(value: b, label: b.label),
+                      ],
+                      onSelected: (v) => ref.read(jobBudgetFilterProvider.notifier).state = v,
+                    ),
+                    FilterDropdown<String?>(
+                      semanticLabel: AppStrings.jobBoardTownshipLabel,
+                      displayText: townshipFilter ?? AppStrings.jobBoardTownshipLabel,
+                      isActive: townshipFilter != null,
+                      options: [
+                        FilterOption(value: null, label: "${AppStrings.jobBoardCategoryAll} ${AppStrings.jobBoardTownshipLabel}"),
+                        for (final t in _townships) FilterOption(value: t, label: t),
+                      ],
+                      onSelected: (v) => ref.read(townshipFilterProvider.notifier).state = v,
+                    ),
+                    FilterToggleChip(
+                      label: AppStrings.jobBoardUrgentOnlyChip,
+                      selected: urgentOnly,
+                      onTap: () => ref.read(urgentOnlyJobsProvider.notifier).state = !urgentOnly,
+                    ),
+                  ],
+                  activeFilterChips: activeChips,
+                  onClearAll: activeChips.isEmpty ? null : clearAllFilters,
                 ),
-              )
-            else
-              ...eligible.map((j) => _JobCard(
-                    job: j,
-                    onInterested: () {
-                      ref.read(jobsStateProvider.notifier).state = [
-                        for (final job in ref.read(jobsStateProvider))
-                          if (job.id == j.id) job.copyWith(status: AppStrings.dashboardInterestReceived) else job,
-                      ];
-                      ref.read(workerInterestsProvider.notifier).state = [
-                        ...ref.read(workerInterestsProvider),
-                        WorkerInterest(workerId: worker.id, jobId: j.id, createdAt: DateTime.now()),
-                      ];
-                    },
-                    onMessageClient: () => context.push(Routes.chatbot),
-                  )),
+              ),
+              const SizedBox(height: AppSpacing.md),
+              if (eligible.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                  child: Center(
+                    child: Text(AppStrings.dashboardNoJobsFound,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
+                  ),
+                )
+              else
+                ...List.generate(eligible.length, (i) {
+                  final j = eligible[i];
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: AppMotion.medium,
+                    curve: AppMotion.enter,
+                    builder: (context, t, child) => Opacity(
+                      opacity: t,
+                      child: Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
+                    ),
+                    child: JobCard(
+                      job: j,
+                      onAccept: () {
+                        ref.read(jobsStateProvider.notifier).state = [
+                          for (final job in ref.read(jobsStateProvider))
+                            if (job.id == j.id) job.copyWith(status: AppStrings.dashboardInterestReceived) else job,
+                        ];
+                        ref.read(workerInterestsProvider.notifier).state = [
+                          ...ref.read(workerInterestsProvider),
+                          WorkerInterest(workerId: worker.id, jobId: j.id, createdAt: DateTime.now()),
+                        ];
+                      },
+                      onViewDetails: () => _showJobDetails(j),
+                    ),
+                  );
+                }),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
@@ -274,6 +481,54 @@ class WorkerDashboardScreen extends ConsumerWidget {
           return d != null && d.year == now.year && d.month == now.month;
         })
         .fold(0, (sum, b) => sum + b.totalMmk);
+  }
+}
+
+/// Worker Home header: TOLY MOLY logo + greeting at the top-left (replacing
+/// the old "Worker Dashboard" AppBar title), with the switch-role and
+/// notification actions on the right — same shape as the customer Home
+/// header, just mirrored.
+class _WorkerHomeHeader extends StatelessWidget {
+  final VoidCallback onSwitchRole;
+  const _WorkerHomeHeader({required this.onSwitchRole});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        Image.asset("assets/logo_circle.png", width: 36, height: 36),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Text(
+            AppStrings.workerHomeGreeting,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: theme.textTheme.headlineSmall,
+          ),
+        ),
+        Semantics(
+          label: "အခန်းကဏ္ဍ ပြောင်းမည်",
+          button: true,
+          child: IconButton(
+            icon: const Icon(Icons.swap_horiz, color: AppColors.purple700),
+            tooltip: "အခန်းကဏ္ဍ ပြောင်းမည်",
+            onPressed: onSwitchRole,
+          ),
+        ),
+        Semantics(
+          label: AppStrings.homeNotificationsEmpty,
+          button: true,
+          child: IconButton(
+            icon: const Icon(Icons.notifications_outlined, color: AppColors.purple700),
+            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(AppStrings.homeNotificationsEmpty)),
+            ),
+          ),
+        ),
+      ],
+    );
   }
 }
 
@@ -420,16 +675,20 @@ class _DigitalCheckInCard extends StatelessWidget {
                     style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                  decoration: BoxDecoration(
-                    color: AppColors.success.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    AppStrings.executionLiveBadge,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700),
+                Flexible(
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                    decoration: BoxDecoration(
+                      color: AppColors.success.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(AppRadius.pill),
+                    ),
+                    child: Text(
+                      AppStrings.executionLiveBadge,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700),
+                    ),
                   ),
                 ),
               ],
@@ -544,133 +803,6 @@ class _StatCard extends StatelessWidget {
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onBrandMuted)),
         ],
-      ),
-    );
-  }
-}
-
-class _Chip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _Chip({required this.label, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.only(right: AppSpacing.sm),
-      child: ChoiceChip(
-        label: Text(label),
-        selected: selected,
-        onSelected: (_) => onTap(),
-        selectedColor: AppColors.purple700,
-        labelStyle: theme.textTheme.bodyMedium
-            ?.copyWith(color: selected ? AppColors.onBrand : null, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-}
-
-class _JobCard extends StatelessWidget {
-  final Job job;
-  final VoidCallback onInterested;
-  final VoidCallback onMessageClient;
-  const _JobCard({required this.job, required this.onInterested, required this.onMessageClient});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final interested = job.status == AppStrings.dashboardInterestReceived;
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 2),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md + 2),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(job.category,
-                      maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleMedium),
-                ),
-                if (job.isUrgent) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                    decoration: BoxDecoration(
-                      color: AppColors.orange.withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text("⚡ Urgent",
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.orange, fontWeight: FontWeight.w700)),
-                  ),
-                ],
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(job.description,
-                maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium),
-            const SizedBox(height: AppSpacing.xs + 2),
-            Row(
-              children: [
-                Icon(Icons.location_on, size: 14, color: theme.hintColor),
-                const SizedBox(width: AppSpacing.xxs),
-                Flexible(
-                  child: Text("${job.township} • ${job.distanceMiles.toStringAsFixed(1)} mi",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Text("${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-            const SizedBox(height: AppSpacing.sm + 2),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(AppStrings.dashboardAiEstimatedBudget,
-                    style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-                Text("${job.aiSuggestedBudgetMmk} MMK",
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: AppColors.purple700, fontWeight: FontWeight.w900)),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm + 2),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: onMessageClient,
-                    child: Text(AppStrings.dashboardMessageClientCta,
-                        maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(
-                        backgroundColor: interested ? AppColors.success : AppColors.purple700),
-                    onPressed: interested ? null : onInterested,
-                    child: Text(
-                      interested ? AppStrings.dashboardInterestReceived : AppStrings.dashboardInterestedCta,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
       ),
     );
   }

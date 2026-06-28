@@ -167,7 +167,7 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
         title: Text(_skill ?? AppStrings.exploreAllWorkers),
         actions: [
           Semantics(
-            label: "Chat",
+            label: "ချက်တင်",
             button: true,
             child: IconButton(
               icon: const Icon(Icons.chat_bubble_outline),

@@ -19,31 +19,31 @@ class AppStrings {
   static const String bookingConfirmed = "Booking Confirmed!";
 
   // ── Tasker Explore & Discovery ──────────────────────────────────────────
-  static const String exploreAllWorkers = "All Workers";
-  static const String exploreFilterTrustLevel = "Trust Level";
-  static const String exploreFilterRating = "Rating";
-  static const String exploreFilterTownship = "Township";
-  static const String exploreAvailableNow = "Available now";
-  static const String exploreSortNearest = "Nearest";
-  static const String exploreSortTopRated = "Top rated";
-  static const String exploreSortTrustTier = "Highest trust";
-  static const String exploreSortMostCompleted = "Most completed";
-  static const String exploreNoResults = "No workers match these filters";
-  static const String exploreResetFilters = "Reset filters";
+  static const String exploreAllWorkers = "အလုပ်သမား အားလုံး";
+  static const String exploreFilterTrustLevel = "ယုံကြည်မှု အဆင့်";
+  static const String exploreFilterRating = "အဆင့်သတ်မှတ်ချက်";
+  static const String exploreFilterTownship = "မြို့နယ်";
+  static const String exploreAvailableNow = "ယခုရရှိနိုင်သည်";
+  static const String exploreSortNearest = "အနီးဆုံး";
+  static const String exploreSortTopRated = "အဆင့်အမြင့်ဆုံး";
+  static const String exploreSortTrustTier = "ယုံကြည်မှု အမြင့်ဆုံး";
+  static const String exploreSortMostCompleted = "ပြီးစီးအများဆုံး";
+  static const String exploreNoResults = "ဤစစ်ထုးမှုများနှင့် ကိုက်ညီသော အလုပ်သမား မရှိပါ";
+  static const String exploreResetFilters = "စစ်ထုးမှုများ ပြန်လည်သတ်မှတ်မည်";
   static const String exploreSearchHint = "ဝန်ဆောင်မှုကို ရှာဖွေပါ...";
-  static const String exploreFilterCategory = "Category";
-  static const String exploreFilterSort = "Sort";
-  static const String exploreFilterAvailability = "Availability";
-  static const String exploreAllCategories = "All Categories";
-  static const String exploreAllWorkersOption = "All Workers";
-  static const String exploreClearAllFilters = "Clear All";
-  static const String badgeCommunityHelper = "Community Helper";
-  static const String badgeVerifiedProfessional = "Verified Professional";
-  static const String badgeCommunityAmbassador = "Community Ambassador";
-  static const String verifiedLabel = "Verified";
-  static const String tasksCompletedSuffix = "Tasks Completed";
-  static const String availableNowLabel = "Available now";
-  static const String availableLaterLabel = "Available later today";
+  static const String exploreFilterCategory = "အမျိုးအစား";
+  static const String exploreFilterSort = "စီစဉ်ပုံ";
+  static const String exploreFilterAvailability = "ရရှိနိုင်မှု";
+  static const String exploreAllCategories = "အမျိုးအစား အားလုံး";
+  static const String exploreAllWorkersOption = "အလုပ်သမား အားလုံး";
+  static const String exploreClearAllFilters = "အားလုံး ရှင်းမည်";
+  static const String badgeCommunityHelper = "ရပ်ရွာ အကူအညီပေးသူ";
+  static const String badgeVerifiedProfessional = "အတည်ပြုထားသော ကျွမ်းကျင်သူ";
+  static const String badgeCommunityAmbassador = "ရပ်ရွာ ကိုယ်စားလှယ်";
+  static const String verifiedLabel = "အတည်ပြုပြီး";
+  static const String tasksCompletedSuffix = "ပြီးစီးအလုပ်များ";
+  static const String availableNowLabel = "ယခုရရှိနိုင်သည်";
+  static const String availableLaterLabel = "ယနေ့ နောက်ပိုင်း ရရှိနိုင်သည်";
   static const String scheduleWorkerCta = "အလုပ်အပ်မည်";
   static const String scheduleWorkerTitle = "အလုပ်အပ်မည်";
   static const String scheduleCategoryLabel = "လုပ်ငန်းအမျိုးအစား";
@@ -63,6 +63,7 @@ class AppStrings {
   // ── Client Home Screen (Burmese-first, per the home screen spec) ───────
   static const String homeGreeting = "မင်္ဂလာပါ 👋";
   static const String homeDemoClientName = "မအေးအေး";
+  static const String workerHomeGreeting = "မင်္ဂလာပါ";
   static const String homeNotificationsEmpty = "အကြောင်းကြားစာ မရှိသေးပါ";
   static const String homePostTaskAction = "အလုပ်တင်မည်";
   static const String homeFindWorkerAction = "အလုပ်သမားရှာမည်";
@@ -77,43 +78,69 @@ class AppStrings {
   static const String comingSoonTitle = "မကြာမီ လာမည်";
   static const String comingSoonMessage = "ဒီအပိုင်းကို မကြာမီ ထည့်သွင်းပေးပါမယ်နော်";
 
-  static const String availableForBookings = "Available for bookings";
-  static const String todaysEarnings = "Today's Earnings";
+  static const String availableForBookings = "ဝန်ဆောင်မှု လက်ခံရန် အသင့်ရှိသည်";
+  static const String todaysEarnings = "ယနေ့ ဝင်ငွေ";
 
   // ── Tasker Dashboard ─────────────────────────────────────────────────────
-  static const String dashboardCheckIn = "Check In";
-  static const String dashboardCheckOut = "Check Out";
-  static const String dashboardCheckedInSince = "Checked in since";
-  static const String dashboardCheckedOut = "Checked out";
-  static const String dashboardHoursToday = "Hours today";
-  static const String dashboardMonthlyIncome = "Monthly Income";
-  static const String dashboardCompletedJobs = "Completed Jobs";
+  static const String dashboardCheckIn = "အလုပ်ဝင်မည်";
+  static const String dashboardCheckOut = "အလုပ်ထွက်မည်";
+  static const String dashboardCheckedInSince = "ဝင်ရောက်ချိန်";
+  static const String dashboardCheckedOut = "ထွက်ရောက်ပြီး";
+  static const String dashboardHoursToday = "ယနေ့ အလုပ်ချိန်";
+  static const String dashboardMonthlyIncome = "လစဉ်ဝင်ငွေ";
+  static const String dashboardCompletedJobs = "ပြီးစီးအလုပ်များ";
   static const String dashboardJobSearchHint = "ဘယ်အလုပ် ရှာနေပါသလဲ";
-  static const String dashboardNearbyJobs = "Nearby Jobs";
-  static const String dashboardAllJobs = "All Jobs";
-  static const String dashboardUrgentOnly = "Urgent only";
-  static const String dashboardNoJobsFound = "No matching jobs right now";
-  static const String dashboardAiEstimatedBudget = "AI Estimated Budget";
-  static const String dashboardInterestedCta = "စိတ်ဝင်စားသည်";
-  static const String dashboardInterestReceived = "Interest Received";
+  static const String dashboardNearbyJobs = "အနီးအနားရှိ အလုပ်များ";
+  static const String dashboardAllJobs = "အလုပ်အားလုံး";
+  static const String dashboardUrgentOnly = "အရေးပေါ်သာ ပြရန်";
+  static const String dashboardNoJobsFound = "ကိုက်ညီသော အလုပ် မရှိသေးပါ";
+  static const String dashboardAiEstimatedBudget = "AI ခန့်မှန်းဘတ်ဂျက်";
+  static const String dashboardInterestedCta = "အလုပ်လက်ခံမည်";
+  static const String dashboardInterestReceived = "လက်ခံပြီးပါပြီ";
   static const String dashboardMessageClientCta = "စာပို့မည်";
-  static const String dashboardRequiredTierPrefix = "Requires: ";
+  static const String dashboardViewDetailsCta = "အသေးစိတ်ကြည့်မည်";
+  static const String dashboardRequiredTierPrefix = "လိုအပ်ချက်: ";
   static const String dashboardCheckInToSeeJobs =
-      "အလုပ်များကို မြင်ရန် Check In ပြုလုပ်ပါ";
+      "အလုပ်များကို မြင်ရန် 'အလုပ်ဝင်မည်' ကို နှိပ်ပါ";
+
+  // ── Job Board search + filters ──────────────────────────────────────────
+  static const String jobBoardTitle = "အလုပ်များ စာရင်း";
+  static const String jobBoardSearchHint = "အလုပ်ကို ရှာဖွေပါ...";
+  static const String jobBoardVoiceSearchLabel = "အသံဖြင့် ရှာဖွေမည်";
+  static const String jobBoardFilterLabel = "စစ်ထုးမှုများ";
+  static const String jobBoardCategoryLabel = "အမျိုးအစား";
+  static const String jobBoardCategoryAll = "အလုပ်အားလုံး";
+  static const String jobBoardDistanceLabel = "အကွာအဝေး";
+  static const String jobBoardDistanceNearby = "အနီးအနား";
+  static const String jobBoardSortLabel = "စီစဉ်ပုံ";
+  static const String jobBoardSortRecommended = "အကြံပြုထားသည်";
+  static const String jobBoardSortNearest = "အနီးဆုံး";
+  static const String jobBoardSortHighestBudget = "ဘတ်ဂျက်အမြင့်ဆုံး";
+  static const String jobBoardSortNewest = "အသစ်ဆုံး";
+  static const String jobBoardSortUrgentFirst = "အရေးပေါ်အရင်";
+  static const String jobBoardBudgetLabel = "ဘတ်ဂျက်";
+  static const String jobBoardBudgetAny = "ဘတ်ဂျက် မည်သည်ဖြစ်စေ";
+  static const String jobBoardBudgetUnder20k = "၂၀,၀၀၀ ကျပ်အောက်";
+  static const String jobBoardBudget20to50k = "၂၀,၀၀၀–၅၀,၀၀၀ ကျပ်";
+  static const String jobBoardBudgetAbove50k = "၅၀,၀၀၀ ကျပ်အထက်";
+  static const String jobBoardTownshipLabel = "မြို့နယ်";
+  static const String jobBoardUrgentOnlyChip = "အရေးပေါ်သာ";
+  static const String jobBoardClearAllFilters = "အားလုံး ရှင်းမည်";
+  static const String jobBoardPostedPrefix = "တင်ထားချိန်: ";
 
   // ── Digital Task Check-In (per-task execution, distinct from the
   // Availability Management check-in/out above) ──────────────────────────
-  static const String executionSectionTitle = "Digital Check-In / Check-Out";
-  static const String executionStartProcess = "Start Process";
-  static const String executionTodaysTask = "Today's Task";
-  static const String executionLiveBadge = "On-site";
-  static const String executionPageTitle = "Digital Check-In / Check-Out";
+  static const String executionSectionTitle = "အလုပ်ချိန် မှတ်တမ်းတင်ခြင်း";
+  static const String executionStartProcess = "လုပ်ငန်းစတင်မည်";
+  static const String executionTodaysTask = "ယနေ့ အလုပ်";
+  static const String executionLiveBadge = "လုပ်ငန်းခွင်";
+  static const String executionPageTitle = "အလုပ်ချိန် မှတ်တမ်းတင်ခြင်း";
   static const String executionLeavingCta = "🚶 အလုပ်သို့ ထွက်ခွာပြီ";
   static const String executionStartedCta = "📍 ရောက်ရှိပြီး အလုပ်စတင်ပြီ";
   static const String executionCompletedCta = "✅ အလုပ်ပြီးစီးပါပြီ";
   static const String executionWaitingClientConfirmation =
       "အလုပ်ပြီးစီးပါပြီ — ဖောက်သည် အတည်ပြုရန် စောင့်ဆိုင်းနေသည်";
-  static const String executionTimelineTitle = "Timeline";
+  static const String executionTimelineTitle = "လုပ်ငန်းအဆင့်များ";
   static const String executionLeaveLabel = "ထွက်ခွာပြီ";
   static const String executionArrivalLabel = "ရောက်ရှိပြီး စတင်ပြီ";
   static const String executionCompletionLabel = "ပြီးစီးပါပြီ";

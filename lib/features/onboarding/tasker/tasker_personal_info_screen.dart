@@ -60,7 +60,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
 
     setState(() {
       _nameError = name.isEmpty ? OnboardingStrings.nameRequiredError : null;
-      _ageError = (age == null || age < 18 || age > 100) ? OnboardingStrings.ageRangeError : null;
+      _ageError = (age == null || age < 18 || age > 80) ? OnboardingStrings.ageRangeError : null;
     });
     if (_nameError != null || _ageError != null || gender == null) {
       if (gender == null) {

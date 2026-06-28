@@ -13,7 +13,7 @@ class OnboardingStrings {
   // Needs a Burmese speaker to review tone/wording before this replaces
   // welcomeMessage above.
   static const String welcomeMessageV2 =
-      "မင်္ဂလာပါနော်! ကျွန်တော် ဖိုးဝရုပ် ပါ။ သင့်အတွက် အကောင်းဆုံး လုပ်သားလေးတွေကို ရှာပေးမှာပါ — လက်ဆွဲပြီး လမ်းညွှန်ပေးမယ်နော်။";
+      "မင်္ဂလာပါနော်! ကျွန်တော် ဖိုးဝရုပ် ပါ။ သင့်အတွက် အကောင်းဆုံး လုပ်သားတွေ / အလုပ်တွေ ကိုရှာပေးမှာပါ — လက်ဆွဲပြီး လမ်းညွှန်ပေးမယ်နော်။";
   static const String getStarted = "စတင်မည်";
 
   // ── Create account ───────────────────────────────────────────────────
@@ -22,7 +22,7 @@ class OnboardingStrings {
   static const String chooseRolePrompt = "သင်၏ ရည်ရွယ်ချက်ကို ရွေးချယ်ပါ။";
   // TODO(native-speaker-review): see welcomeMessageV2 above for context.
   static const String chooseRolePromptV2 =
-      "ကိစ္စမရှိပါ — ဘယ်လိုစလိုလဲ ပြောပြပါ။ အကူအညီ လိုချင်လား၊ ဝန်ဆောင်မှု ပေးချင်လား။";
+      "ဘယ်တွေလိုအပ်လဲဆိုတာ ပြောပြပါ။ အကူအညီ လိုချင်လား၊ ဝန်ဆောင်မှု ပေးချင်လား။";
   static const String roleClientLabel = "အကူအညီ ငှားမည်";
   static const String roleClientSublabel = "အလုပ်သမား ရှာဖွေရန်";
   static const String roleTaskerLabel = "အလုပ် လုပ်မည်";
@@ -63,7 +63,7 @@ class OnboardingStrings {
       "အမည်၊ ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါနော်။";
   // TODO(native-speaker-review): see welcomeMessageV2 above for context.
   static const String basicInfoMascotMessageV2 =
-      "နီးနီးကပ်ကပ်ပါ! အမည်လေးနှင့် ဆက်သွယ်ရန် အချက်အလက်လေး ပေးလိုက်ရင် ပြီးပါပြီနော်။";
+      "အမည်လေးနှင့် ဆက်သွယ်ရန် အချက်အလက်လေး ပေးလိုက်ရင် ပြီးပါပြီနော်။";
   static const String basicInfoInstructions =
       "အမည်၊ ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါ။";
 
@@ -71,8 +71,8 @@ class OnboardingStrings {
   static const String personalInfoTitle = "ကိုယ်ရေးအချက်အလက်";
   static const String genderLabel = "လိင်";
   static const String ageLabel = "အသက်";
-  static const String agePlaceholder = "အသက် (၁၈ - ၁၀၀)";
-  static const String ageRangeError = "အသက်ကို ၁၈ နှင့် ၁၀၀ ကြားတွင် ထည့်ပေးပါ";
+  static const String agePlaceholder = "အသက် (၁၈ - ၈၀)";
+  static const String ageRangeError = "အသက်ကို ၁၈ နှင့် ၈၀ ကြားတွင် ထည့်ပေးပါ";
   static const String clientPersonalMascotMessage =
       "ဒီအချက်အလက်လေး ဖြည့်ပေးပါနော်";
   static const String taskerPersonalMascotMessage =
