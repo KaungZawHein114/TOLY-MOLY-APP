@@ -289,7 +289,13 @@ final List<RouteBase> _workerRoutes = [
 final List<RouteBase> _chatbotRoutes = [
   GoRoute(
     path: Routes.chatbot,
-    builder: (context, state) => const ChatbotScreen(),
+    builder: (context, state) {
+      // Optional ?role=client|tasker hint from whichever dashboard opened it.
+      final role = state.uri.queryParameters['role'] == 'tasker'
+          ? 'tasker'
+          : 'client';
+      return ChatbotScreen(role: role);
+    },
   ),
 ];
 

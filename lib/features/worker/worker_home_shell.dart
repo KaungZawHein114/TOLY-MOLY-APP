@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
+import '../../core/widgets/chatbot_fab.dart';
 import 'activity_placeholder_screen.dart';
 import 'dashboard_screen.dart';
 import 'tasker_profile_screen.dart';
@@ -18,6 +21,10 @@ class WorkerHomeShell extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(workerTabIndexProvider);
     return Scaffold(
+      // Floating AI assistant — only on the Dashboard tab.
+      floatingActionButton: index == 0
+          ? ChatbotFab(onTap: () => context.push('${Routes.chatbot}?role=tasker'))
+          : null,
       body: IndexedStack(
         index: index,
         children: const [

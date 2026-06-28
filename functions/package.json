@@ -9,9 +9,13 @@
   "scripts": {
     "serve": "firebase emulators:start --only functions",
     "deploy": "firebase deploy --only functions",
-    "logs": "firebase functions:log"
+    "logs": "firebase functions:log",
+    "index:knowledge": "node scripts/index_knowledge.js",
+    "index:knowledge:dry": "node scripts/index_knowledge.js --dry-run"
   },
   "dependencies": {
+    "@pinecone-database/pinecone": "^4.0.0",
+    "dotenv": "^16.4.5",
     "firebase-functions": "^6.1.0",
     "openai": "^4.73.0"
   }

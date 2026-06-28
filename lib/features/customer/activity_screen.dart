@@ -5,145 +5,28 @@ import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import '../activity/activity_chat.dart';
 
 // LOCAL UI STATE (Riverpod) co-located in the screen file as per architecture rules.
 final activityTabProvider = StateProvider<int>((ref) => 0); // 0 = Messages, 1 = Bookings
-final bookingFilterProvider = StateProvider<int>((ref) => 0); // 0 = Ongoing, 1 = Pending, 2 = History
-
-const List<String> _directReplyChoices = [
-  'ရောက်ရှိနေပါပြီ။',
-  'အလုပ်စတင်ရန် အဆင်သင့်ဖြစ်ပါပြီ။',
-  'ချိန်းထားသောအချိန်ကို အက်ပ်ထဲတွင် အတည်ပြုပေးပါ။',
-  'ငွေပေးချေမှုကို Tolymoly အက်ပ်အတွင်းသာ ပြုလုပ်ပါမည်။',
-  'Task Details ထဲရှိ အချက်အလက်အတိုင်း ဆောင်ရွက်ပါမည်။',
-  'အကူအညီလိုအပ်ပါက Support ကို ဆက်သွယ်ပါမည်။',
-];
-
-const List<String> _groupReplyChoices = [
-  'အက်ပ်စည်းမျဉ်းအတိုင်းသာ ဆက်သွယ်ပါမည်။',
-  'ယနေ့အတွက် အကူအညီရနိုင်ပါသည်။',
-  'ချိန်းဆိုချိန်နှင့်နေရာကို Booking ထဲတွင် အတည်ပြုပေးပါ။',
-  'ငွေပေးချေမှုကို Tolymoly အက်ပ်အတွင်းသာ ပြုလုပ်ပါမည်။',
-  'အရေးကြီးပါက Support ကို ဆက်သွယ်ပါမည်။',
-];
-
-String _bookingStatusLabel(String status) {
-  switch (status) {
-    case 'Active':
-      return 'လုပ်ဆောင်နေဆဲ';
-    case 'Pending':
-      return 'စောင့်ဆိုင်းနေဆဲ';
-    case 'Completed':
-      return 'ပြီးဆုံးပြီး';
-    default:
-      return status;
-  }
-}
+// 0 = Task Marked (Active), 1 = Discussing, 2 = History (Completed)
+final bookingFilterProvider = StateProvider<int>((ref) => 0);
 
 String _bookingSkillLabel(String skill) {
   switch (skill) {
     case 'Electrician':
       return 'လျှပ်စစ်ပြုပြင်ခြင်း';
-    case 'AC Repair':
+    case 'AC Technician':
       return 'အဲကွန်းပြုပြင်ခြင်း';
     case 'Plumber':
       return 'ရေပိုက်ပြုပြင်ခြင်း';
-    case 'Pet Care':
-      return 'အိမ်မွေးတိရစ္ဆာန် စောင့်ရှောက်မှု';
+    case 'Cleaner':
+      return 'သန့်ရှင်းရေး';
+    case 'Carpenter':
+      return 'ပန်းရန်/လက်သမား';
     default:
       return skill;
   }
-}
-
-void _showActivitySnack(BuildContext context, String message) {
-  ScaffoldMessenger.of(context)
-    ..hideCurrentSnackBar()
-    ..showSnackBar(SnackBar(content: Text(message)));
-}
-
-void _openRestrictedChat(
-    BuildContext context, {
-      required _ChatThread thread,
-    }) {
-  showModalBottomSheet<void>(
-    context: context,
-    isScrollControlled: true,
-    useSafeArea: true,
-    backgroundColor: AppColors.lightSurface,
-    shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-    ),
-    builder: (_) => _RestrictedChatSheet(thread: thread),
-  );
-}
-
-class _ChatThread {
-  final String name;
-  final String emoji;
-  final bool isGroup;
-  final List<_ChatMessage> messages;
-
-  const _ChatThread({
-    required this.name,
-    required this.emoji,
-    required this.messages,
-    this.isGroup = false,
-  });
-}
-
-class _ChatMessage {
-  final String text;
-  final String time;
-  final bool isMe;
-
-  const _ChatMessage({
-    required this.text,
-    required this.time,
-    required this.isMe,
-  });
-}
-
-const _ChatThread _mayThuThread = _ChatThread(
-  name: 'မေသူ',
-  emoji: '👩‍🔧',
-  messages: [
-    _ChatMessage(text: 'Gate မှာ ရောက်နေပါပြီ။', time: '10:42 နံနက်', isMe: false),
-    _ChatMessage(text: 'ကျေးဇူးပြု၍ Booking ထဲက လိပ်စာအတိုင်း လာပေးပါ။', time: '10:43 နံနက်', isMe: true),
-    _ChatMessage(text: 'အလုပ်စတင်ရန် အဆင်သင့်ဖြစ်ပါပြီ။', time: '10:44 နံနက်', isMe: false),
-  ],
-);
-
-const _ChatThread _kyawSwarThread = _ChatThread(
-  name: 'ကျော်စွာ',
-  emoji: '👨‍🔧',
-  messages: [
-    _ChatMessage(text: 'AC ပြုပြင်မှု ပြီးဆုံးပါပြီ။', time: 'မနေ့က', isMe: false),
-    _ChatMessage(text: 'အက်ပ်ထဲမှသာ ငွေပေးချေပါမည်။', time: 'မနေ့က', isMe: true),
-    _ChatMessage(text: 'ကူညီပေးလို့ ကျေးဇူးတင်ပါတယ်။', time: 'မနေ့က', isMe: false),
-  ],
-);
-
-const _ChatThread _petGroupThread = _ChatThread(
-  name: 'ရန်ကုန် အိမ်မွေးတိရစ္ဆာန် ချစ်သူများ',
-  emoji: '🐾',
-  isGroup: true,
-  messages: [
-    _ChatMessage(text: 'ဇင်ဇင်: ဒီနေ့ လမ်းလျှောက်ပေးနိုင်သူရှိပါသလား။', time: 'တနင်္လာ', isMe: false),
-    _ChatMessage(text: 'အက်ပ်စည်းမျဉ်းအတိုင်းသာ ဆက်သွယ်ပါမည်။', time: 'တနင်္လာ', isMe: true),
-    _ChatMessage(text: 'မင်းမင်း: Booking ထဲမှာ အချိန်ထည့်ပေးပါ။', time: 'တနင်္လာ', isMe: false),
-  ],
-);
-
-_ChatThread _workerThread(String workerName) {
-  return _ChatThread(
-    name: workerName,
-    emoji: '👨‍🔧',
-    messages: [
-      const _ChatMessage(text: 'Booking ကို လက်ခံပြီးပါပြီ။', time: 'ယနေ့', isMe: false),
-      const _ChatMessage(text: 'ငွေပေးချေမှုကို Tolymoly အက်ပ်အတွင်းသာ ပြုလုပ်ပါမည်။', time: 'ယနေ့', isMe: true),
-      _ChatMessage(text: '$workerName: Task Details ထဲက အချက်အလက်အတိုင်း လာပါမည်။', time: 'ယနေ့', isMe: false),
-    ],
-  );
 }
 
 class ActivityScreen extends ConsumerWidget {
@@ -188,7 +71,7 @@ class ActivityScreen extends ConsumerWidget {
                           button: true,
                           child: IconButton(
                             icon: const Icon(Icons.notifications_none_outlined, color: AppColors.onBrand),
-                            onPressed: () => _showActivitySnack(context, 'အသိပေးချက်အသစ်များ မရှိသေးပါ။'),
+                            onPressed: () => showActivitySnack(context, 'အသိပေးချက်အသစ်များ မရှိသေးပါ။'),
                           ),
                         ),
                         Positioned(
@@ -296,33 +179,61 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-class _MessagesView extends StatelessWidget {
+class _MessagesView extends ConsumerWidget {
   const _MessagesView();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final phase = ref.watch(taskPhaseProvider);
+
+    final (String chat1Status, Color chat1Color) = switch (phase) {
+      TaskPhase.discussing => ('ဆွေးနွေးဆဲ', AppColors.indigo500),
+      TaskPhase.confirmed => ('သဘောတူပြီး', AppColors.purple700),
+      TaskPhase.marked => ('အလုပ်လက်ခံပြီး', AppColors.tealDark),
+    };
+    final chat1Snippet = switch (phase) {
+      TaskPhase.discussing => 'မင်္ဂလာပါ။ သင့်အလုပ်ကို စိတ်ဝင်စားလို့ ဆက်သွယ်လိုက်တာပါ။',
+      TaskPhase.confirmed => 'နှစ်ဦးသဘောတူပြီးပါပြီ။ Escrow ဖြင့် ဆက်လက်ဆောင်ရွက်ပါ။',
+      TaskPhase.marked => 'အလုပ် လက်ခံပြီးပါပြီ။ အခြေအနေ အပ်ဒိတ်ကို စောင့်ပါ။',
+    };
+
     return ListView(
       padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxl),
-      children: const [
-        _SafetyNoticeCard(),
-        SizedBox(height: AppSpacing.lg),
+      children: [
+        const _SafetyNoticeCard(),
+        const SizedBox(height: AppSpacing.lg),
+        // Chat 1 — the lifecycle task's discussion thread.
         _ChatTile(
-          thread: _mayThuThread,
-          snippet: 'Gate မှာ ရောက်နေပါပြီ။ အက်ပ်ထဲကနေသာ ဆက်သွယ်ပါမယ်။',
-          time: '10:42 နံနက်',
-          isUnread: true,
+          name: kDiscussionTaskerName,
+          emoji: kTaskerEmoji,
+          statusLabel: chat1Status,
+          statusColor: chat1Color,
+          snippet: chat1Snippet,
+          time: 'ယခု',
+          isUnread: phase == TaskPhase.discussing,
+          onTap: () => openDiscussionChat(
+            context,
+            role: ActivityRole.client,
+            counterpartName: kDiscussionTaskerName,
+            counterpartEmoji: kTaskerEmoji,
+          ),
         ),
+        // Chat 2 — a separate, already-confirmed task in progress.
         _ChatTile(
-          thread: _kyawSwarThread,
-          snippet: 'AC ပြုပြင်မှုအတွက် ကူညီပေးလို့ ကျေးဇူးတင်ပါတယ်။',
-          time: 'မနေ့က',
+          name: kProgressTaskerName,
+          emoji: kTaskerEmoji,
+          statusLabel: 'အလုပ်ဆောင်ရွက်ဆဲ',
+          statusColor: AppColors.tealDark,
+          snippet: 'အလုပ် အတည်ဖြစ်ပြီးပါပြီ။ ထွက်ခွာချိန် ရောက်ရင် အသိပေးပါမယ်။',
+          time: 'မနက်က',
           isUnread: false,
-        ),
-        _ChatTile(
-          thread: _petGroupThread,
-          snippet: 'ဇင်ဇင်: ဒီနေ့ လမ်းလျှောက်ပေးနိုင်သူရှိပါသလား။',
-          time: 'တနင်္လာ',
-          isUnread: false,
+          onTap: () => openProgressChat(
+            context,
+            role: ActivityRole.client,
+            counterpartName: kProgressTaskerName,
+            counterpartEmoji: kTaskerEmoji,
+            fixedTask: kProgressDemoTask,
+          ),
         ),
       ],
     );
@@ -371,357 +282,108 @@ class _SafetyNoticeCard extends StatelessWidget {
 }
 
 class _ChatTile extends StatelessWidget {
-  final _ChatThread thread;
+  final String name;
+  final String emoji;
+  final String statusLabel;
+  final Color statusColor;
   final String snippet;
   final String time;
   final bool isUnread;
+  final VoidCallback onTap;
 
   const _ChatTile({
-    required this.thread,
+    required this.name,
+    required this.emoji,
+    required this.statusLabel,
+    required this.statusColor,
     required this.snippet,
     required this.time,
     required this.isUnread,
+    required this.onTap,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Opacity(
-      opacity: isUnread ? 1.0 : 0.75,
-      child: Card(
-        margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(AppRadius.lg),
-          onTap: () => _openRestrictedChat(context, thread: thread),
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.md),
-            child: Row(
-              children: [
-                CircleAvatar(
-                  radius: AppSpacing.xl,
-                  backgroundColor: thread.isGroup
-                      ? AppColors.orangeLight.withValues(alpha: 0.2)
-                      : AppColors.purple100,
-                  child: Text(thread.emoji, style: theme.textTheme.titleLarge),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              thread.name,
-                              style: theme.textTheme.titleMedium,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                          Text(
-                            time,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                              color: isUnread ? AppColors.purple500 : AppColors.textSecondary,
-                              fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSpacing.xxs),
-                      Text(
-                        snippet,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: isUnread ? AppColors.textPrimary : AppColors.textSecondary,
-                          fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                if (isUnread) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  Container(
-                    width: AppSpacing.sm,
-                    height: AppSpacing.sm,
-                    decoration: const BoxDecoration(color: AppColors.purple500, shape: BoxShape.circle),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _RestrictedChatSheet extends StatefulWidget {
-  final _ChatThread thread;
-
-  const _RestrictedChatSheet({required this.thread});
-
-  @override
-  State<_RestrictedChatSheet> createState() => _RestrictedChatSheetState();
-}
-
-class _RestrictedChatSheetState extends State<_RestrictedChatSheet> {
-  final List<String> _sentReplies = [];
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final choices = widget.thread.isGroup ? _groupReplyChoices : _directReplyChoices;
-
-    return FractionallySizedBox(
-      heightFactor: 0.94,
-      child: Column(
-        children: [
-          Container(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.md, AppSpacing.sm, AppSpacing.md, AppSpacing.md),
-            decoration: const BoxDecoration(
-              color: AppColors.purple700,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
-            ),
-            child: Column(
-              children: [
-                Container(
-                  width: AppSpacing.xl * 2,
-                  height: AppSpacing.xxs,
-                  margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: AppColors.onBrandMuted,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                ),
-                Row(
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          child: Row(
+            children: [
+              CircleAvatar(
+                radius: AppSpacing.xl,
+                backgroundColor: AppColors.purple100,
+                child: Text(emoji, style: theme.textTheme.titleLarge),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    IconButton(
-                      icon: const Icon(Icons.close, color: AppColors.onBrand),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                    CircleAvatar(
-                      backgroundColor: AppColors.onBrand,
-                      child: Text(widget.thread.emoji, style: theme.textTheme.titleMedium),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            widget.thread.name,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            name,
+                            style: theme.textTheme.titleMedium,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium?.copyWith(
-                              color: AppColors.onBrand,
-                              fontWeight: FontWeight.bold,
-                            ),
                           ),
-                          Text(
-                            'စည်းမျဉ်းအတွင်း စာတိုပို့ခြင်း',
-                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onBrandMuted),
+                        ),
+                        Text(
+                          time,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: isUnread ? AppColors.purple500 : AppColors.textSecondary,
+                            fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
                           ),
-                        ],
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                      decoration: BoxDecoration(
+                        color: statusColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                      ),
+                      child: Text(
+                        statusLabel,
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: statusColor,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                    IconButton(
-                      icon: const Icon(Icons.volume_up_outlined, color: AppColors.onBrand),
-                      tooltip: 'ဖတ်ပြရန်',
-                      onPressed: () => _showActivitySnack(context, 'ဤ chat တွင် စာရိုက်၍ မရပါ။ အောက်ပါစာတိုများမှသာ ရွေးချယ်ပို့နိုင်ပါသည်။'),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      snippet,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: isUnread ? AppColors.textPrimary : AppColors.textSecondary,
+                        fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
-              children: [
-                _ChatRuleBanner(isGroup: widget.thread.isGroup),
-                const SizedBox(height: AppSpacing.md),
-                for (final message in widget.thread.messages) _ChatBubble(message: message),
-                for (final reply in _sentReplies)
-                  _ChatBubble(
-                    message: _ChatMessage(text: reply, time: 'ယခု', isMe: true),
-                  ),
-              ],
-            ),
-          ),
-          _AllowedReplyPanel(
-            choices: choices,
-            onSend: (reply) {
-              setState(() => _sentReplies.add(reply));
-              _showActivitySnack(context, 'စာတိုပို့ပြီးပါပြီ။');
-            },
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatRuleBanner extends StatelessWidget {
-  final bool isGroup;
-
-  const _ChatRuleBanner({required this.isGroup});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.blue100,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.blue300.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.lock_outline, color: AppColors.purple500),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              isGroup
-                  ? 'Group chat တွင်လည်း စည်းမျဉ်းအတိုင်း ကြိုတင်ရေးထားသော စာတိုများမှသာ ပို့နိုင်ပါသည်။'
-                  : 'ဤ chat တွင် စာရိုက်ဧရိယာ မပါပါ။ အက်ပ်စည်းမျဉ်းနှင့်ကိုက်ညီသော စာတိုများမှသာ ရွေးချယ်ပို့နိုင်ပါသည်။',
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatBubble extends StatelessWidget {
-  final _ChatMessage message;
-
-  const _ChatBubble({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Align(
-      alignment: message.isMe ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        constraints: const BoxConstraints(maxWidth: 280),
-        margin: const EdgeInsets.only(bottom: AppSpacing.sm),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: message.isMe ? AppColors.purple700 : AppColors.lightBg,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(AppRadius.lg),
-            topRight: const Radius.circular(AppRadius.lg),
-            bottomLeft: Radius.circular(message.isMe ? AppRadius.lg : AppRadius.sm),
-            bottomRight: Radius.circular(message.isMe ? AppRadius.sm : AppRadius.lg),
-          ),
-          border: message.isMe ? null : Border.all(color: AppColors.onboardingDivider),
-        ),
-        child: Column(
-          crossAxisAlignment: message.isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
-          children: [
-            Text(
-              message.text,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: message.isMe ? AppColors.onBrand : AppColors.textPrimary,
               ),
-            ),
-            const SizedBox(height: AppSpacing.xxs),
-            Text(
-              message.time,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: message.isMe ? AppColors.onBrandMuted : AppColors.textSecondary,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _AllowedReplyPanel extends StatelessWidget {
-  final List<String> choices;
-  final ValueChanged<String> onSend;
-
-  const _AllowedReplyPanel({required this.choices, required this.onSend});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.lightSurface,
-        border: Border(top: BorderSide(color: AppColors.onboardingDivider)),
-        boxShadow: [BoxShadow(color: AppColors.shadowSm, blurRadius: AppSpacing.md, offset: const Offset(0, -2))],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              const Icon(Icons.fact_check_outlined, size: AppSpacing.lg, color: AppColors.purple700),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  'ပို့နိုင်သောစာတိုများ',
-                  style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+              if (isUnread) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Container(
+                  width: AppSpacing.sm,
+                  height: AppSpacing.sm,
+                  decoration: const BoxDecoration(color: AppColors.purple500, shape: BoxShape.circle),
                 ),
-              ),
+              ],
             ],
           ),
-          const SizedBox(height: AppSpacing.sm),
-          SizedBox(
-            height: 120,
-            child: ListView.separated(
-              itemCount: choices.length,
-              separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.xs),
-              itemBuilder: (context, index) {
-                final choice = choices[index];
-                return Semantics(
-                  button: true,
-                  label: 'စာတိုပို့ရန် $choice',
-                  child: InkWell(
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                    onTap: () => onSend(choice),
-                    child: Container(
-                      constraints: const BoxConstraints(minHeight: AppSpacing.xl * 2),
-                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: AppColors.purple100,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              choice,
-                              style: theme.textTheme.bodyMedium?.copyWith(
-                                color: AppColors.purple900,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          const Icon(Icons.send_rounded, size: AppSpacing.md, color: AppColors.purple700),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -733,14 +395,9 @@ class _BookingsView extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final filterIdx = ref.watch(bookingFilterProvider);
+    final phase = ref.watch(taskPhaseProvider);
     final notifier = ref.read(bookingFilterProvider.notifier);
     final theme = Theme.of(context);
-
-    final filteredBookings = bookings.where((booking) {
-      if (filterIdx == 0) return booking.status == 'Active';
-      if (filterIdx == 1) return booking.status == 'Pending';
-      return booking.status == 'Completed';
-    }).toList();
 
     return Column(
       children: [
@@ -752,9 +409,9 @@ class _BookingsView extends ConsumerWidget {
               scrollDirection: Axis.horizontal,
               padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
               children: [
-                _FilterChip(label: 'လုပ်ဆောင်နေဆဲ', isSelected: filterIdx == 0, onTap: () => notifier.state = 0),
+                _FilterChip(label: 'အလုပ်လက်ခံပြီး', isSelected: filterIdx == 0, onTap: () => notifier.state = 0),
                 const SizedBox(width: AppSpacing.sm),
-                _FilterChip(label: 'စောင့်ဆိုင်း', isSelected: filterIdx == 1, onTap: () => notifier.state = 1),
+                _FilterChip(label: 'ဆွေးနွေးနေဆဲ', isSelected: filterIdx == 1, onTap: () => notifier.state = 1),
                 const SizedBox(width: AppSpacing.sm),
                 _FilterChip(label: 'မှတ်တမ်း', isSelected: filterIdx == 2, onTap: () => notifier.state = 2),
               ],
@@ -762,18 +419,68 @@ class _BookingsView extends ConsumerWidget {
           ),
         ),
         Expanded(
-          child: filteredBookings.isEmpty
-              ? Center(child: Text('မှတ်တမ်းမတွေ့ပါ', style: theme.textTheme.bodyMedium))
-              : ListView.builder(
-            padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
-            itemCount: filteredBookings.length,
-            itemBuilder: (context, index) {
-              final booking = filteredBookings[index];
-              return _BookingTaskCard(booking: booking, filterType: filterIdx);
-            },
-          ),
+          child: _bookingsBody(context, theme, filterIdx, phase),
         ),
       ],
+    );
+  }
+
+  Widget _bookingsBody(BuildContext context, ThemeData theme, int filterIdx, TaskPhase phase) {
+    if (filterIdx == 2) {
+      final history = bookings.where((b) => b.status == 'Completed').toList();
+      return ListView.builder(
+        padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
+        itemCount: history.length,
+        itemBuilder: (context, index) => _HistoryBookingCard(booking: history[index]),
+      );
+    }
+
+    final bool liveHere = filterIdx == 0
+        ? phase == TaskPhase.marked
+        : phase == TaskPhase.discussing || phase == TaskPhase.confirmed;
+
+    if (!liveHere) {
+      return _EmptyState(
+        message: filterIdx == 0
+            ? 'လက်ရှိ လက်ခံထားသော အလုပ် မရှိသေးပါ။\nဆွေးနွေးမှု ပြီးပြီး Escrow ပေးချေပြီးမှ ဤနေရာတွင် ပေါ်လာပါမည်။'
+            : 'ဆွေးနွေးနေဆဲ အလုပ် မရှိသေးပါ။',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
+      children: const [
+        LiveTaskBookingCard(role: ActivityRole.client, filterIndex: 0),
+        LiveTaskBookingCard(role: ActivityRole.client, filterIndex: 1),
+      ],
+    );
+  }
+}
+
+class _EmptyState extends StatelessWidget {
+  final String message;
+
+  const _EmptyState({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.xxl),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Icon(Icons.assignment_outlined, size: 48, color: AppColors.purple300),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -813,23 +520,11 @@ class _FilterChip extends StatelessWidget {
   }
 }
 
-class _BookingTaskCard extends StatelessWidget {
+/// Completed bookings are read-only history: no messaging, just a receipt.
+class _HistoryBookingCard extends StatelessWidget {
   final Booking booking;
-  final int filterType; // 0 = Ongoing, 1 = Pending, 2 = History
 
-  const _BookingTaskCard({required this.booking, required this.filterType});
-
-  Color get _statusBackgroundColor {
-    if (filterType == 0) return AppColors.blue100;
-    if (filterType == 1) return AppColors.purple100;
-    return AppColors.lightBg;
-  }
-
-  Color get _statusTextColor {
-    if (filterType == 0) return AppColors.tealDark;
-    if (filterType == 1) return AppColors.purple700;
-    return AppColors.textSecondary;
-  }
+  const _HistoryBookingCard({required this.booking});
 
   @override
   Widget build(BuildContext context) {
@@ -837,175 +532,94 @@ class _BookingTaskCard extends StatelessWidget {
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Stack(
-        children: [
-          if (filterType == 0)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(height: AppSpacing.xxs, color: AppColors.teal),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                            decoration: BoxDecoration(
-                              color: _statusBackgroundColor,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                            ),
-                            child: Text(
-                              _bookingStatusLabel(booking.status),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: _statusTextColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            _bookingSkillLabel(booking.skill),
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            booking.date,
-                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: AppColors.blue100,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'ESCROW',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.purple500,
-                            ),
-                          ),
-                          Text(
-                            '${booking.totalMmk ~/ 1000}K MMK',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.orangeDark,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                if (filterType != 1) ...[
-                  Container(
-                    padding: const EdgeInsets.all(AppSpacing.sm),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightBg,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Row(
-                      children: [
-                        CircleAvatar(radius: AppSpacing.md, child: Text('👨‍🔧', style: theme.textTheme.bodyLarge)),
-                        const SizedBox(width: AppSpacing.sm),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                booking.workerName,
-                                style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                              ),
-                              Text(
-                                '4.9 • ယုံကြည်မှု 98%',
-                                style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                              ),
-                            ],
-                          ),
-                        ),
-                        IconButton(
-                          tooltip: 'စည်းမျဉ်းအတိုင်း စာတိုပို့ရန်',
-                          icon: const Icon(Icons.chat_bubble_outline, size: AppSpacing.lg, color: AppColors.purple700),
-                          onPressed: () => _openRestrictedChat(
-                            context,
-                            thread: _workerThread(booking.workerName),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-                if (filterType == 1) ...[
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(AppSpacing.md),
-                    decoration: BoxDecoration(
-                      color: AppColors.lightBg,
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: Text(
-                      'AI Task Scoper အသုံးပြုပြီးပါပြီ။ အကြံပြုဘတ်ဂျက်သည် ဒေသတွင်းပျမ်းမျှနှင့် ကိုက်ညီပါသည်။',
-                      style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                    ),
-                  ),
-                  const SizedBox(height: AppSpacing.md),
-                ],
-                Row(
-                  children: [
-                    Expanded(
-                      child: LargeButton(
-                        label: filterType == 1 ? 'Task ပြင်ရန်' : 'Task အသေးစိတ်',
-                        gradient: AppColors.purpleGradient,
-                        onTap: () => _showActivitySnack(
-                          context,
-                          filterType == 1
-                              ? 'Task ပြင်ရန် စာမျက်နှာကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'
-                              : 'Task အသေးစိတ်ကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။',
-                        ),
-                      ),
-                    ),
-                    if (filterType == 0) ...[
-                      const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                       Container(
-                        width: AppSpacing.xl * 2,
-                        height: AppSpacing.xl * 2,
+                        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
                         decoration: BoxDecoration(
-                          color: AppColors.error.withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AppRadius.md),
-                          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
+                          color: AppColors.lightBg,
+                          borderRadius: BorderRadius.circular(AppRadius.sm),
                         ),
-                        child: IconButton(
-                          tooltip: 'အရေးပေါ်အကူအညီ',
-                          icon: const Icon(Icons.warning_amber_rounded, color: AppColors.error),
-                          onPressed: () => _showActivitySnack(context, 'အရေးပေါ်အကူအညီအတွက် Support ကို ဆက်သွယ်ပါ။'),
+                        child: Text(
+                          'ပြီးဆုံးပြီး',
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+                      Text(
+                        _bookingSkillLabel(booking.skill),
+                        style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
+                      ),
+                      Text(
+                        '${booking.workerName} • ${booking.date}',
+                        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.sm),
+                  decoration: BoxDecoration(
+                    color: AppColors.lightBg,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      Text(
+                        'ပေးချေပြီး',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.purple500,
+                        ),
+                      ),
+                      Text(
+                        '${booking.totalMmk ~/ 1000}K MMK',
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.orangeDark,
                         ),
                       ),
                     ],
-                  ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: AppSpacing.md),
+            Row(
+              children: [
+                Expanded(
+                  child: LargeButton(
+                    label: 'ပြေစာ ကြည့်ရန်',
+                    gradient: AppColors.purpleGradient,
+                    onTap: () => showActivitySnack(context, 'ပြေစာ အသေးစိတ်ကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                OutlinedButton.icon(
+                  onPressed: () => showActivitySnack(context, 'အဆင့်သတ်မှတ်ခြင်းကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'),
+                  icon: const Icon(Icons.star_outline, size: AppSizes.iconSm),
+                  label: const Text('အဆင့်ပေး'),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }

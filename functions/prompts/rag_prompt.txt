@@ -1,0 +1,10 @@
+CONTEXT (TOLY MOLY knowledge base — the ONLY source you may use):
+---
+{{context}}
+---
+
+Using ONLY the CONTEXT above, answer the user's question below.
+If the answer is not contained in the CONTEXT, reply with the exact "couldn't find" sentence from your instructions — do not try to help from outside knowledge.
+
+USER QUESTION:
+{{question}}

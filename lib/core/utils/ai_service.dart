@@ -67,6 +67,27 @@ class TaskEvaluation {
   });
 }
 
+/// One assistant reply for the in-app chatbot.
+/// - [action] ("post_task" | "find_task" | null) drives the inline button.
+/// - [intent] is the broader classification ("post_task" | "find_task" |
+///   "general" | "off_topic"); kept distinct from [action] so new intents
+///   (faq, payment, support, …) can be added later without a UI break.
+class ChatReply {
+  final String message;
+  final String? action;
+  final String? intent;
+  final AiSource source;
+  const ChatReply({
+    required this.message,
+    this.action,
+    this.intent,
+    required this.source,
+  });
+}
+
+/// The only actions the chatbot UI knows how to act on.
+const Set<String> kChatActions = {'post_task', 'find_task'};
+
 class AiService {
   AiService._();
 
@@ -168,6 +189,43 @@ class AiService {
       );
     }
     return _mockEvaluateTask(task);
+  }
+
+  // ── Chatbot: app-scoped, intent-aware assistant ─────────────────────────
+  /// Sends a user [message] (with the user's [role]) to the `chatAssistant`
+  /// Cloud Function and returns a [ChatReply]. On ANY failure it falls back to
+  /// the synchronous offline mock, so the chat never hangs or crashes.
+  ///
+  /// [history] is an optional recent transcript for light context, newest last:
+  /// each entry is `{ 'role': 'user'|'assistant', 'text': '...' }`.
+  static Future<ChatReply> chatAssistant({
+    required String message,
+    required String role,
+    List<Map<String, String>> history = const [],
+  }) async {
+    final data = await _call('chatAssistant', {
+      'message': message,
+      'role': role,
+      'history': history,
+    });
+    final reply = data?['message']?.toString();
+    if (reply != null && reply.trim().isNotEmpty) {
+      final raw = data?['action']?.toString();
+      final action = (raw != null && kChatActions.contains(raw)) ? raw : null;
+      return ChatReply(
+        message: reply.trim(),
+        action: action,
+        intent: data?['intent']?.toString(),
+        source: AiSource.live,
+      );
+    }
+    final mock = chatAssistantReply(message, role); // offline fallback
+    return ChatReply(
+      message: mock.message,
+      action: mock.action,
+      intent: mock.intent,
+      source: AiSource.mock,
+    );
   }
 
   // ── Offline mock fallbacks ──────────────────────────────────────────────
