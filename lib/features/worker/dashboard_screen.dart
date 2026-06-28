@@ -7,7 +7,6 @@ import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/widgets/demo_card.dart';
 import '../../core/widgets/large_button.dart';
 
 // ============================================================================
@@ -51,9 +50,6 @@ class WorkerDashboardScreen extends ConsumerWidget {
     final view = ref.watch(jobViewProvider);
     final allJobsState = ref.watch(jobsStateProvider);
     final worker = loggedInWorker;
-
-    // Pending requests = the demo bookings that are not yet completed.
-    final pending = bookings.where((b) => b.status == "Pending" || b.status == "Active").toList();
 
     // Worker only sees jobs that match their skill and tier. A job this
     // worker has already expressed interest in stays visible (with the
@@ -121,8 +117,6 @@ class WorkerDashboardScreen extends ConsumerWidget {
       body: ListView(
         padding: const EdgeInsets.all(AppSpacing.lg),
         children: [
-          _WorkerIdentityCard(worker: worker),
-          const SizedBox(height: AppSpacing.lg),
           _AttendanceCard(
             attendance: attendance,
             onCheckIn: () => ref.read(attendanceProvider.notifier).state = attendance.checkIn(),
@@ -261,13 +255,6 @@ class WorkerDashboardScreen extends ConsumerWidget {
                     onMessageClient: () => context.push(Routes.chatbot),
                   )),
           ],
-          const SizedBox(height: AppSpacing.xxl),
-          Text(AppStrings.pendingRequests, style: theme.textTheme.titleLarge),
-          const SizedBox(height: AppSpacing.sm),
-          if (!attendance.isCheckedIn)
-            const _OfflineHint()
-          else
-            ...pending.map((b) => _RequestCard(booking: b)),
         ],
       ),
     );
@@ -285,46 +272,6 @@ class WorkerDashboardScreen extends ConsumerWidget {
 }
 
 const List<String> _townships = ["လှိုင်", "ကမာရွတ်", "မရမ်းကုန်း", "အင်းစိန်"];
-
-class _WorkerIdentityCard extends StatelessWidget {
-  final Worker worker;
-  const _WorkerIdentityCard({required this.worker});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: const BoxDecoration(color: AppColors.purple100, shape: BoxShape.circle),
-            alignment: Alignment.center,
-            child: Text(worker.emoji, style: const TextStyle(fontSize: 28)),
-          ),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(worker.name, maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xxs),
-                TrustBadgePill(tier: worker.currentTier),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
 
 class _AttendanceCard extends StatelessWidget {
   final AttendanceStatus attendance;
@@ -427,42 +374,110 @@ class _DigitalCheckInCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final radius = BorderRadius.circular(AppRadius.lg);
+
     return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
       decoration: BoxDecoration(
         color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(AppStrings.executionSectionTitle,
-              maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Icon(Icons.assignment_outlined, size: 18, color: theme.hintColor),
-              const SizedBox(width: AppSpacing.xs),
-              Expanded(
-                child: Text(
-                  "${AppStrings.executionTodaysTask}: ${booking.skill} • ${booking.timeSlot} • ${booking.township}",
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          LargeButton(
-            label: AppStrings.executionStartProcess,
-            icon: Icons.play_arrow,
-            filled: false,
-            outlineColor: AppColors.purple700,
-            onTap: () => context.push('${Routes.taskExecution}/${booking.id}'),
+        borderRadius: radius,
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.shadowMd,
+            blurRadius: 14,
+            offset: const Offset(0, 6),
           ),
         ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(AppSpacing.lg),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.purpleGradient,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.qr_code_scanner, color: AppColors.onBrand, size: AppSizes.iconMd),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Text(
+                    AppStrings.executionSectionTitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    AppStrings.executionLiveBadge,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.purple100.withValues(alpha: 0.4),
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "${AppStrings.executionTodaysTask} • ${booking.skill}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                  const SizedBox(height: AppSpacing.xs),
+                  Row(
+                    children: [
+                      Icon(Icons.access_time, size: 14, color: theme.hintColor),
+                      const SizedBox(width: AppSpacing.xxs),
+                      Flexible(
+                        child: Text(booking.timeSlot,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Icon(Icons.location_on, size: 14, color: theme.hintColor),
+                      const SizedBox(width: AppSpacing.xxs),
+                      Flexible(
+                        child: Text(booking.township,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            LargeButton(
+              label: AppStrings.executionStartProcess,
+              icon: Icons.play_circle_fill,
+              gradient: AppColors.purpleGradient,
+              onTap: () => context.push('${Routes.taskExecution}/${booking.id}'),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -655,78 +670,6 @@ class _JobCard extends StatelessWidget {
   }
 }
 
-class _RequestCard extends StatelessWidget {
-  final Booking booking;
-  const _RequestCard({required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 2),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.md + 2),
-        child: Column(
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: AppColors.orange.withValues(alpha: 0.15),
-                  child: const Text("🧑"),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(booking.customerName,
-                          maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleMedium),
-                      Text("${booking.skill} • ${booking.date}",
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.xs),
-                StatusBadge(status: booking.status),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm + 2),
-            Text("${booking.totalMmk} MMK",
-                style: theme.textTheme.titleMedium?.copyWith(color: AppColors.orange, fontWeight: FontWeight.w900)),
-            const SizedBox(height: AppSpacing.sm),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton(
-                    onPressed: () => _toast(context, "Declined"),
-                    child: const Text("Decline", maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Expanded(
-                  child: FilledButton(
-                    style: FilledButton.styleFrom(backgroundColor: AppColors.purple700),
-                    onPressed: () => _toast(context, "Accepted ✓"),
-                    child: const Text("Accept", maxLines: 1, overflow: TextOverflow.ellipsis),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _toast(BuildContext context, String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(msg), duration: const Duration(seconds: 1)),
-    );
-  }
-}
-
 class _CheckInHint extends StatelessWidget {
   final String message;
   const _CheckInHint({required this.message});
@@ -752,28 +695,3 @@ class _CheckInHint extends StatelessWidget {
   }
 }
 
-class _OfflineHint extends StatelessWidget {
-  const _OfflineHint();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Column(
-        children: [
-          const Text("😴", style: TextStyle(fontSize: 36)),
-          const SizedBox(height: AppSpacing.sm),
-          Text("Turn on \"Available for bookings\" to see requests",
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
-        ],
-      ),
-    );
-  }
-}

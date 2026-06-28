@@ -30,6 +30,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
   String? _nameError;
   String? _phoneError;
   String? _passwordError;
+  bool _obscurePassword = true;
 
   @override
   void initState() {
@@ -117,10 +118,9 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
               hintText: OnboardingStrings.namePlaceholder,
               errorText: _nameError,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
-              ),
+              border: _fieldBorder(),
+              enabledBorder: _fieldBorder(),
+              focusedBorder: _fieldBorder(focused: true),
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -141,10 +141,9 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
               hintText: "09•••••••••",
               errorText: _phoneError,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
-              ),
+              border: _fieldBorder(),
+              enabledBorder: _fieldBorder(),
+              focusedBorder: _fieldBorder(focused: true),
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
@@ -152,15 +151,24 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _passwordController,
-            obscureText: true,
+            obscureText: _obscurePassword,
             style: theme.textTheme.bodyLarge,
             decoration: InputDecoration(
               hintText: OnboardingStrings.passwordPlaceholder,
               errorText: _passwordError,
               contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
+              border: _fieldBorder(),
+              enabledBorder: _fieldBorder(),
+              focusedBorder: _fieldBorder(focused: true),
+              suffixIcon: Semantics(
+                label: _obscurePassword
+                    ? OnboardingStrings.showPasswordLabel
+                    : OnboardingStrings.hidePasswordLabel,
+                button: true,
+                child: IconButton(
+                  icon: Icon(_obscurePassword ? Icons.visibility_off : Icons.visibility),
+                  onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                ),
               ),
             ),
           ),
@@ -174,4 +182,16 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
       ),
     );
   }
+}
+
+/// Shared text-field border for this screen: a soft divider-colored outline
+/// at rest, switching to a thicker brand-purple outline on focus.
+OutlineInputBorder _fieldBorder({bool focused = false}) {
+  return OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadius.md),
+    borderSide: BorderSide(
+      color: focused ? AppColors.purple700 : AppColors.onboardingDivider,
+      width: focused ? 2 : 1,
+    ),
+  );
 }

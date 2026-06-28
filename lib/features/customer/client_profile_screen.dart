@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/onboarding_strings.dart';
@@ -144,12 +145,133 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
           ),
         ),
 
+        BecomeTaskerSignupCard(
+          onTap: () => context.push(Routes.taskerPersonal),
+        ),
+
         // ── Logout ──
         const SizedBox(height: AppSpacing.sm),
         ProfileLogoutButton(
           onConfirm: () => context.go(Routes.onboardingWelcome),
         ),
       ],
+    );
+  }
+}
+
+class BecomeTaskerSignupCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const BecomeTaskerSignupCard({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(AppRadius.lg);
+
+    return Semantics(
+      label: "${ProfileStrings.becomeTaskerTitle} "
+          "${ProfileStrings.becomeTaskerCta}",
+      button: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.purple700,
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.selectedCardShadow,
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.onBrand.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(
+                      Icons.engineering_outlined,
+                      color: AppColors.onBrand,
+                      size: AppSizes.iconLg,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          ProfileStrings.becomeTaskerTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: AppColors.onBrand,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          ProfileStrings.becomeTaskerSubtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.onBrandMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 96,
+                      minHeight: 48,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      ProfileStrings.becomeTaskerCta,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

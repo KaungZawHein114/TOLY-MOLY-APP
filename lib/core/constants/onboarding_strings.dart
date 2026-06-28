@@ -32,6 +32,8 @@ class OnboardingStrings {
   static const String phoneLabel = "ဖုန်းနံပါတ်";
   static const String passwordLabel = "စကားဝှက်";
   static const String passwordPlaceholder = "••••••••";
+  static const String showPasswordLabel = "စကားဝှက် ပြရန်";
+  static const String hidePasswordLabel = "စကားဝှက် ဖျောက်ရန်";
   static const String continueButton = "ဆက်လက်လုပ်ဆောင်မည်";
   static const String orDivider = "သို့မဟုတ်";
   static const String googleSignup = "Google ဖြင့် ဝင်ရောက်မည်";

@@ -61,6 +61,12 @@ void main() {
     await settle(tester);
 
     await scrollDown(tester);
+    // The dashboard is shorter now (no identity card, no pending-requests
+    // section), so scrolling all the way to the bottom can leave the target
+    // card flush against the AppBar — nudge back up slightly so its center
+    // point is a safe distance below the AppBar before tapping.
+    await tester.drag(find.byType(ListView).first, const Offset(0, 150));
+    await settle(tester);
     await tester.tap(find.text(AppStrings.dashboardInterestedCta).first);
     await settle(tester);
 

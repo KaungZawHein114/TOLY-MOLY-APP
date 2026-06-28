@@ -9,91 +9,128 @@ import '../theme/app_spacing.dart';
 /// Toly Moly is a task-based, not a time-based, marketplace; clients pick
 /// workers on trust/skill/availability, never on an hourly rate.
 /// Data-driven: it renders whatever [Worker] it is given. Tapping is delegated
-/// to the caller, and all styling comes from theme tokens.
-class WorkerCard extends StatelessWidget {
+/// to the caller, and all styling comes from theme tokens. Scales down
+/// slightly on press for tactile feedback, matching the category/onboarding
+/// cards elsewhere in the app.
+class WorkerCard extends StatefulWidget {
   final Worker worker;
   final VoidCallback onTap;
 
   const WorkerCard({super.key, required this.worker, required this.onTap});
 
   @override
+  State<WorkerCard> createState() => _WorkerCardState();
+}
+
+class _WorkerCardState extends State<WorkerCard> {
+  bool _pressed = false;
+
+  @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final worker = widget.worker;
     final distanceKm = (worker.distanceMiles * 1.609).toStringAsFixed(1);
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 2),
-      clipBehavior: Clip.antiAlias,
-      child: InkWell(
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              _Avatar(emoji: worker.emoji, available: worker.isAvailableNow),
-              const SizedBox(width: AppSpacing.md + 2),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final radius = BorderRadius.circular(AppRadius.lg);
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      child: AnimatedScale(
+        scale: _pressed ? 0.97 : 1.0,
+        duration: AppMotion.fast,
+        curve: AppMotion.press,
+        child: Container(
+          decoration: BoxDecoration(
+            color: theme.cardColor,
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.shadowMd,
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            borderRadius: radius,
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: widget.onTap,
+              onTapDown: (_) => setState(() => _pressed = true),
+              onTapCancel: () => setState(() => _pressed = false),
+              onTapUp: (_) => setState(() => _pressed = false),
+              child: Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Row(
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            worker.name,
+                    _Avatar(emoji: worker.emoji, available: worker.isAvailableNow),
+                    const SizedBox(width: AppSpacing.md + 2),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  worker.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.titleMedium,
+                                ),
+                              ),
+                              const Icon(Icons.star,
+                                  color: AppColors.star, size: AppSizes.iconSm),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Text(worker.rating.toString(),
+                                  style: theme.textTheme.bodyMedium
+                                      ?.copyWith(fontWeight: FontWeight.w600)),
+                            ],
+                          ),
+                          const SizedBox(height: AppSpacing.xxs),
+                          Text(
+                            worker.skill,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.titleMedium,
+                            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
                           ),
-                        ),
-                        const Icon(Icons.star,
-                            color: AppColors.star, size: AppSizes.iconSm),
-                        const SizedBox(width: AppSpacing.xxs),
-                        Text(worker.rating.toString(),
-                            style: theme.textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w600)),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Text(
-                      worker.skill,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
-                    ),
-                    const SizedBox(height: AppSpacing.xs + 2),
-                    TrustBadgePill(tier: worker.currentTier),
-                    const SizedBox(height: AppSpacing.xs + 2),
-                    Row(
-                      children: [
-                        Icon(Icons.location_on,
-                            size: 14, color: theme.hintColor),
-                        const SizedBox(width: AppSpacing.xxs),
-                        Text("$distanceKm km",
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: theme.hintColor)),
-                        const SizedBox(width: AppSpacing.md),
-                        Flexible(
-                          child: Text(
-                            "${worker.completedTasks} Tasks",
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall
-                                ?.copyWith(color: theme.hintColor),
+                          const SizedBox(height: AppSpacing.sm),
+                          TrustBadgePill(tier: worker.currentTier),
+                          const SizedBox(height: AppSpacing.sm),
+                          Row(
+                            children: [
+                              Icon(Icons.location_on,
+                                  size: 14, color: theme.hintColor),
+                              const SizedBox(width: AppSpacing.xxs),
+                              Text("$distanceKm km",
+                                  style: theme.textTheme.bodySmall
+                                      ?.copyWith(color: theme.hintColor)),
+                              const SizedBox(width: AppSpacing.md),
+                              Flexible(
+                                child: Text(
+                                  "${worker.completedTasks} Tasks",
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: theme.textTheme.bodySmall
+                                      ?.copyWith(color: theme.hintColor),
+                                ),
+                              ),
+                              if (worker.isVerified) ...[
+                                const SizedBox(width: AppSpacing.xs),
+                                const Icon(Icons.verified,
+                                    size: 14, color: AppColors.success),
+                              ],
+                            ],
                           ),
-                        ),
-                        if (worker.isVerified) ...[
-                          const SizedBox(width: AppSpacing.xs),
-                          const Icon(Icons.verified,
-                              size: 14, color: AppColors.success),
                         ],
-                      ],
+                      ),
                     ),
+                    const SizedBox(width: AppSpacing.xs + 2),
+                    Icon(Icons.chevron_right, color: theme.hintColor),
                   ],
                 ),
               ),
-              const SizedBox(width: AppSpacing.xs + 2),
-              const Icon(Icons.chevron_right),
-            ],
+            ),
           ),
         ),
       ),

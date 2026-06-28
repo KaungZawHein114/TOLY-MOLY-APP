@@ -30,6 +30,13 @@ class AppStrings {
   static const String exploreSortMostCompleted = "Most completed";
   static const String exploreNoResults = "No workers match these filters";
   static const String exploreResetFilters = "Reset filters";
+  static const String exploreSearchHint = "ဝန်ဆောင်မှုကို ရှာဖွေပါ...";
+  static const String exploreFilterCategory = "Category";
+  static const String exploreFilterSort = "Sort";
+  static const String exploreFilterAvailability = "Availability";
+  static const String exploreAllCategories = "All Categories";
+  static const String exploreAllWorkersOption = "All Workers";
+  static const String exploreClearAllFilters = "Clear All";
   static const String badgeCommunityHelper = "Community Helper";
   static const String badgeVerifiedProfessional = "Verified Professional";
   static const String badgeCommunityAmbassador = "Community Ambassador";
@@ -60,6 +67,10 @@ class AppStrings {
   static const String homePostTaskAction = "အလုပ်တင်မည်";
   static const String homeFindWorkerAction = "အလုပ်သမားရှာမည်";
   static const String homeBrowseServicesTitle = "ဝန်ဆောင်မှုများ ရှာဖွေမည်";
+  static const String homeCategoriesTitle = "ဝန်ဆောင်မှု အမျိုးအစားများ";
+  static const String homeCategoriesSubtitle = "သင်လိုအပ်သော ဝန်ဆောင်မှုကို ရွေးချယ်ပါ";
+  static const String homeCategoriesSearchHint = "လုပ်ငန်းအမျိုးအစား ရှာရန်...";
+  static const String homeCategoriesSearchEmpty = "ရှာဖွေမှုနှင့် ကိုက်ညီသော ဝန်ဆောင်မှု မရှိပါ";
   static const String homeTabLabel = "ပင်မ";
   static const String activityTabLabel = "လုပ်ဆောင်ချက်များ";
   static const String profileTabLabel = "ပရိုဖိုင်";
@@ -68,7 +79,6 @@ class AppStrings {
 
   static const String availableForBookings = "Available for bookings";
   static const String todaysEarnings = "Today's Earnings";
-  static const String pendingRequests = "Pending Requests";
 
   // ── Tasker Dashboard ─────────────────────────────────────────────────────
   static const String dashboardCheckIn = "Check In";
@@ -96,6 +106,7 @@ class AppStrings {
   static const String executionSectionTitle = "Digital Check-In / Check-Out";
   static const String executionStartProcess = "Start Process";
   static const String executionTodaysTask = "Today's Task";
+  static const String executionLiveBadge = "On-site";
   static const String executionPageTitle = "Digital Check-In / Check-Out";
   static const String executionLeavingCta = "🚶 အလုပ်သို့ ထွက်ခွာပြီ";
   static const String executionStartedCta = "📍 ရောက်ရှိပြီး အလုပ်စတင်ပြီ";

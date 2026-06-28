@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:toly_moly/main.dart';
 import 'package:toly_moly/core/constants/app_strings.dart';
+import 'package:toly_moly/core/constants/onboarding_strings.dart';
+import 'package:toly_moly/core/constants/profile_strings.dart';
 import 'package:toly_moly/core/constants/task_posting_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 
@@ -21,7 +23,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
-    expect(find.text(AppStrings.homeBrowseServicesTitle), findsOneWidget);
+    expect(find.text(AppStrings.homeCategoriesTitle), findsOneWidget);
 
     await tester.tap(find.text(AppStrings.activityTabLabel));
     await tester.pump();
@@ -64,6 +66,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text("All Workers"), findsOneWidget);
+  });
+
+  testWidgets('Profile worker signup card opens tasker signup', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
+    appRouter.go(Routes.customerHome);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.text(AppStrings.profileTabLabel));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.dragUntilVisible(
+      find.text(ProfileStrings.becomeTaskerCta),
+      find.byType(ListView).first,
+      const Offset(0, -300),
+    );
+    await tester.pump();
+    await tester.tap(find.text(ProfileStrings.becomeTaskerCta));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text(OnboardingStrings.personalInfoTitle), findsWidgets);
+    expect(find.text(OnboardingStrings.nameLabel), findsOneWidget);
   });
 
   testWidgets('Category card tap navigates to WorkerListScreen filtered by skill', (tester) async {

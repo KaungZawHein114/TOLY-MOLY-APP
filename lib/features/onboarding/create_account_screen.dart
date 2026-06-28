@@ -32,6 +32,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   final TextEditingController _loginPasswordController = TextEditingController();
   String? _roleError;
   String? _loginError;
+  bool _obscureLoginPassword = true;
 
   @override
   void dispose() {
@@ -221,10 +222,9 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
           ),
           hintText: "09•••••••••",
           contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            borderSide: BorderSide.none,
-          ),
+          border: _fieldBorder(),
+          enabledBorder: _fieldBorder(),
+          focusedBorder: _fieldBorder(focused: true),
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
@@ -232,14 +232,23 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       const SizedBox(height: AppSpacing.sm),
       TextField(
         controller: _loginPasswordController,
-        obscureText: true,
+        obscureText: _obscureLoginPassword,
         style: theme.textTheme.bodyLarge,
         decoration: InputDecoration(
           hintText: OnboardingStrings.passwordPlaceholder,
           contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(AppRadius.md),
-            borderSide: BorderSide.none,
+          border: _fieldBorder(),
+          enabledBorder: _fieldBorder(),
+          focusedBorder: _fieldBorder(focused: true),
+          suffixIcon: Semantics(
+            label: _obscureLoginPassword
+                ? OnboardingStrings.showPasswordLabel
+                : OnboardingStrings.hidePasswordLabel,
+            button: true,
+            child: IconButton(
+              icon: Icon(_obscureLoginPassword ? Icons.visibility_off : Icons.visibility),
+              onPressed: () => setState(() => _obscureLoginPassword = !_obscureLoginPassword),
+            ),
           ),
         ),
       ),
@@ -250,6 +259,18 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       ],
     ];
   }
+}
+
+/// Shared text-field border for this screen: a soft divider-colored outline
+/// at rest, switching to a thicker brand-purple outline on focus.
+OutlineInputBorder _fieldBorder({bool focused = false}) {
+  return OutlineInputBorder(
+    borderRadius: BorderRadius.circular(AppRadius.md),
+    borderSide: BorderSide(
+      color: focused ? AppColors.purple700 : AppColors.onboardingDivider,
+      width: focused ? 2 : 1,
+    ),
+  );
 }
 
 class _TabToggle extends StatelessWidget {

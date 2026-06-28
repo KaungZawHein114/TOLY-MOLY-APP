@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
@@ -176,12 +177,141 @@ class _TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
           child: AvailabilityEditor(initial: _profile.availability),
         ),
 
+        // ── Switch role: back to the Task Provider (client) home ──
+        BecomeClientCard(
+          // Switching role is a sanctioned stack reset (CLAUDE.md routing
+          // rules), same as the onboarding-complete/booking-done go() calls —
+          // not a forward push, since the tasker shell shouldn't stay on the
+          // back stack underneath the client shell.
+          onTap: () => context.go(Routes.customerHome),
+        ),
+
         // ── Logout ──
         const SizedBox(height: AppSpacing.sm),
         ProfileLogoutButton(
           onConfirm: () => context.go(Routes.onboardingWelcome),
         ),
       ],
+    );
+  }
+}
+
+/// Banner prompting a tasker to switch back to being a client ("Task
+/// Provider") — mirrors [BecomeTaskerSignupCard] on the client profile, just
+/// pointed the other way. Purely presentational; navigation is the caller's.
+class BecomeClientCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const BecomeClientCard({super.key, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(AppRadius.lg);
+
+    return Semantics(
+      label: "${ProfileStrings.becomeClientTitle} "
+          "${ProfileStrings.becomeClientCta}",
+      button: true,
+      child: Container(
+        margin: const EdgeInsets.only(bottom: AppSpacing.lg),
+        decoration: BoxDecoration(
+          color: AppColors.indigo700,
+          borderRadius: radius,
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.selectedCardShadow,
+              blurRadius: 14,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          borderRadius: radius,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: () {
+              HapticFeedback.selectionClick();
+              onTap();
+            },
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: AppColors.onBrand.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(
+                      Icons.assignment_outlined,
+                      color: AppColors.onBrand,
+                      size: AppSizes.iconLg,
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          ProfileStrings.becomeClientTitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.titleMedium?.copyWith(
+                            color: AppColors.onBrand,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: AppSpacing.xs),
+                        Text(
+                          ProfileStrings.becomeClientSubtitle,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: AppColors.onBrandMuted,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: AppSpacing.md),
+                  Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 96,
+                      minHeight: 48,
+                    ),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    alignment: Alignment.center,
+                    child: Text(
+                      ProfileStrings.becomeClientCta,
+                      textAlign: TextAlign.center,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.labelLarge?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

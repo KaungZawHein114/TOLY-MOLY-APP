@@ -8,7 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/onboarding/staggered_entrance.dart';
-import '../../core/widgets/service_category_card.dart';
+import 'widgets/category_section.dart';
 
 /// Customer landing (Home tab of [CustomerHomeShell]): greeting/logo/bell
 /// header, two quick-action buttons, and a browse-services category grid.
@@ -19,8 +19,6 @@ class CustomerHomeScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
     // Fail-safe: fall back to hardcoded constants if the list is ever empty.
     final cats = categories.isNotEmpty ? categories : fallbackCategories;
 
@@ -49,30 +47,13 @@ class CustomerHomeScreen extends StatelessWidget {
                   onTap: () => context.push(Routes.workerList),
                 ),
                 const SizedBox(height: AppSpacing.xl),
-                Text(AppStrings.homeBrowseServicesTitle, style: theme.textTheme.titleLarge),
-                const SizedBox(height: AppSpacing.md),
-                GridView.builder(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: cats.length,
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 3,
-                    mainAxisSpacing: AppSpacing.lg,
-                    crossAxisSpacing: AppSpacing.lg,
-                    childAspectRatio: 0.95,
-                  ),
-                  itemBuilder: (context, i) {
-                    final c = cats[i];
-                    return ServiceCategoryCard(
-                      emoji: c.icon,
-                      label: c.burmese,
-                      onTap: () {
-                        final skills = categoryToSkills[c.name] ?? const [];
-                        context.push(skills.isEmpty
-                            ? Routes.workerList
-                            : '${Routes.workerList}?skill=${skills.first}');
-                      },
-                    );
+                CategorySection(
+                  categories: cats,
+                  onCategoryTap: (c) {
+                    final skills = categoryToSkills[c.name] ?? const [];
+                    context.push(skills.isEmpty
+                        ? Routes.workerList
+                        : '${Routes.workerList}?skill=${skills.first}');
                   },
                 ),
               ],

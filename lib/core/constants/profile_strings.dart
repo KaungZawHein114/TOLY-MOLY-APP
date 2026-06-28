@@ -66,6 +66,14 @@ class ProfileStrings {
   static const String postTaskCta = "အလုပ်တင်မည်";
   static const String acceptTaskCta = "အလုပ်လက်ခံမည်";
   // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  static const String becomeTaskerTitle = "ဝန်ဆောင်မှုပေးချင်လား?";
+  static const String becomeTaskerSubtitle = "အလုပ်လုပ်ပြီး ဝင်ငွေရယူနိုင်ပါတယ်";
+  static const String becomeTaskerCta = "အလုပ်သမားအဖြစ် လျှောက်မည်";
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  static const String becomeClientTitle = "ဝန်ဆောင်မှု ရယူလိုပါသလား?";
+  static const String becomeClientSubtitle = "အလုပ်ရှာပြီး ဝန်ဆောင်မှု တောင်းခံလိုက်ပါ";
+  static const String becomeClientCta = "အလုပ်ပေးသူအဖြစ် ပြောင်းမည်";
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
   static const String postTaskLockedHint =
       "အတည်ပြုပြီးမှ အလုပ်တင်နိုင်ပါမည်";
   static const String acceptTaskLockedHint =
