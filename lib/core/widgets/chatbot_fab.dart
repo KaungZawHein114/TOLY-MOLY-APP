@@ -20,7 +20,9 @@ class ChatbotFab extends StatelessWidget {
       child: Semantics(
         label: AppStrings.chatbotFabLabel,
         button: true,
-        child: const Icon(Icons.smart_toy_outlined),
+        child: ClipOval(
+          child: Image.asset("assets/img.png", width: 40, height: 40, fit: BoxFit.cover),
+        ),
       ),
     );
   }

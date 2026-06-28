@@ -126,8 +126,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             CircleAvatar(
               radius: 14,
               backgroundColor: AppColors.indigo700,
-              child: Icon(Icons.smart_toy_outlined,
-                  size: 16, color: AppColors.onBrand),
+              backgroundImage: AssetImage("assets/img.png"),
             ),
             SizedBox(width: AppSpacing.sm),
             Text(AppStrings.chatbotTitle),

@@ -73,6 +73,10 @@ class _DateTimeScreenState extends ConsumerState<DateTimeScreen> {
     if (_error != null) return;
     if (_editMode) {
       context.pop();
+    } else if (draft.presetWorkerId != null) {
+      // Scheduling a specific worker already fixed the category + tier on
+      // their profile — skip the tier-pick step entirely.
+      context.push(Routes.postTaskDescription);
     } else {
       context.push(Routes.postTaskWorkersTier);
     }

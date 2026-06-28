@@ -119,13 +119,15 @@ extension TaskerSkillLabel on TaskerSkill {
   }
 }
 
-enum ExperienceLevel { underOneYear, oneYear, twoYears, threeYearsPlus, fiveYearsPlus }
+enum ExperienceLevel { underSixMonths, sixMonths, oneYear, twoYears, threeYearsPlus, fiveYearsPlus }
 
 extension ExperienceLevelLabel on ExperienceLevel {
   String get label {
     switch (this) {
-      case ExperienceLevel.underOneYear:
-        return "၁ နှစ်အောက်";
+      case ExperienceLevel.underSixMonths:
+        return "၆ လအောက်";
+      case ExperienceLevel.sixMonths:
+        return "၆ လ";
       case ExperienceLevel.oneYear:
         return "၁ နှစ်";
       case ExperienceLevel.twoYears:
@@ -216,7 +218,10 @@ class TaskerProfileDraft {
   final String phone;
   final bool otpVerified;
   final Set<TaskerSkill> skills;
-  final ExperienceLevel? experienceLevel;
+  // Each selected skill gets its own experience duration (e.g. "1 year" for
+  // Plumbing, "6 months" for Painting) rather than one duration for the
+  // whole profile.
+  final Map<TaskerSkill, ExperienceLevel> skillExperience;
   final String customSkill;
   final String? profilePicturePath;
   final HearAboutSource? hearAboutSource;
@@ -229,7 +234,7 @@ class TaskerProfileDraft {
     this.phone = "",
     this.otpVerified = false,
     this.skills = const {},
-    this.experienceLevel,
+    this.skillExperience = const {},
     this.customSkill = "",
     this.profilePicturePath,
     this.hearAboutSource,
@@ -245,7 +250,7 @@ class TaskerProfileDraft {
     String? phone,
     bool? otpVerified,
     Set<TaskerSkill>? skills,
-    ExperienceLevel? experienceLevel,
+    Map<TaskerSkill, ExperienceLevel>? skillExperience,
     String? customSkill,
     String? profilePicturePath,
     HearAboutSource? hearAboutSource,
@@ -258,7 +263,7 @@ class TaskerProfileDraft {
       phone: phone ?? this.phone,
       otpVerified: otpVerified ?? this.otpVerified,
       skills: skills ?? this.skills,
-      experienceLevel: experienceLevel ?? this.experienceLevel,
+      skillExperience: skillExperience ?? this.skillExperience,
       customSkill: customSkill ?? this.customSkill,
       profilePicturePath: profilePicturePath ?? this.profilePicturePath,
       hearAboutSource: hearAboutSource ?? this.hearAboutSource,

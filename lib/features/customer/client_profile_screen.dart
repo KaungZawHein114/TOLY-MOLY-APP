@@ -197,55 +197,63 @@ class BecomeTaskerSignupCard extends StatelessWidget {
             },
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
+              // Stacked layout (icon+copy row, then a full-width CTA below)
+              // instead of a single wide Row — this is what keeps the card
+              // from cramping/overflowing the CTA text on narrow phones,
+              // and it scales cleanly up to tablet widths too.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.onBrand.withValues(alpha: 0.16),
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                    ),
-                    child: const Icon(
-                      Icons.engineering_outlined,
-                      color: AppColors.onBrand,
-                      size: AppSizes.iconLg,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          ProfileStrings.becomeTaskerTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: AppColors.onBrand,
-                            fontWeight: FontWeight.w800,
-                          ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.onBrand.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          ProfileStrings.becomeTaskerSubtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.onBrandMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
+                        child: const Icon(
+                          Icons.engineering_outlined,
+                          color: AppColors.onBrand,
+                          size: AppSizes.iconLg,
                         ),
-                      ],
-                    ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              ProfileStrings.becomeTaskerTitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: AppColors.onBrand,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              ProfileStrings.becomeTaskerSubtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.onBrandMuted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: AppSpacing.md),
+                  const SizedBox(height: AppSpacing.md),
                   Container(
-                    constraints: const BoxConstraints(
-                      minWidth: 96,
-                      minHeight: 48,
-                    ),
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 48),
                     padding: const EdgeInsets.symmetric(
                       horizontal: AppSpacing.md,
                       vertical: AppSpacing.sm,
@@ -258,7 +266,7 @@ class BecomeTaskerSignupCard extends StatelessWidget {
                     child: Text(
                       ProfileStrings.becomeTaskerCta,
                       textAlign: TextAlign.center,
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: theme.textTheme.labelLarge?.copyWith(
                         color: AppColors.textPrimary,

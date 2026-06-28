@@ -93,6 +93,7 @@ class OnboardingStrings {
   static const String skillsTitle = "ကျွမ်းကျင်မှုများ";
   static const String skillsMascotMessage = "သင်တတ်ကျွမ်းတဲ့ အလုပ်ကို ပြောလိုက်ပါနော်";
   static const String experienceQuestion = "အတွေ့အကြုံ ဘယ်လောက်ရှိပါသလဲ";
+  static const String experienceDropdownPlaceholder = "ရွေးပါ";
   static const String customSkillLabel = "အခြား ကျွမ်းကျင်မှု ထည့်မည်";
   static const String skillsRequiredError = "ကျွမ်းကျင်မှု အနည်းဆုံး တစ်ခု ရွေးပေးပါနော်";
 

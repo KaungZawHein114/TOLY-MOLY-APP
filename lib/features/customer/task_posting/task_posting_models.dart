@@ -163,6 +163,10 @@ class TaskDraft {
   final String description;
   final int? budgetMmk; // client-entered budget (Screen 6).
   final String notes; // optional voice/text notes from the review screen.
+  // Set only when this draft started from "Schedule Worker" on a specific
+  // worker's profile — [category]/[workerTier] are auto-filled from that
+  // worker, and the flow skips the category-pick and tier-pick steps.
+  final int? presetWorkerId;
 
   const TaskDraft({
     this.title = "",
@@ -181,6 +185,7 @@ class TaskDraft {
     this.description = "",
     this.budgetMmk,
     this.notes = "",
+    this.presetWorkerId,
   });
 
   factory TaskDraft.empty() => const TaskDraft();
@@ -216,6 +221,7 @@ class TaskDraft {
     String? description,
     int? budgetMmk,
     String? notes,
+    int? presetWorkerId,
   }) {
     return TaskDraft(
       title: title ?? this.title,
@@ -234,6 +240,7 @@ class TaskDraft {
       description: description ?? this.description,
       budgetMmk: budgetMmk ?? this.budgetMmk,
       notes: notes ?? this.notes,
+      presetWorkerId: presetWorkerId ?? this.presetWorkerId,
     );
   }
 }

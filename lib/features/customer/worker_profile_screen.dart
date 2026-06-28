@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
@@ -8,15 +9,30 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
 import '../../core/widgets/large_button.dart';
+import 'task_posting/task_posting_models.dart';
+import 'task_posting/task_posting_state.dart';
 
 /// Worker profile. The router guarantees a non-null Worker; if anything is off
 /// it passes the hardcoded fallbackWorker, so this screen always renders.
-class WorkerProfileScreen extends StatelessWidget {
+class WorkerProfileScreen extends ConsumerWidget {
   final Worker worker;
   const WorkerProfileScreen({super.key, required this.worker});
 
+  /// "Schedule Worker" starts a fresh task-posting draft with this worker's
+  /// category + tier already filled in, then jumps straight to the Location
+  /// step — the category-pick and tier-pick steps are skipped entirely since
+  /// they're no longer a choice (the client picked this exact worker).
+  void _scheduleWorker(BuildContext context, WidgetRef ref) {
+    ref.read(taskDraftProvider.notifier).state = TaskDraft(
+      category: worker.skill,
+      workerTier: WorkerTier.values[worker.currentTier.clamp(1, 7) - 1],
+      presetWorkerId: worker.id,
+    );
+    context.push(Routes.postTaskTypeLocation);
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Scaffold(
       body: CustomScrollView(
@@ -101,7 +117,7 @@ class WorkerProfileScreen extends StatelessWidget {
                   label: AppStrings.scheduleWorkerCta,
                   icon: Icons.calendar_month,
                   gradient: AppColors.purpleGradient,
-                  onTap: () => context.push(Routes.postTask),
+                  onTap: () => _scheduleWorker(context, ref),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 LargeButton(

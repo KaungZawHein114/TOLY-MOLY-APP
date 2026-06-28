@@ -39,7 +39,8 @@ void main() {
     await tester.tap(find.text(AppStrings.scheduleWorkerCta));
     await settle(tester);
 
-    // Task posting flow, Screen 1 ("Suggest Category").
-    expect(find.text(TaskPostingStrings.categoryTitle), findsWidgets);
+    // Category + tier are auto-filled from the chosen worker, so the flow
+    // jumps straight to the Location step.
+    expect(find.text(TaskPostingStrings.typeLocationTitle), findsWidgets);
   });
 }
