@@ -8,6 +8,7 @@ class ClientProfile(models.Model):
     name = models.CharField(max_length=150)
     gender = models.CharField(max_length=10)
     age = models.PositiveSmallIntegerField()
+    profile_picture = models.ImageField(upload_to="profile_pictures/", blank=True, null=True)
 
     def __str__(self):
         return self.name
@@ -18,6 +19,9 @@ class TaskerProfile(models.Model):
     name = models.CharField(max_length=150)
     gender = models.CharField(max_length=10)
     age = models.PositiveSmallIntegerField()
+    profile_picture = models.ImageField(upload_to="profile_pictures/", blank=True, null=True)
+    tier = models.PositiveSmallIntegerField(default=1)
+    trust_score = models.PositiveIntegerField(default=0)
 
     def __str__(self):
         return self.name

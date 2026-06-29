@@ -77,7 +77,14 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = "static/"
+MEDIA_URL = "media/"
+MEDIA_ROOT = BASE_DIR / "media"
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Sensitive verification documents (NRC, face images) live in a separate
+# subtree from public profile pictures and are never served by the public
+# MEDIA_URL route — see apps.verification's upload views.
+PRIVATE_MEDIA_ROOT = BASE_DIR / "private_media"
 
 CORS_ALLOW_ALL_ORIGINS = DEBUG
 

@@ -2,5 +2,7 @@
 __pycache__/
 *.pyc
 db.sqlite3
+media/
+private_media/
 venv/
 .venv/
