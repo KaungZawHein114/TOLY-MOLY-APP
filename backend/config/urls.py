@@ -8,6 +8,7 @@ urlpatterns = [
     path("api/auth/", include("apps.authentication.urls")),
     path("api/profile/", include("apps.profiles.urls")),
     path("api/verification/", include("apps.verification.urls")),
+    path("api/tasker/", include("apps.taskers.urls")),
 ]
 
 if settings.DEBUG:
