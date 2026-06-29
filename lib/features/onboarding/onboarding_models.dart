@@ -169,6 +169,7 @@ class ClientProfileDraft {
   final Gender? gender;
   final int? age;
   final String phone;
+  final String password;
   final bool otpVerified;
   final String? profilePicturePath;
   final HearAboutSource? hearAboutSource;
@@ -179,6 +180,7 @@ class ClientProfileDraft {
     this.gender,
     this.age,
     this.phone = "",
+    this.password = "",
     this.otpVerified = false,
     this.profilePicturePath,
     this.hearAboutSource,
@@ -192,6 +194,7 @@ class ClientProfileDraft {
     Gender? gender,
     int? age,
     String? phone,
+    String? password,
     bool? otpVerified,
     String? profilePicturePath,
     HearAboutSource? hearAboutSource,
@@ -202,6 +205,7 @@ class ClientProfileDraft {
       gender: gender ?? this.gender,
       age: age ?? this.age,
       phone: phone ?? this.phone,
+      password: password ?? this.password,
       otpVerified: otpVerified ?? this.otpVerified,
       profilePicturePath: profilePicturePath ?? this.profilePicturePath,
       hearAboutSource: hearAboutSource ?? this.hearAboutSource,
@@ -216,6 +220,7 @@ class TaskerProfileDraft {
   final Gender? gender;
   final int? age;
   final String phone;
+  final String password;
   final bool otpVerified;
   final Set<TaskerSkill> skills;
   // Each selected skill gets its own experience duration (e.g. "1 year" for
@@ -232,6 +237,7 @@ class TaskerProfileDraft {
     this.gender,
     this.age,
     this.phone = "",
+    this.password = "",
     this.otpVerified = false,
     this.skills = const {},
     this.skillExperience = const {},
@@ -248,6 +254,7 @@ class TaskerProfileDraft {
     Gender? gender,
     int? age,
     String? phone,
+    String? password,
     bool? otpVerified,
     Set<TaskerSkill>? skills,
     Map<TaskerSkill, ExperienceLevel>? skillExperience,
@@ -261,6 +268,7 @@ class TaskerProfileDraft {
       gender: gender ?? this.gender,
       age: age ?? this.age,
       phone: phone ?? this.phone,
+      password: password ?? this.password,
       otpVerified: otpVerified ?? this.otpVerified,
       skills: skills ?? this.skills,
       skillExperience: skillExperience ?? this.skillExperience,

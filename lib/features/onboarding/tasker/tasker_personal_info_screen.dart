@@ -12,6 +12,8 @@ import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
 import '../../../core/widgets/onboarding/speech_to_text_button.dart';
+import '../../auth/data/auth_failure.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -28,6 +30,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
   String? _nameError;
   String? _ageError;
   int _genderShakeTrigger = 0;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -53,7 +56,8 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     );
   }
 
-  void _continue() {
+  Future<void> _continue() async {
+    if (_isSubmitting) return;
     final name = _nameController.text.trim();
     final age = int.tryParse(_ageController.text.trim());
     final gender = ref.read(taskerDraftProvider).gender;
@@ -73,7 +77,26 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     }
 
     _updateDraft();
-    context.push(Routes.taskerPhone);
+    final draft = ref.read(taskerDraftProvider);
+
+    setState(() => _isSubmitting = true);
+    try {
+      await ref.read(authRepositoryProvider).register(
+            name: draft.name,
+            phoneNumber: draft.phone,
+            password: draft.password,
+            gender: gender.name,
+            age: age!,
+            role: "TASKER",
+          );
+      if (!mounted) return;
+      context.push(Routes.taskerPhone);
+    } on AuthFailure catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
   }
 
   @override
@@ -163,8 +186,8 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
         ],
       ),
       bottomBar: LargeButton(
-        label: OnboardingStrings.continueButton,
-        icon: Icons.arrow_forward,
+        label: _isSubmitting ? OnboardingStrings.submittingLabel : OnboardingStrings.continueButton,
+        icon: _isSubmitting ? null : Icons.arrow_forward,
         gradient: AppColors.purpleGradient,
         onTap: _continue,
       ),

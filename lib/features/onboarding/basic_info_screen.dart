@@ -69,11 +69,11 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
 
     if (role == UserRole.tasker) {
       ref.read(taskerDraftProvider.notifier).state =
-          ref.read(taskerDraftProvider).copyWith(name: name, phone: phone);
+          ref.read(taskerDraftProvider).copyWith(name: name, phone: phone, password: password);
       context.push(Routes.taskerPersonal);
     } else {
       ref.read(clientDraftProvider.notifier).state =
-          ref.read(clientDraftProvider).copyWith(name: name, phone: phone);
+          ref.read(clientDraftProvider).copyWith(name: name, phone: phone, password: password);
       context.push(Routes.clientPersonal);
     }
   }
