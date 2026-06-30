@@ -9,6 +9,8 @@ import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/rules_agreement_panel.dart';
+import '../../auth/data/auth_failure.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -21,6 +23,41 @@ class TaskerRulesScreen extends ConsumerStatefulWidget {
 
 class _TaskerRulesScreenState extends ConsumerState<TaskerRulesScreen> {
   String? _error;
+  bool _isSubmitting = false;
+
+  Future<void> _continue() async {
+    if (_isSubmitting) return;
+    final draft = ref.read(taskerDraftProvider);
+    if (!draft.rulesAgreed) {
+      setState(() => _error = OnboardingStrings.rulesAgreeRequiredError);
+      return;
+    }
+
+    // This is the only place a tasker account actually gets created — only
+    // reachable once every prior step (incl. phone verification, skills,
+    // and rules agreement) has succeeded.
+    setState(() {
+      _error = null;
+      _isSubmitting = true;
+    });
+    try {
+      await ref.read(authRepositoryProvider).register(
+            name: draft.name,
+            phoneNumber: draft.phone,
+            password: draft.password,
+            gender: draft.gender!.name,
+            age: draft.age!,
+            role: "TASKER",
+          );
+      if (!mounted) return;
+      context.push(Routes.taskerWelcome);
+    } on AuthFailure catch (e) {
+      if (!mounted) return;
+      setState(() => _error = e.message);
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -44,16 +81,10 @@ class _TaskerRulesScreenState extends ConsumerState<TaskerRulesScreen> {
         },
       ),
       bottomBar: LargeButton(
-        label: OnboardingStrings.continueButton,
-        icon: Icons.arrow_forward,
+        label: _isSubmitting ? OnboardingStrings.submittingLabel : OnboardingStrings.continueButton,
+        icon: _isSubmitting ? null : Icons.arrow_forward,
         gradient: AppColors.purpleGradient,
-        onTap: () {
-          if (!draft.rulesAgreed) {
-            setState(() => _error = OnboardingStrings.rulesAgreeRequiredError);
-            return;
-          }
-          context.push(Routes.taskerWelcome);
-        },
+        onTap: _continue,
       ),
     );
   }

@@ -31,6 +31,8 @@ class ClientPhoneVerificationScreen extends ConsumerWidget {
       body: PhoneOtpForm(
         initialPhone: draft.phone,
         initiallyVerified: draft.otpVerified,
+        alreadySent: draft.otpSent,
+        initialDevCode: draft.lastDevOtpCode,
         onPhoneChanged: (v) {
           final notifier = ref.read(clientDraftProvider.notifier);
           notifier.state = notifier.state.copyWith(phone: v);

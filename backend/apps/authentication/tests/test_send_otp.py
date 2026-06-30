@@ -10,18 +10,23 @@ from apps.users.models import User
 class SendOtpEndpointTests(APITestCase):
     def setUp(self):
         self.url = reverse("auth-send-otp")
-        self.user = User.objects.create_user(phone_number="09123456789", password="x", role="CLIENT")
 
-    def test_send_otp_returns_dev_code(self):
+    def test_send_otp_returns_dev_code_for_unregistered_phone(self):
         response = self.client.post(self.url, {"phone_number": "09123456789"}, format="json")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(response.data["otp_sent"])
-        otp = PhoneOTP.objects.get(user=self.user, is_used=False)
+        otp = PhoneOTP.objects.get(phone_number="09123456789", is_used=False)
         self.assertEqual(response.data["dev_otp_code"], otp.code)
 
-    def test_unregistered_phone_returns_404(self):
-        response = self.client.post(self.url, {"phone_number": "09100000000"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+    def test_already_registered_phone_rejected(self):
+        User.objects.create_user(phone_number="09123456789", password="x", role="CLIENT")
+        response = self.client.post(self.url, {"phone_number": "09123456789"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(response.data.get("code"), "phone_already_registered")
+
+    def test_invalid_phone_format_rejected(self):
+        response = self.client.post(self.url, {"phone_number": "12345"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_cooldown_blocks_immediate_resend(self):
         self.client.post(self.url, {"phone_number": "09123456789"}, format="json")
@@ -31,7 +36,7 @@ class SendOtpEndpointTests(APITestCase):
 
     def test_resend_allowed_after_cooldown(self):
         self.client.post(self.url, {"phone_number": "09123456789"}, format="json")
-        otp = PhoneOTP.objects.get(user=self.user, is_used=False)
+        otp = PhoneOTP.objects.get(phone_number="09123456789", is_used=False)
         otp.created_at = timezone.now() - timezone.timedelta(seconds=31)
         otp.save(update_fields=["created_at"])
         response = self.client.post(self.url, {"phone_number": "09123456789"}, format="json")

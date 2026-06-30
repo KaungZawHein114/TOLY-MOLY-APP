@@ -38,6 +38,17 @@ class _SuccessPop extends StatelessWidget {
 class PhoneOtpForm extends StatefulWidget {
   final String initialPhone;
   final bool initiallyVerified;
+
+  /// True when the OTP was already sent before this screen even appeared
+  /// (basic_info_screen sends it immediately on phone+password submit, so
+  /// a duplicate-phone error shows right there instead of two screens
+  /// later). Skips straight to the code-entry box instead of waiting for
+  /// a "Send OTP" tap.
+  final bool alreadySent;
+
+  /// Dev-mode code from that earlier send, shown immediately if present.
+  final String? initialDevCode;
+
   final ValueChanged<String> onPhoneChanged;
   final VoidCallback onVerified;
 
@@ -53,6 +64,8 @@ class PhoneOtpForm extends StatefulWidget {
     super.key,
     required this.initialPhone,
     required this.initiallyVerified,
+    this.alreadySent = false,
+    this.initialDevCode,
     required this.onPhoneChanged,
     required this.onVerified,
     required this.onSendOtp,
@@ -79,7 +92,8 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
   void initState() {
     super.initState();
     _verified = widget.initiallyVerified;
-    _otpSent = widget.initiallyVerified;
+    _otpSent = widget.initiallyVerified || widget.alreadySent;
+    _devOtpCode = widget.initialDevCode;
   }
 
   @override

@@ -11,6 +11,8 @@ import '../../core/widgets/mascot/mascot_state.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../core/widgets/onboarding/speech_to_text_button.dart';
+import '../auth/data/auth_failure.dart';
+import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
 import 'onboarding_state.dart';
 
@@ -31,6 +33,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
   String? _phoneError;
   String? _passwordError;
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void initState() {
@@ -54,7 +57,8 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
     super.dispose();
   }
 
-  void _continue() {
+  Future<void> _continue() async {
+    if (_isSubmitting) return;
     final role = ref.read(selectedRoleProvider);
     final name = _nameController.text.trim();
     final phone = _phoneController.text.trim();
@@ -67,14 +71,42 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
     });
     if (name.isEmpty || phone.isEmpty || password.isEmpty) return;
 
-    if (role == UserRole.tasker) {
-      ref.read(taskerDraftProvider.notifier).state =
-          ref.read(taskerDraftProvider).copyWith(name: name, phone: phone, password: password);
-      context.push(Routes.taskerPersonal);
-    } else {
-      ref.read(clientDraftProvider.notifier).state =
-          ref.read(clientDraftProvider).copyWith(name: name, phone: phone, password: password);
-      context.push(Routes.clientPersonal);
+    // Sending the OTP right here — not on the phone-verification screen two
+    // steps later — is what makes a duplicate-phone error show up
+    // immediately, in red, right under the field the user just typed it
+    // into, instead of silently surfacing on a later screen.
+    setState(() => _isSubmitting = true);
+    try {
+      final result = await ref.read(authRepositoryProvider).sendOtp(phone);
+      if (!mounted) return;
+      if (role == UserRole.tasker) {
+        ref.read(taskerDraftProvider.notifier).state = ref.read(taskerDraftProvider).copyWith(
+              name: name,
+              phone: phone,
+              password: password,
+              otpSent: true,
+              lastDevOtpCode: result.devCode,
+            );
+        context.push(Routes.taskerPersonal);
+      } else {
+        ref.read(clientDraftProvider.notifier).state = ref.read(clientDraftProvider).copyWith(
+              name: name,
+              phone: phone,
+              password: password,
+              otpSent: true,
+              lastDevOtpCode: result.devCode,
+            );
+        context.push(Routes.clientPersonal);
+      }
+    } on AuthFailure catch (e) {
+      if (!mounted) return;
+      if (e.code == "phone_already_registered") {
+        setState(() => _phoneError = e.message);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message)));
+      }
+    } finally {
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -175,8 +207,8 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
         ],
       ),
       bottomBar: LargeButton(
-        label: OnboardingStrings.continueButton,
-        icon: Icons.arrow_forward,
+        label: _isSubmitting ? OnboardingStrings.submittingLabel : OnboardingStrings.continueButton,
+        icon: _isSubmitting ? null : Icons.arrow_forward,
         gradient: AppColors.purpleGradient,
         onTap: _continue,
       ),

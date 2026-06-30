@@ -12,10 +12,23 @@ MAX_OTP_ATTEMPTS = 5
 DEV_FIXED_OTP_CODE = "12345"
 
 
-def generate_otp_for_user(user):
-    PhoneOTP.objects.filter(user=user, is_used=False).delete()
+OTP_VERIFIED_WINDOW_MINUTES = 60
+
+
+def generate_otp_for_phone(phone_number):
+    PhoneOTP.objects.filter(phone_number=phone_number, is_used=False).delete()
     return PhoneOTP.objects.create(
-        user=user,
+        phone_number=phone_number,
         code=DEV_FIXED_OTP_CODE,
         expires_at=timezone.now() + timezone.timedelta(minutes=OTP_LIFETIME_MINUTES),
     )
+
+
+def has_verified_otp(phone_number):
+    """True if this phone completed verify-otp recently enough that
+    register (the final onboarding step) can trust it without asking the
+    user to re-verify."""
+    cutoff = timezone.now() - timezone.timedelta(minutes=OTP_VERIFIED_WINDOW_MINUTES)
+    return PhoneOTP.objects.filter(
+        phone_number=phone_number, is_used=True, created_at__gte=cutoff
+    ).exists()

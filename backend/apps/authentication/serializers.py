@@ -3,7 +3,6 @@ import re
 from django.contrib.auth.password_validation import validate_password
 from django.db import transaction
 from rest_framework import serializers
-from rest_framework.exceptions import NotFound
 
 from apps.profiles.models import ClientProfile, TaskerProfile
 from apps.users.models import User
@@ -28,6 +27,11 @@ class RegisterSerializer(serializers.Serializer):
         validate_password(value)
         return value
 
+    # phone_already_registered / otp_not_verified are checked in the view,
+    # not here — a dict raised from a serializer's validate() gets each
+    # value wrapped in a list by DRF, which breaks the flat
+    # {"detail": ..., "code": ...} shape the rest of this API uses for
+    # business-logic errors (see RegisterView).
     @transaction.atomic
     def create(self, validated_data):
         user = User.objects.create_user(
@@ -35,6 +39,14 @@ class RegisterSerializer(serializers.Serializer):
             password=validated_data["password"],
             role=validated_data["role"],
         )
+        # Phone ownership was already proven via verify-otp before this
+        # call is reachable (RegisterView checks has_verified_otp) — this
+        # is the moment the account actually comes into existence, fully
+        # formed, so it goes straight to active+verified.
+        user.is_active = True
+        user.is_phone_verified = True
+        user.save(update_fields=["is_active", "is_phone_verified"])
+
         profile_model = ClientProfile if validated_data["role"] == "CLIENT" else TaskerProfile
         profile_model.objects.create(
             user=user,
@@ -42,9 +54,6 @@ class RegisterSerializer(serializers.Serializer):
             gender=validated_data["gender"],
             age=validated_data["age"],
         )
-        # No auto-generated OTP here — the client always calls send-otp
-        # explicitly right after register, and a redundant auto-send here
-        # used to race with that call's 30s resend cooldown.
         return user
 
 
@@ -52,8 +61,8 @@ class SendOtpSerializer(serializers.Serializer):
     phone_number = serializers.CharField(max_length=20)
 
     def validate_phone_number(self, value):
-        if not User.objects.filter(phone_number=value).exists():
-            raise NotFound("No account found for this phone number.")
+        if not PHONE_REGEX.match(value):
+            raise serializers.ValidationError("Enter a valid phone number (e.g. 09123456789).")
         return value
 
 

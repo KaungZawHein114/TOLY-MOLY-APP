@@ -13,7 +13,11 @@ from apps.authentication.serializers import (
     SendOtpSerializer,
     VerifyOtpSerializer,
 )
-from apps.authentication.services import MAX_OTP_ATTEMPTS, generate_otp_for_user
+from apps.authentication.services import (
+    MAX_OTP_ATTEMPTS,
+    generate_otp_for_phone,
+    has_verified_otp,
+)
 from apps.users.models import User
 
 OTP_RESEND_COOLDOWN_SECONDS = 30
@@ -24,6 +28,11 @@ def _user_payload(user):
 
 
 class RegisterView(APIView):
+    """The final onboarding step (after rules agreement) — this is the only
+    moment a User row gets created, and only once phone ownership was
+    already proven via verify-otp. No more half-finished accounts left
+    behind by someone who drops off mid-flow."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -33,11 +42,19 @@ class RegisterView(APIView):
                 {"detail": "This phone number is already registered.", "code": "phone_already_registered"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
+        if phone_number and not has_verified_otp(phone_number):
+            return Response(
+                {"detail": "Please verify your phone number first.", "code": "otp_not_verified"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
         serializer = RegisterSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         user = serializer.save()
+
+        refresh = RefreshToken.for_user(user)
         return Response(
-            {"user_id": user.id, "phone_number": user.phone_number, "role": user.role},
+            {"access_token": str(refresh.access_token), "refresh_token": str(refresh), "user": _user_payload(user)},
             status=status.HTTP_201_CREATED,
         )
 
@@ -48,9 +65,15 @@ class SendOtpView(APIView):
     def post(self, request):
         serializer = SendOtpSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        user = User.objects.get(phone_number=serializer.validated_data["phone_number"])
+        phone_number = serializer.validated_data["phone_number"]
 
-        last_otp = PhoneOTP.objects.filter(user=user).order_by("-created_at").first()
+        if User.objects.filter(phone_number=phone_number).exists():
+            return Response(
+                {"detail": "This phone number is already registered.", "code": "phone_already_registered"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        last_otp = PhoneOTP.objects.filter(phone_number=phone_number).order_by("-created_at").first()
         if last_otp:
             elapsed = (timezone.now() - last_otp.created_at).total_seconds()
             if elapsed < OTP_RESEND_COOLDOWN_SECONDS:
@@ -59,11 +82,15 @@ class SendOtpView(APIView):
                     status=status.HTTP_429_TOO_MANY_REQUESTS,
                 )
 
-        otp = generate_otp_for_user(user)
+        otp = generate_otp_for_phone(phone_number)
         return Response({"otp_sent": True, "dev_otp_code": otp.code}, status=status.HTTP_200_OK)
 
 
 class VerifyOtpView(APIView):
+    """Proves phone ownership before any account exists — does not create a
+    User or issue tokens. RegisterView is what actually creates the account,
+    once this has succeeded recently enough (see has_verified_otp)."""
+
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -72,14 +99,7 @@ class VerifyOtpView(APIView):
         phone_number = serializer.validated_data["phone_number"]
         code = serializer.validated_data["code"]
 
-        user = User.objects.filter(phone_number=phone_number).first()
-        if not user:
-            return Response(
-                {"detail": "No account found for this phone number.", "code": "phone_not_found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
-
-        otp = PhoneOTP.objects.filter(user=user, is_used=False).order_by("-created_at").first()
+        otp = PhoneOTP.objects.filter(phone_number=phone_number, is_used=False).order_by("-created_at").first()
         if not otp:
             return Response(
                 {"detail": "No active code for this phone number.", "code": "otp_expired"},
@@ -108,15 +128,7 @@ class VerifyOtpView(APIView):
 
         otp.is_used = True
         otp.save(update_fields=["is_used"])
-        user.is_phone_verified = True
-        user.is_active = True
-        user.save(update_fields=["is_phone_verified", "is_active"])
-
-        refresh = RefreshToken.for_user(user)
-        return Response(
-            {"access_token": str(refresh.access_token), "refresh_token": str(refresh), "user": _user_payload(user)},
-            status=status.HTTP_200_OK,
-        )
+        return Response({"phone_verified": True}, status=status.HTTP_200_OK)
 
 
 class LoginView(APIView):

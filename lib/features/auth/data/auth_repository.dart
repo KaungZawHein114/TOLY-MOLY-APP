@@ -8,7 +8,7 @@ class OtpSendResult {
   const OtpSendResult({this.devCode});
 }
 
-/// Result of a successful login/verify-otp call.
+/// Result of a successful register/login call.
 class AuthSession {
   final AuthUser user;
   const AuthSession(this.user);
@@ -19,7 +19,11 @@ class AuthSession {
 /// without touching UI code (same seam pattern as demo_data.dart/ai_mock.dart
 /// in Phase 1 — see CLAUDE.md).
 abstract class AuthRepository {
-  Future<void> register({
+  /// The final onboarding step (called once rules are agreed to) — this is
+  /// the only call that actually creates the account. It requires the phone
+  /// to have already passed [verifyOtp] recently; the backend rejects it
+  /// otherwise with `code: "otp_not_verified"`.
+  Future<AuthSession> register({
     required String name,
     required String phoneNumber,
     required String password,
@@ -30,7 +34,9 @@ abstract class AuthRepository {
 
   Future<OtpSendResult> sendOtp(String phoneNumber);
 
-  Future<AuthSession> verifyOtp({required String phoneNumber, required String code});
+  /// Proves phone ownership — does not create an account or return tokens.
+  /// [register] is what actually creates the account afterward.
+  Future<void> verifyOtp({required String phoneNumber, required String code});
 
   Future<AuthSession> login({required String phoneNumber, required String password});
 

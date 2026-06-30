@@ -12,7 +12,7 @@ class AuthRepositoryImpl implements AuthRepository {
         _tokens = tokenStorage ?? TokenStorage();
 
   @override
-  Future<void> register({
+  Future<AuthSession> register({
     required String name,
     required String phoneNumber,
     required String password,
@@ -20,7 +20,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required int age,
     required String role,
   }) async {
-    await _api.register(
+    final json = await _api.register(
       name: name,
       phoneNumber: phoneNumber,
       password: password,
@@ -28,6 +28,7 @@ class AuthRepositoryImpl implements AuthRepository {
       age: age,
       role: role,
     );
+    return _saveSessionAndReturn(json);
   }
 
   @override
@@ -37,9 +38,8 @@ class AuthRepositoryImpl implements AuthRepository {
   }
 
   @override
-  Future<AuthSession> verifyOtp({required String phoneNumber, required String code}) async {
-    final json = await _api.verifyOtp(phoneNumber: phoneNumber, code: code);
-    return _saveSessionAndReturn(json);
+  Future<void> verifyOtp({required String phoneNumber, required String code}) async {
+    await _api.verifyOtp(phoneNumber: phoneNumber, code: code);
   }
 
   @override

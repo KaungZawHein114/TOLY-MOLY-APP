@@ -170,6 +170,13 @@ class ClientProfileDraft {
   final int? age;
   final String phone;
   final String password;
+  // otpSent/lastDevOtpCode are set by basic_info_screen the moment the
+  // phone+password are submitted (it sends the OTP immediately, so a
+  // duplicate-phone error surfaces right there instead of two screens
+  // later). The phone-verification screen reads them so it doesn't have
+  // to send a second OTP itself.
+  final bool otpSent;
+  final String? lastDevOtpCode;
   final bool otpVerified;
   final bool rulesAgreed;
 
@@ -179,6 +186,8 @@ class ClientProfileDraft {
     this.age,
     this.phone = "",
     this.password = "",
+    this.otpSent = false,
+    this.lastDevOtpCode,
     this.otpVerified = false,
     this.rulesAgreed = false,
   });
@@ -191,6 +200,8 @@ class ClientProfileDraft {
     int? age,
     String? phone,
     String? password,
+    bool? otpSent,
+    String? lastDevOtpCode,
     bool? otpVerified,
     bool? rulesAgreed,
   }) {
@@ -200,6 +211,8 @@ class ClientProfileDraft {
       age: age ?? this.age,
       phone: phone ?? this.phone,
       password: password ?? this.password,
+      otpSent: otpSent ?? this.otpSent,
+      lastDevOtpCode: lastDevOtpCode ?? this.lastDevOtpCode,
       otpVerified: otpVerified ?? this.otpVerified,
       rulesAgreed: rulesAgreed ?? this.rulesAgreed,
     );
@@ -213,6 +226,8 @@ class TaskerProfileDraft {
   final int? age;
   final String phone;
   final String password;
+  final bool otpSent;
+  final String? lastDevOtpCode;
   final bool otpVerified;
   final Set<TaskerSkill> skills;
   // Each selected skill gets its own experience duration (e.g. "1 year" for
@@ -228,6 +243,8 @@ class TaskerProfileDraft {
     this.age,
     this.phone = "",
     this.password = "",
+    this.otpSent = false,
+    this.lastDevOtpCode,
     this.otpVerified = false,
     this.skills = const {},
     this.skillExperience = const {},
@@ -243,6 +260,8 @@ class TaskerProfileDraft {
     int? age,
     String? phone,
     String? password,
+    bool? otpSent,
+    String? lastDevOtpCode,
     bool? otpVerified,
     Set<TaskerSkill>? skills,
     Map<TaskerSkill, ExperienceLevel>? skillExperience,
@@ -255,6 +274,8 @@ class TaskerProfileDraft {
       age: age ?? this.age,
       phone: phone ?? this.phone,
       password: password ?? this.password,
+      otpSent: otpSent ?? this.otpSent,
+      lastDevOtpCode: lastDevOtpCode ?? this.lastDevOtpCode,
       otpVerified: otpVerified ?? this.otpVerified,
       skills: skills ?? this.skills,
       skillExperience: skillExperience ?? this.skillExperience,
