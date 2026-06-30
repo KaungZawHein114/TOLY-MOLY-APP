@@ -24,10 +24,16 @@ class VoiceRecordButton extends StatefulWidget {
   State<VoiceRecordButton> createState() => _VoiceRecordButtonState();
 }
 
+// Candidate locale ids for Burmese, in the form the device's speech engine
+// reports them — varies by OS/vendor, so we try a few known spellings
+// rather than assume one.
+const _burmeseLocaleCandidates = ["my_MM", "my-MM", "my_MY", "my-MY", "my"];
+
 class _VoiceRecordButtonState extends State<VoiceRecordButton> {
   final stt.SpeechToText _speech = stt.SpeechToText();
   bool _isListening = false;
   bool _isInitializing = false;
+  String? _burmeseLocaleId;
 
   @override
   void dispose() {
@@ -64,6 +70,18 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
       return;
     }
 
+    _burmeseLocaleId ??= await _resolveBurmeseLocaleId();
+    if (_burmeseLocaleId == null && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            "ဖုန်း၏ အသံအသိအမှတ်ပြုစနစ်တွင် မြန်မာဘာသာ မပါရှိပါ။ "
+            "Settings > System > Languages တွင် မြန်မာဘာသာ ထည့်ပေးပါ။",
+          ),
+        ),
+      );
+    }
+
     setState(() => _isListening = true);
     await _speech.listen(
       onResult: (result) {
@@ -73,7 +91,27 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
           widget.onPartialResult(result.recognizedWords);
         }
       },
+      listenOptions: stt.SpeechListenOptions(localeId: _burmeseLocaleId),
     );
+  }
+
+  Future<String?> _resolveBurmeseLocaleId() async {
+    final available = await _speech.locales();
+    for (final candidate in _burmeseLocaleCandidates) {
+      for (final locale in available) {
+        if (locale.localeId.toLowerCase() == candidate.toLowerCase()) {
+          return locale.localeId;
+        }
+      }
+    }
+    // Some engines report a Burmese-script display name with a non-obvious
+    // localeId — fall back to matching on that instead of giving up.
+    for (final locale in available) {
+      if (locale.name.contains("Burmese") || locale.name.contains("မြန်မာ")) {
+        return locale.localeId;
+      }
+    }
+    return null;
   }
 
   @override
