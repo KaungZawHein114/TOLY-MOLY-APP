@@ -6,7 +6,6 @@ import 'package:toly_moly/main.dart';
 import 'package:toly_moly/core/constants/app_strings.dart';
 import 'package:toly_moly/core/constants/onboarding_strings.dart';
 import 'package:toly_moly/core/constants/profile_strings.dart';
-import 'package:toly_moly/core/constants/task_posting_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 
 void main() {
