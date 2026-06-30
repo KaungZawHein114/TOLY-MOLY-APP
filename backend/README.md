@@ -101,17 +101,32 @@ python manage.py test
 
 Should report all tests passing (57 at time of writing) with no errors.
 
-## Connecting the Flutter app to your backend
+## Running the Flutter app
+
+From the repo root (not `backend/`):
+
+```bash
+flutter pub get
+flutter devices       # see what's connected/available
+flutter run -d <device-id>
+```
+
+The backend (above) must already be running in its own terminal — the app
+doesn't start it for you.
+
+### Connecting to your backend (`apiBaseUrl`)
 
 The app's API base URL is a hardcoded constant in
 `lib/features/auth/data/auth_api.dart`:
 
 ```dart
-const String apiBaseUrl = "http://10.0.2.2:8000";
+const String apiBaseUrl = "http://192.168.8.102:8000";
 ```
 
 This value depends on **where you're running the Flutter app**, not where
-the Django server runs (the server always runs on your machine):
+the Django server runs (the server always runs on your machine), and it's
+checked in pointed at whoever last edited it — you will almost certainly
+need to change it for your own setup:
 
 | Running the app on... | Set `apiBaseUrl` to |
 |---|---|
@@ -126,6 +141,49 @@ edit per developer).
 
 After changing it, **hot-restart** the app (not hot-reload — it's a `const`,
 so a plain hot-reload won't pick up the change).
+
+### Physical phone over Wi-Fi: two extra one-time steps
+
+If "physical phone" above is your case (most common — e.g. testing on an
+Android phone via USB/Wi-Fi debugging), you also need:
+
+1. **Phone and PC on the same Wi-Fi network.**
+2. **A Windows Firewall rule allowing inbound traffic on port 8000** — by
+   default Windows blocks it, so the phone's requests never arrive even
+   though `runserver 0.0.0.0:8000` is listening correctly. One-time fix, run
+   in an **elevated** (Run as Administrator) PowerShell/Command Prompt:
+
+   ```bash
+   netsh advfirewall firewall add rule name="Django Dev Server 8000" dir=in action=allow protocol=TCP localport=8000
+   ```
+
+If you still see "can't reach server" after both of those, re-check
+`apiBaseUrl` against the PC's *current* IP — it changes whenever the PC
+reconnects to Wi-Fi or reboots, so this is the most common thing to go
+stale.
+
+### AI Task Posting (OpenAI key)
+
+The AI Task Posting feature (Whisper-backed endpoints under
+`/api/tasks/ai/*` — though voice input in the app itself now uses on-device
+`speech_to_text`, not Whisper, so this is only needed if you're exercising
+those endpoints directly) needs an `OPENAI_API_KEY` in `backend/.env`:
+
+```
+OPENAI_API_KEY=sk-proj-...
+```
+
+Leave it blank to disable those specific endpoints — everything else in the
+backend works fine without it; they just return a clean 503 instead of
+crashing.
+
+### Burmese voice input
+
+Voice input in AI Task Posting uses the phone's on-device speech recognizer
+forced to Burmese. If a teammate's phone has no Burmese language pack
+installed (Settings → System → Languages), the app shows an in-app message
+telling them to add one — this is a device setting, not something fixable
+in code.
 
 ## Day-to-day (after first-time setup)
 
