@@ -51,7 +51,6 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _chatScrollController = ScrollController();
   bool _isSending = false;
-  bool _isTranscribing = false;
   String? _chatError;
 
   // Demo mode: location is always the fixed demo coordinate, never live GPS.
@@ -116,23 +115,18 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
     }
   }
 
-  Future<void> _onVoiceRecorded(List<int> bytes) async {
-    setState(() {
-      _isTranscribing = true;
-      _chatError = null;
-    });
-    try {
-      final text = await ref.read(taskRepositoryProvider).transcribeAudio(bytes);
-      if (!mounted) return;
-      setState(() => _isTranscribing = false);
-      await _sendMessage(text);
-    } on TaskFailure catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _isTranscribing = false;
-        _chatError = e.message;
-      });
-    }
+  // Recognized words appear directly in the message field as the user
+  // speaks (on-device speech recognition, no backend round-trip needed for
+  // this), then get sent as the chat message as soon as recognition settles
+  // on a final result.
+  void _onSpeechPartialResult(String words) {
+    setState(() => _messageController.text = words);
+  }
+
+  void _onSpeechFinalResult(String words) {
+    if (words.trim().isEmpty) return;
+    _messageController.text = words;
+    _sendMessage(words);
   }
 
   Future<void> _enterBudgetPhase() async {
@@ -266,7 +260,7 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
               Expanded(
                 child: TextField(
                   controller: _messageController,
-                  enabled: !_isSending && !_isTranscribing,
+                  enabled: !_isSending,
                   decoration: InputDecoration(
                     hintText: "Type your message...",
                     filled: true,
@@ -281,9 +275,12 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
-              VoiceRecordButton(onRecorded: _onVoiceRecorded),
+              VoiceRecordButton(
+                onPartialResult: _onSpeechPartialResult,
+                onFinalResult: _onSpeechFinalResult,
+              ),
               const SizedBox(width: AppSpacing.sm),
-              (_isSending || _isTranscribing)
+              _isSending
                   ? const Padding(
                       padding: EdgeInsets.all(AppSpacing.sm),
                       child: SizedBox(width: 24, height: 24, child: CircularProgressIndicator(strokeWidth: 2.5)),

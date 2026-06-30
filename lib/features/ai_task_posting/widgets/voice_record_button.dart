@@ -1,78 +1,85 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
-import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../../../core/theme/app_colors.dart';
 
-/// Real microphone recording (unlike core/widgets/onboarding/
-/// speech_to_text_button.dart, which is a Phase-1 mock that returns a
-/// canned transcript). Records to a temp .m4a file and hands the raw bytes
-/// to [onRecorded] once the user taps again to stop.
+/// On-device speech recognition (the OS's Google speech service on Android)
+/// instead of recording audio and uploading it to the backend's Whisper
+/// endpoint. Recognized words are streamed back live via [onPartialResult]
+/// as the user speaks, and the final transcript via [onFinalResult] once
+/// they stop — the caller shows that text directly as the chat message.
 class VoiceRecordButton extends StatefulWidget {
-  final ValueChanged<List<int>> onRecorded;
+  final ValueChanged<String> onPartialResult;
+  final ValueChanged<String> onFinalResult;
   final bool large;
 
-  const VoiceRecordButton({super.key, required this.onRecorded, this.large = false});
+  const VoiceRecordButton({
+    super.key,
+    required this.onPartialResult,
+    required this.onFinalResult,
+    this.large = false,
+  });
 
   @override
   State<VoiceRecordButton> createState() => _VoiceRecordButtonState();
 }
 
 class _VoiceRecordButtonState extends State<VoiceRecordButton> {
-  final AudioRecorder _recorder = AudioRecorder();
-  bool _isRecording = false;
-  bool _isProcessing = false;
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _isListening = false;
+  bool _isInitializing = false;
 
   @override
   void dispose() {
-    _recorder.dispose();
+    _speech.stop();
     super.dispose();
   }
 
   Future<void> _toggle() async {
-    if (_isProcessing) return;
-    if (_isRecording) {
-      await _stop();
-    } else {
-      await _start();
+    if (_isInitializing) return;
+    if (_isListening) {
+      await _speech.stop();
+      if (mounted) setState(() => _isListening = false);
+      return;
     }
-  }
 
-  Future<void> _start() async {
-    final hasPermission = await _recorder.hasPermission();
-    if (!hasPermission) {
-      if (!mounted) return;
+    setState(() => _isInitializing = true);
+    final available = await _speech.initialize(
+      onStatus: (status) {
+        if (status == "done" || status == "notListening") {
+          if (mounted) setState(() => _isListening = false);
+        }
+      },
+      onError: (_) {
+        if (mounted) setState(() => _isListening = false);
+      },
+    );
+    if (!mounted) return;
+    setState(() => _isInitializing = false);
+
+    if (!available) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Microphone permission is required to record.")),
+        const SnackBar(content: Text("Speech recognition isn't available on this device.")),
       );
       return;
     }
-    final tempDir = await getTemporaryDirectory();
-    final path = "${tempDir.path}/task_voice_${DateTime.now().millisecondsSinceEpoch}.m4a";
-    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc), path: path);
-    if (!mounted) return;
-    setState(() => _isRecording = true);
-  }
 
-  Future<void> _stop() async {
-    setState(() {
-      _isRecording = false;
-      _isProcessing = true;
-    });
-    final path = await _recorder.stop();
-    if (path != null) {
-      final bytes = await File(path).readAsBytes();
-      widget.onRecorded(bytes);
-    }
-    if (mounted) setState(() => _isProcessing = false);
+    setState(() => _isListening = true);
+    await _speech.listen(
+      onResult: (result) {
+        if (result.finalResult) {
+          widget.onFinalResult(result.recognizedWords);
+        } else {
+          widget.onPartialResult(result.recognizedWords);
+        }
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final dimension = widget.large ? 88.0 : 56.0;
-    final label = _isRecording ? "Stop recording" : "Record voice message";
+    final label = _isListening ? "Stop listening" : "Speak your message";
     return Tooltip(
       message: label,
       child: Semantics(
@@ -83,24 +90,24 @@ class _VoiceRecordButtonState extends State<VoiceRecordButton> {
           shape: const CircleBorder(),
           child: InkWell(
             customBorder: const CircleBorder(),
-            onTap: _isProcessing ? null : _toggle,
+            onTap: _isInitializing ? null : _toggle,
             child: Container(
               width: dimension,
               height: dimension,
               decoration: BoxDecoration(
-                gradient: _isRecording ? null : AppColors.purpleGradient,
-                color: _isRecording ? AppColors.error : null,
+                gradient: _isListening ? null : AppColors.purpleGradient,
+                color: _isListening ? AppColors.error : null,
                 shape: BoxShape.circle,
               ),
               alignment: Alignment.center,
-              child: _isProcessing
+              child: _isInitializing
                   ? SizedBox(
                       width: dimension * 0.4,
                       height: dimension * 0.4,
                       child: const CircularProgressIndicator(strokeWidth: 2.5, color: AppColors.onBrand),
                     )
                   : Icon(
-                      _isRecording ? Icons.stop_rounded : Icons.mic_rounded,
+                      _isListening ? Icons.stop_rounded : Icons.mic_rounded,
                       color: AppColors.onBrand,
                       size: widget.large ? 40 : 24,
                     ),

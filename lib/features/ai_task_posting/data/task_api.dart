@@ -20,13 +20,6 @@ class TaskApi {
             )),
         _tokens = tokenStorage ?? TokenStorage();
 
-  Future<Map<String, dynamic>> transcribe(List<int> audioBytes, {String filename = "recording.m4a"}) async {
-    final formData = FormData.fromMap({
-      "audio": MultipartFile.fromBytes(audioBytes, filename: filename),
-    });
-    return _authedPost("/api/tasks/ai/transcribe", data: formData);
-  }
-
   Future<Map<String, dynamic>> analyze({
     required String message,
     required List<Map<String, String>> history,

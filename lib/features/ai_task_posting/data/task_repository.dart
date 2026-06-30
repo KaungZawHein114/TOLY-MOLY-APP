@@ -4,8 +4,6 @@ import '../models/ai_task_models.dart';
 /// interface, never on [TaskApi] directly — same seam pattern as
 /// lib/features/auth/data/auth_repository.dart.
 abstract class TaskRepository {
-  Future<String> transcribeAudio(List<int> audioBytes);
-
   Future<AnalyzeResult> analyze({
     required String message,
     required List<ChatTurn> history,

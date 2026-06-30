@@ -54,11 +54,11 @@ dependencies:
   dio: ^5.7.0
   flutter_secure_storage: ^9.2.2
 
-  # AI Task Posting (Phase 2) — real voice recording uploaded to the Django
-  # backend's Whisper endpoint. Location is demo-only (a fixed coordinate in
-  # ai_task_posting_screen.dart), so no GPS package is needed.
-  record: ^7.1.0
-  path_provider: ^2.1.5
+  # AI Task Posting (Phase 2) — on-device speech recognition (Google speech
+  # service via the OS) for voice input, instead of recording audio and
+  # uploading it to the backend's Whisper endpoint. Location is demo-only (a
+  # fixed coordinate in ai_task_posting_screen.dart), so no GPS package.
+  speech_to_text: ^7.0.0
 
 dev_dependencies:
   flutter_test:

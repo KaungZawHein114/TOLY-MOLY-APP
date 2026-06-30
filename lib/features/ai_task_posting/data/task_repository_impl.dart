@@ -8,12 +8,6 @@ class TaskRepositoryImpl implements TaskRepository {
   TaskRepositoryImpl({TaskApi? api}) : _api = api ?? TaskApi();
 
   @override
-  Future<String> transcribeAudio(List<int> audioBytes) async {
-    final json = await _api.transcribe(audioBytes);
-    return json["text"] as String;
-  }
-
-  @override
   Future<AnalyzeResult> analyze({
     required String message,
     required List<ChatTurn> history,

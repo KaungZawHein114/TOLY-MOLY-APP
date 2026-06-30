@@ -1,7 +1,7 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- AI Task Posting: voice recording (record package) for the
-         conversational task posting flow. Location is demo-only (fixed
-         coordinate), so no location permission is needed. -->
+    <!-- AI Task Posting: on-device speech recognition (speech_to_text
+         package) for the conversational task posting flow. Location is
+         demo-only (fixed coordinate), so no location permission needed. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <application
         android:label="Toly Moly"
@@ -47,6 +47,11 @@
         </intent>
         <intent>
                 <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!-- Lets speech_to_text find the device's speech recognizer service
+             on Android 11+, which restricts package visibility by default. -->
+        <intent>
+            <action android:name="android.speech.RecognitionService" />
         </intent>
     </queries>
 </manifest>
