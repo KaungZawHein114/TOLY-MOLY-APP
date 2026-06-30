@@ -97,12 +97,6 @@ class OnboardingStrings {
   static const String customSkillLabel = "အခြား ကျွမ်းကျင်မှု ထည့်မည်";
   static const String skillsRequiredError = "ကျွမ်းကျင်မှု အနည်းဆုံး တစ်ခု ရွေးပေးပါနော်";
 
-  // ── Basic profile (both flows) ───────────────────────────────────────
-  static const String basicProfileTitle = "အခြေခံ Profile";
-  static const String profilePhotoLabel = "ဓာတ်ပုံ ထည့်မည်";
-  static const String cameraButton = "ကင်မရာ";
-  static const String chooseFileButton = "ဖိုင်ရွေးမည်";
-  static const String hearAboutQuestion = "Toly Moly ကို ဘယ်က သိရှိခဲ့ပါသလဲ";
   static const String readAloudButton = "ဖတ်ပြမည်";
 
   // ── Rules (both flows) ────────────────────────────────────────────────
@@ -134,7 +128,6 @@ class OnboardingStrings {
   // ── Generic ───────────────────────────────────────────────────────────
   static const String backButtonSemantic = "နောက်သို့";
   static const String continueGeneric = "ရှေ့ဆက်မည်";
-  static const String mockPhotoSelectedMessage = "ဓာတ်ပုံ ရွေးချယ်ပြီးပါပြီ (Demo)";
   static const String mockVoiceCapturedMessage = "🎙️ အသံဖြင့် ထည့်သွင်းပြီးပါပြီ";
   static const String mockReadingAloudMessage = "🔊 ဖတ်ပြနေသည်...";
 }

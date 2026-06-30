@@ -28,7 +28,7 @@ class _ClientRulesScreenState extends ConsumerState<ClientRulesScreen> {
     final notifier = ref.read(clientDraftProvider.notifier);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 4, totalSteps: 5),
+      progress: const OnboardingProgress(step: 3, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.rulesTitle,
       title: OnboardingStrings.rulesTitle,

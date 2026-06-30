@@ -5,7 +5,6 @@ from django.db import transaction
 from rest_framework import serializers
 from rest_framework.exceptions import NotFound
 
-from apps.authentication.services import generate_otp_for_user
 from apps.profiles.models import ClientProfile, TaskerProfile
 from apps.users.models import User
 
@@ -43,7 +42,9 @@ class RegisterSerializer(serializers.Serializer):
             gender=validated_data["gender"],
             age=validated_data["age"],
         )
-        generate_otp_for_user(user)
+        # No auto-generated OTP here — the client always calls send-otp
+        # explicitly right after register, and a redundant auto-send here
+        # used to race with that call's 30s resend cooldown.
         return user
 
 

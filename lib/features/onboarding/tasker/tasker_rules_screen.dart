@@ -28,7 +28,7 @@ class _TaskerRulesScreenState extends ConsumerState<TaskerRulesScreen> {
     final notifier = ref.read(taskerDraftProvider.notifier);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 5, totalSteps: 6),
+      progress: const OnboardingProgress(step: 4, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.rulesTitle,
       title: OnboardingStrings.rulesTitle,

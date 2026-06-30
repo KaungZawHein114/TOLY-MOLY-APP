@@ -3,11 +3,11 @@ import 'package:dio/dio.dart';
 import 'auth_failure.dart';
 
 /// Base URL for the Django backend (see backend/README — `python manage.py
-/// runserver`). Android emulators can't reach the host's `127.0.0.1`
-/// directly — point this at `http://10.0.2.2:8000` when running on one.
-/// iOS simulators, desktop, and web all reach the host machine fine via
-/// `127.0.0.1`.
-const String apiBaseUrl = "http://127.0.0.1:8000";
+/// runserver`). Currently set for the Android emulator, which can't reach
+/// the host's `127.0.0.1` directly — `10.0.2.2` is the emulator's alias for
+/// the host machine. Switch back to `http://127.0.0.1:8000` for iOS
+/// simulator/desktop/web, or to your PC's LAN IP for a physical device.
+const String apiBaseUrl = "http://10.0.2.2:8000";
 
 /// Thin wrapper around the seven `/api/auth/*` endpoints from
 /// backend/apps/authentication/urls.py. Knows nothing about tokens or

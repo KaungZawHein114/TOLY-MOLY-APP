@@ -66,7 +66,7 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
     final notifier = ref.read(taskerDraftProvider.notifier);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 3, totalSteps: 6),
+      progress: const OnboardingProgress(step: 3, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.skillsMascotMessage,
       title: OnboardingStrings.skillsTitle,
@@ -154,7 +154,7 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
             setState(() => _skillsError = OnboardingStrings.skillsRequiredError);
             return;
           }
-          context.push(Routes.taskerProfile);
+          context.push(Routes.taskerRules);
         },
       ),
     );

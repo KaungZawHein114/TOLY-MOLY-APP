@@ -97,7 +97,7 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
     final draft = ref.watch(clientDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 1, totalSteps: 5),
+      progress: const OnboardingProgress(step: 1, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.clientPersonalMascotMessage,
       title: OnboardingStrings.personalInfoTitle,

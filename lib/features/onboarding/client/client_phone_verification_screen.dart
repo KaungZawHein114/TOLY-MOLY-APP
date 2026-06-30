@@ -22,7 +22,7 @@ class ClientPhoneVerificationScreen extends ConsumerWidget {
     final draft = ref.watch(clientDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 2, totalSteps: 5),
+      progress: const OnboardingProgress(step: 2, totalSteps: 4),
       mascotState: draft.otpVerified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.phoneVerificationTitle,
       title: OnboardingStrings.phoneVerificationTitle,
@@ -61,7 +61,7 @@ class ClientPhoneVerificationScreen extends ConsumerWidget {
         icon: Icons.arrow_forward,
         gradient: AppColors.purpleGradient,
         onTap: draft.otpVerified
-            ? () => context.push(Routes.clientProfile)
+            ? () => context.push(Routes.clientRules)
             : () => ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(content: Text(OnboardingStrings.otpInvalidError)),
                 ),

@@ -37,10 +37,13 @@ class RegisterEndpointTests(APITestCase):
         self.assertTrue(TaskerProfile.objects.filter(user=user).exists())
         self.assertFalse(ClientProfile.objects.filter(user=user).exists())
 
-    def test_register_generates_an_otp(self):
+    def test_register_does_not_auto_generate_an_otp(self):
+        # The client always calls send-otp explicitly right after register;
+        # an auto-generated OTP here would race with that call's resend
+        # cooldown and could leave the OTP screen with nothing to enter.
         self.client.post(self.url, self.valid_payload, format="json")
         user = User.objects.get(phone_number="09123456789")
-        self.assertTrue(user.otps.exists())
+        self.assertFalse(user.otps.exists())
 
     def test_duplicate_phone_number_rejected(self):
         self.client.post(self.url, self.valid_payload, format="json")

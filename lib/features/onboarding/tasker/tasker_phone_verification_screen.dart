@@ -22,7 +22,7 @@ class TaskerPhoneVerificationScreen extends ConsumerWidget {
     final draft = ref.watch(taskerDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 2, totalSteps: 6),
+      progress: const OnboardingProgress(step: 2, totalSteps: 5),
       mascotState: draft.otpVerified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.phoneVerificationTitle,
       title: OnboardingStrings.phoneVerificationTitle,

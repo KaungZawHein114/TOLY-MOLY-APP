@@ -171,8 +171,6 @@ class ClientProfileDraft {
   final String phone;
   final String password;
   final bool otpVerified;
-  final String? profilePicturePath;
-  final HearAboutSource? hearAboutSource;
   final bool rulesAgreed;
 
   const ClientProfileDraft({
@@ -182,8 +180,6 @@ class ClientProfileDraft {
     this.phone = "",
     this.password = "",
     this.otpVerified = false,
-    this.profilePicturePath,
-    this.hearAboutSource,
     this.rulesAgreed = false,
   });
 
@@ -196,8 +192,6 @@ class ClientProfileDraft {
     String? phone,
     String? password,
     bool? otpVerified,
-    String? profilePicturePath,
-    HearAboutSource? hearAboutSource,
     bool? rulesAgreed,
   }) {
     return ClientProfileDraft(
@@ -207,8 +201,6 @@ class ClientProfileDraft {
       phone: phone ?? this.phone,
       password: password ?? this.password,
       otpVerified: otpVerified ?? this.otpVerified,
-      profilePicturePath: profilePicturePath ?? this.profilePicturePath,
-      hearAboutSource: hearAboutSource ?? this.hearAboutSource,
       rulesAgreed: rulesAgreed ?? this.rulesAgreed,
     );
   }
@@ -228,8 +220,6 @@ class TaskerProfileDraft {
   // whole profile.
   final Map<TaskerSkill, ExperienceLevel> skillExperience;
   final String customSkill;
-  final String? profilePicturePath;
-  final HearAboutSource? hearAboutSource;
   final bool rulesAgreed;
 
   const TaskerProfileDraft({
@@ -242,8 +232,6 @@ class TaskerProfileDraft {
     this.skills = const {},
     this.skillExperience = const {},
     this.customSkill = "",
-    this.profilePicturePath,
-    this.hearAboutSource,
     this.rulesAgreed = false,
   });
 
@@ -259,8 +247,6 @@ class TaskerProfileDraft {
     Set<TaskerSkill>? skills,
     Map<TaskerSkill, ExperienceLevel>? skillExperience,
     String? customSkill,
-    String? profilePicturePath,
-    HearAboutSource? hearAboutSource,
     bool? rulesAgreed,
   }) {
     return TaskerProfileDraft(
@@ -273,8 +259,6 @@ class TaskerProfileDraft {
       skills: skills ?? this.skills,
       skillExperience: skillExperience ?? this.skillExperience,
       customSkill: customSkill ?? this.customSkill,
-      profilePicturePath: profilePicturePath ?? this.profilePicturePath,
-      hearAboutSource: hearAboutSource ?? this.hearAboutSource,
       rulesAgreed: rulesAgreed ?? this.rulesAgreed,
     );
   }
