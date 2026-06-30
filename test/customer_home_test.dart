@@ -41,7 +41,7 @@ void main() {
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
   });
 
-  testWidgets('Post a task quick action navigates to the task posting flow (Screen 1)',
+  testWidgets('Post a task quick action navigates to the AI Task Assistant',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
@@ -52,7 +52,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text(TaskPostingStrings.categoryTitle), findsWidgets);
+    expect(find.text("AI Task Assistant"), findsOneWidget);
   });
 
   testWidgets('Find a worker quick action navigates to WorkerListScreen', (tester) async {

@@ -45,5 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>TOLY MOLY uses your microphone to let you describe a task by voice instead of typing.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>TOLY MOLY uses your location to set where a posted task should take place.</string>
 </dict>
 </plist>

@@ -54,6 +54,12 @@ dependencies:
   dio: ^5.7.0
   flutter_secure_storage: ^9.2.2
 
+  # AI Task Posting (Phase 2) — real voice recording uploaded to the Django
+  # backend's Whisper endpoint, and device GPS for location confirmation.
+  record: ^5.2.0
+  geolocator: ^13.0.2
+  path_provider: ^2.1.5
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
