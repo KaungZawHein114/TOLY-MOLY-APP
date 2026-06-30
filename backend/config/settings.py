@@ -27,6 +27,7 @@ INSTALLED_APPS = [
     "apps.profiles",
     "apps.verification",
     "apps.taskers",
+    "apps.tasks",
 ]
 
 MIDDLEWARE = [
@@ -96,6 +97,11 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ),
 }
+
+# AI Task Posting (Whisper + GPT) — blank in dev until someone fills it
+# into their local .env; apps.tasks.services checks this and returns a
+# clear error instead of crashing when it's unset.
+OPENAI_API_KEY = env("OPENAI_API_KEY", default="")
 
 SIMPLE_JWT = {
     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=env.int("JWT_ACCESS_TOKEN_LIFETIME_MINUTES", default=30)),

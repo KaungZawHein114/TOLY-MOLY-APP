@@ -9,6 +9,7 @@ urlpatterns = [
     path("api/profile/", include("apps.profiles.urls")),
     path("api/verification/", include("apps.verification.urls")),
     path("api/tasker/", include("apps.taskers.urls")),
+    path("api/tasks/", include("apps.tasks.urls")),
 ]
 
 if settings.DEBUG:
