@@ -8,8 +8,10 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
+import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
+import '../../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
@@ -83,7 +85,12 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium),
+          Row(
+            children: [
+              Expanded(child: Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium)),
+              ReadAloudButton(textToRead: OnboardingStrings.genderLabel, compact: true),
+            ],
+          ),
           const SizedBox(height: AppSpacing.md),
           ShakeOnTrigger(
             trigger: _genderShakeTrigger,
@@ -104,7 +111,15 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.ageLabel, style: theme.textTheme.titleMedium),
+          FieldLabelWithVoice(
+            label: OnboardingStrings.ageLabel,
+            readAloudText: OnboardingStrings.ageLabel,
+            mockTranscript: "25",
+            onSpeechResult: (v) => setState(() {
+              _ageController.text = v;
+              _updateDraft();
+            }),
+          ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _ageController,

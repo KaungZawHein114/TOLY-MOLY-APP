@@ -6,15 +6,20 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/onboarding/read_aloud_button.dart';
-import '../data/location_service.dart';
 import '../data/task_failure.dart';
 import '../models/ai_task_models.dart';
 import '../providers/task_provider.dart';
 import '../widgets/voice_record_button.dart';
 
-enum _Phase { chat, location, budget, review }
+enum _Phase { chat, budget, review }
 
 const _greeting = "မင်္ဂလာပါ။ ဒီနေ့ ဘာအလုပ်တင်ချင်ပါသလဲ?";
+
+// Demo-only stand-in for live GPS (Yangon, Sule Pagoda) — task posting
+// always uses this fixed coordinate instead of asking for location
+// permission/device GPS, per product decision to keep location as a demo.
+const _demoLatitude = 16.7745;
+const _demoLongitude = 96.1591;
 
 const _budgetTierLabels = {
   "ECONOMY": "Economy",
@@ -49,10 +54,9 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
   bool _isTranscribing = false;
   String? _chatError;
 
-  double? _latitude;
-  double? _longitude;
-  bool _isLocating = false;
-  String? _locationError;
+  // Demo mode: location is always the fixed demo coordinate, never live GPS.
+  final double _latitude = _demoLatitude;
+  final double _longitude = _demoLongitude;
 
   Map<String, BudgetOption>? _budgetOptions;
   String? _selectedBudgetTier;
@@ -103,7 +107,7 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
       _messageController.clear();
       _scrollChatToBottom();
       if (result.ready) {
-        await _enterLocationPhase();
+        await _enterBudgetPhase();
       }
     } on TaskFailure catch (e) {
       setState(() => _chatError = e.message);
@@ -131,34 +135,11 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
     }
   }
 
-  Future<void> _enterLocationPhase() async {
-    setState(() => _phase = _Phase.location);
-    await _detectLocation();
-  }
-
-  Future<void> _detectLocation() async {
+  Future<void> _enterBudgetPhase() async {
     setState(() {
-      _isLocating = true;
-      _locationError = null;
+      _phase = _Phase.budget;
+      _isLoadingBudget = true;
     });
-    try {
-      final result = await LocationService().getCurrentLocation();
-      if (!mounted) return;
-      setState(() {
-        _latitude = result.latitude;
-        _longitude = result.longitude;
-      });
-    } on LocationUnavailable catch (e) {
-      if (!mounted) return;
-      setState(() => _locationError = e.toString());
-    } finally {
-      if (mounted) setState(() => _isLocating = false);
-    }
-  }
-
-  Future<void> _confirmLocation() async {
-    setState(() => _phase = _Phase.budget);
-    setState(() => _isLoadingBudget = true);
     try {
       final options = await ref.read(taskRepositoryProvider).budgetOptions(
             category: _knownFields["category"] as String,
@@ -256,7 +237,6 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
       ),
       body: switch (_phase) {
         _Phase.chat => _buildChatPhase(),
-        _Phase.location => _buildLocationPhase(),
         _Phase.budget => _buildBudgetPhase(),
         _Phase.review => _buildReviewPhase(),
       },
@@ -319,42 +299,6 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
     );
   }
 
-  Widget _buildLocationPhase() {
-    return Padding(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(Icons.location_on, size: 64, color: AppColors.purple700),
-          const SizedBox(height: AppSpacing.lg),
-          if (_isLocating)
-            const CircularProgressIndicator()
-          else if (_locationError != null) ...[
-            Text(_locationError!, textAlign: TextAlign.center, style: const TextStyle(color: AppColors.error)),
-            const SizedBox(height: AppSpacing.lg),
-            LargeButton(label: "Try Again", onTap: _detectLocation, gradient: AppColors.purpleGradient),
-          ] else if (_latitude != null) ...[
-            const Text("I found your current location. Would you like to use this location?"),
-            const SizedBox(height: AppSpacing.sm),
-            Text(
-              "${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}",
-              style: const TextStyle(color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: AppSpacing.xl),
-            LargeButton(label: "Confirm", onTap: _confirmLocation, gradient: AppColors.purpleGradient),
-            const SizedBox(height: AppSpacing.md),
-            LargeButton(
-              label: "Change Location",
-              filled: false,
-              outlineColor: AppColors.purple700,
-              onTap: _detectLocation,
-            ),
-          ],
-        ],
-      ),
-    );
-  }
-
   Widget _buildBudgetPhase() {
     if (_isLoadingBudget) {
       return const Center(child: CircularProgressIndicator());
@@ -399,8 +343,8 @@ class _AiTaskPostingScreenState extends ConsumerState<AiTaskPostingScreen> {
         _ReviewRow(label: "Time", value: "${_knownFields["time"]}", onEdit: () => _editTextField("time", "Time")),
         _ReviewRow(
           label: "Location",
-          value: _latitude == null ? "-" : "${_latitude!.toStringAsFixed(5)}, ${_longitude!.toStringAsFixed(5)}",
-          onEdit: _enterLocationPhase,
+          value: "${_latitude.toStringAsFixed(5)}, ${_longitude.toStringAsFixed(5)} (demo)",
+          onEdit: null,
         ),
         _ReviewRow(
           label: "Urgent",
@@ -508,7 +452,7 @@ class _BudgetTierCard extends StatelessWidget {
 class _ReviewRow extends StatelessWidget {
   final String label;
   final String value;
-  final VoidCallback onEdit;
+  final VoidCallback? onEdit;
 
   const _ReviewRow({required this.label, required this.value, required this.onEdit});
 
@@ -527,7 +471,7 @@ class _ReviewRow extends StatelessWidget {
               ],
             ),
           ),
-          TextButton(onPressed: onEdit, child: const Text("Edit")),
+          if (onEdit != null) TextButton(onPressed: onEdit, child: const Text("Edit")),
         ],
       ),
     );

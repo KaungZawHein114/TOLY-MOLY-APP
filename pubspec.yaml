@@ -55,9 +55,9 @@ dependencies:
   flutter_secure_storage: ^9.2.2
 
   # AI Task Posting (Phase 2) — real voice recording uploaded to the Django
-  # backend's Whisper endpoint, and device GPS for location confirmation.
+  # backend's Whisper endpoint. Location is demo-only (a fixed coordinate in
+  # ai_task_posting_screen.dart), so no GPS package is needed.
   record: ^7.1.0
-  geolocator: ^13.0.2
   path_provider: ^2.1.5
 
 dev_dependencies:

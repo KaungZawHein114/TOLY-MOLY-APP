@@ -12,17 +12,22 @@ class SpeechToTextButton extends StatelessWidget {
   final String mockTranscript;
   final bool large;
 
+  // Smaller footprint to sit inline next to a single field's label, next to
+  // ReadAloudButton's matching `compact` size — see basic_info_screen.dart.
+  final bool compact;
+
   const SpeechToTextButton({
     super.key,
     required this.semanticPrompt,
     required this.onResult,
     required this.mockTranscript,
     this.large = false,
+    this.compact = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    final dimension = large ? 88.0 : 56.0;
+    final dimension = large ? 88.0 : (compact ? 44.0 : 56.0);
     return Tooltip(
       message: semanticPrompt,
       child: Semantics(
@@ -53,7 +58,7 @@ class SpeechToTextButton extends StatelessWidget {
               ),
               alignment: Alignment.center,
               child: Icon(Icons.mic_rounded,
-                  color: AppColors.onBrand, size: large ? 40 : 24),
+                  color: AppColors.onBrand, size: large ? 40 : (compact ? 20 : 24)),
             ),
           ),
         ),

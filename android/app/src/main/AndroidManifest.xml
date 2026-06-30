@@ -1,9 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
-    <!-- AI Task Posting: voice recording (record package) and device
-         location (geolocator) for the conversational task posting flow. -->
+    <!-- AI Task Posting: voice recording (record package) for the
+         conversational task posting flow. Location is demo-only (fixed
+         coordinate), so no location permission is needed. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
-    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
-    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <application
         android:label="Toly Moly"
         android:name="${applicationName}"

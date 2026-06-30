@@ -8,9 +8,8 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
+import '../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
-import '../../core/widgets/onboarding/read_aloud_button.dart';
-import '../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../auth/data/auth_failure.dart';
 import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
@@ -122,26 +121,12 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Row(
-            children: [
-              ReadAloudButton(textToRead: OnboardingStrings.basicInfoInstructions),
-              const SizedBox(width: AppSpacing.md),
-              SpeechToTextButton(
-                semanticPrompt: OnboardingStrings.nameLabel,
-                mockTranscript: "Aye Aye",
-                onResult: (v) => setState(() => _nameController.text = v),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  "${OnboardingStrings.readAloudButton} / ${OnboardingStrings.speakButton}",
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                ),
-              ),
-            ],
+          FieldLabelWithVoice(
+            label: OnboardingStrings.nameLabel,
+            readAloudText: OnboardingStrings.nameLabel,
+            mockTranscript: "Aye Aye",
+            onSpeechResult: (v) => setState(() => _nameController.text = v),
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.nameLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _nameController,
@@ -156,7 +141,12 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.phoneLabel, style: theme.textTheme.titleMedium),
+          FieldLabelWithVoice(
+            label: OnboardingStrings.phoneLabel,
+            readAloudText: OnboardingStrings.phoneLabel,
+            mockTranscript: "09123456789",
+            onSpeechResult: (v) => setState(() => _phoneController.text = v),
+          ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _phoneController,
@@ -179,7 +169,10 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.passwordLabel, style: theme.textTheme.titleMedium),
+          FieldLabelWithVoice(
+            label: OnboardingStrings.passwordLabel,
+            readAloudText: OnboardingStrings.passwordLabel,
+          ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _passwordController,

@@ -8,9 +8,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
+import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
-import '../../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -112,7 +112,15 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
               ),
           ],
           const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.customSkillLabel, style: theme.textTheme.titleMedium),
+          FieldLabelWithVoice(
+            label: OnboardingStrings.customSkillLabel,
+            readAloudText: OnboardingStrings.customSkillLabel,
+            mockTranscript: "ပန်းခြံပြုပြင်ခြင်း",
+            onSpeechResult: (v) {
+              _customSkillController.text = v;
+              notifier.state = notifier.state.copyWith(customSkill: v);
+            },
+          ),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
@@ -130,15 +138,6 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              SpeechToTextButton(
-                semanticPrompt: OnboardingStrings.customSkillLabel,
-                mockTranscript: "ပန်းခြံပြုပြင်ခြင်း",
-                onResult: (v) {
-                  _customSkillController.text = v;
-                  notifier.state = notifier.state.copyWith(customSkill: v);
-                },
               ),
             ],
           ),

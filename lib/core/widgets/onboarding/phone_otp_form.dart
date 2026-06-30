@@ -5,6 +5,7 @@ import '../../constants/onboarding_strings.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../large_button.dart';
+import 'field_label_with_voice.dart';
 
 /// Used by [PhoneOtpForm] to switch in the verified-success container with a
 /// small scale+fade entrance instead of an instant swap — a rare, one-time
@@ -158,7 +159,17 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(OnboardingStrings.phoneLabel, style: theme.textTheme.titleMedium),
+        FieldLabelWithVoice(
+          label: OnboardingStrings.phoneLabel,
+          readAloudText: OnboardingStrings.phoneLabel,
+          mockTranscript: _verified ? null : "09123456789",
+          onSpeechResult: _verified
+              ? null
+              : (v) {
+                  setState(() => _phoneController.text = v);
+                  widget.onPhoneChanged(v);
+                },
+        ),
         const SizedBox(height: AppSpacing.sm),
         TextField(
           controller: _phoneController,
@@ -214,7 +225,12 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
           ),
           if (_otpSent) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text(OnboardingStrings.otpLabel, style: theme.textTheme.titleMedium),
+            FieldLabelWithVoice(
+              label: OnboardingStrings.otpLabel,
+              readAloudText: OnboardingStrings.otpLabel,
+              mockTranscript: _devOtpCode ?? "123456",
+              onSpeechResult: (v) => setState(() => _otpController.text = v),
+            ),
             if (_devOtpCode != null) ...[
               const SizedBox(height: AppSpacing.xxs),
               Text(

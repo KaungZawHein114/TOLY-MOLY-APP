@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
+import '../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../core/widgets/onboarding/read_aloud_button.dart';
@@ -207,7 +208,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ],
       ),
       const SizedBox(height: AppSpacing.xl),
-      Text(OnboardingStrings.phoneLabel, style: theme.textTheme.titleMedium),
+      FieldLabelWithVoice(
+        label: OnboardingStrings.phoneLabel,
+        readAloudText: OnboardingStrings.phoneLabel,
+        mockTranscript: "09123456789",
+        onSpeechResult: (v) => setState(() => _loginPhoneController.text = v),
+      ),
       const SizedBox(height: AppSpacing.sm),
       TextField(
         controller: _loginPhoneController,
@@ -229,7 +235,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
-      Text(OnboardingStrings.passwordLabel, style: theme.textTheme.titleMedium),
+      FieldLabelWithVoice(
+        label: OnboardingStrings.passwordLabel,
+        readAloudText: OnboardingStrings.passwordLabel,
+      ),
       const SizedBox(height: AppSpacing.sm),
       TextField(
         controller: _loginPasswordController,
