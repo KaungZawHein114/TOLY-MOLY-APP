@@ -36,7 +36,7 @@ class CustomerHomeScreen extends StatelessWidget {
                   label: AppStrings.homePostTaskAction,
                   icon: Icons.add_circle_outline,
                   gradient: AppColors.purpleGradient,
-                  onTap: () => context.push(Routes.postTask),
+                  onTap: () => context.push(Routes.aiTaskPosting),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 LargeButton(

@@ -19,19 +19,18 @@ import '../../features/onboarding/create_account_screen.dart';
 import '../../features/onboarding/basic_info_screen.dart';
 import '../../features/onboarding/client/client_personal_info_screen.dart';
 import '../../features/onboarding/client/client_phone_verification_screen.dart';
-import '../../features/onboarding/client/client_basic_profile_screen.dart';
 import '../../features/onboarding/client/client_rules_screen.dart';
 import '../../features/onboarding/client/client_welcome_screen.dart';
 import '../../features/onboarding/tasker/tasker_personal_info_screen.dart';
 import '../../features/onboarding/tasker/tasker_phone_verification_screen.dart';
 import '../../features/onboarding/tasker/tasker_skills_screen.dart';
-import '../../features/onboarding/tasker/tasker_basic_profile_screen.dart';
 import '../../features/onboarding/tasker/tasker_rules_screen.dart';
 import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
 import '../../features/worker/worker_home_shell.dart';
 import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
+import '../../features/ai_task_posting/screens/ai_task_posting_screen.dart';
 import '../data/demo_data.dart';
 import '../theme/app_spacing.dart';
 import '../../features/customer/activity_screen.dart';
@@ -47,19 +46,18 @@ class Routes {
   static const String onboardingBasicInfo = '/onboarding/basic-info';
   static const String clientPersonal = '/onboarding/client/personal';
   static const String clientPhone = '/onboarding/client/phone';
-  static const String clientProfile = '/onboarding/client/profile';
   static const String clientRules = '/onboarding/client/rules';
   static const String clientWelcome = '/onboarding/client/welcome';
   static const String taskerPersonal = '/onboarding/tasker/personal';
   static const String taskerPhone = '/onboarding/tasker/phone';
   static const String taskerSkills = '/onboarding/tasker/skills';
-  static const String taskerProfile = '/onboarding/tasker/profile';
   static const String taskerRules = '/onboarding/tasker/rules';
   static const String taskerWelcome = '/onboarding/tasker/welcome';
 
   // ── customer ────────────────────────────────────────────────────────────
   static const String customerHome = '/customer/home';
   static const String postTask = '/customer/post-task';
+  static const String aiTaskPosting = '/customer/post-task/ai';
   static const String postTaskTypeLocation = '/customer/post-task/type-location';
   static const String postTaskDateTime = '/customer/post-task/date-time';
   static const String postTaskWorkersTier = '/customer/post-task/workers-tier';
@@ -147,10 +145,6 @@ final List<RouteBase> _onboardingRoutes = [
     builder: (context, state) => const ClientPhoneVerificationScreen(),
   ),
   GoRoute(
-    path: Routes.clientProfile,
-    builder: (context, state) => const ClientBasicProfileScreen(),
-  ),
-  GoRoute(
     path: Routes.clientRules,
     builder: (context, state) => const ClientRulesScreen(),
   ),
@@ -169,10 +163,6 @@ final List<RouteBase> _onboardingRoutes = [
   GoRoute(
     path: Routes.taskerSkills,
     builder: (context, state) => const TaskerSkillsScreen(),
-  ),
-  GoRoute(
-    path: Routes.taskerProfile,
-    builder: (context, state) => const TaskerBasicProfileScreen(),
   ),
   GoRoute(
     path: Routes.taskerRules,
@@ -198,6 +188,13 @@ final List<RouteBase> _customerRoutes = [
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
       child: const AiCategoryScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.aiTaskPosting,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      key: state.pageKey,
+      child: const AiTaskPostingScreen(),
     ),
   ),
   GoRoute(

@@ -35,6 +35,7 @@ class OnboardingStrings {
   static const String showPasswordLabel = "စကားဝှက် ပြရန်";
   static const String hidePasswordLabel = "စကားဝှက် ဖျောက်ရန်";
   static const String continueButton = "ဆက်လက်လုပ်ဆောင်မည်";
+  static const String submittingLabel = "ခဏစောင့်ပါ...";
   static const String orDivider = "သို့မဟုတ်";
   static const String googleSignup = "Google ဖြင့် ဝင်ရောက်မည်";
   static const String loginNotSupported =
@@ -44,8 +45,7 @@ class OnboardingStrings {
   // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
   static const String loginFieldsRequiredError =
       "ဖုန်းနံပါတ်နှင့် စကားဝှက် ဖြည့်ပေးပါနော်";
-  static const String loginAsClientButton = "ဝန်ဆောင်မှု ရယူသူ အဖြစ် ဝင်မည်";
-  static const String loginAsTaskerButton = "ဝန်ဆောင်မှု ပေးသူ အဖြစ် ဝင်မည်";
+  static const String loginButton = "အကောင့်ဝင်မည်";
   static const String googleNotSupported =
       "Demo အတွက် Google ဖြင့်ဝင်ရောက်ခြင်းကို ပံ့ပိုးမထားပါသေးပါ။";
   static const String nameRequiredError = "အမည် ထည့်ပေးပါနော်";
@@ -97,12 +97,6 @@ class OnboardingStrings {
   static const String customSkillLabel = "အခြား ကျွမ်းကျင်မှု ထည့်မည်";
   static const String skillsRequiredError = "ကျွမ်းကျင်မှု အနည်းဆုံး တစ်ခု ရွေးပေးပါနော်";
 
-  // ── Basic profile (both flows) ───────────────────────────────────────
-  static const String basicProfileTitle = "အခြေခံ Profile";
-  static const String profilePhotoLabel = "ဓာတ်ပုံ ထည့်မည်";
-  static const String cameraButton = "ကင်မရာ";
-  static const String chooseFileButton = "ဖိုင်ရွေးမည်";
-  static const String hearAboutQuestion = "Toly Moly ကို ဘယ်က သိရှိခဲ့ပါသလဲ";
   static const String readAloudButton = "ဖတ်ပြမည်";
 
   // ── Rules (both flows) ────────────────────────────────────────────────
@@ -134,7 +128,6 @@ class OnboardingStrings {
   // ── Generic ───────────────────────────────────────────────────────────
   static const String backButtonSemantic = "နောက်သို့";
   static const String continueGeneric = "ရှေ့ဆက်မည်";
-  static const String mockPhotoSelectedMessage = "ဓာတ်ပုံ ရွေးချယ်ပြီးပါပြီ (Demo)";
   static const String mockVoiceCapturedMessage = "🎙️ အသံဖြင့် ထည့်သွင်းပြီးပါပြီ";
   static const String mockReadingAloudMessage = "🔊 ဖတ်ပြနေသည်...";
 }

@@ -8,10 +8,11 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
+import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
+import '../../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
-import '../../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -82,7 +83,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     final draft = ref.watch(taskerDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 1, totalSteps: 6),
+      progress: const OnboardingProgress(step: 1, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.taskerPersonalMascotMessage,
       title: OnboardingStrings.personalInfoTitle,
@@ -91,7 +92,12 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(OnboardingStrings.nameLabel, style: theme.textTheme.titleMedium),
+          FieldLabelWithVoice(
+            label: OnboardingStrings.nameLabel,
+            readAloudText: OnboardingStrings.nameLabel,
+            mockTranscript: "Aung Aung",
+            onSpeechResult: (v) => setState(() => _nameController.text = v),
+          ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _nameController,
@@ -107,22 +113,12 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Center(
-            child: Column(
-              children: [
-                SpeechToTextButton(
-                  semanticPrompt: OnboardingStrings.speakButton,
-                  mockTranscript: "Aung Aung",
-                  large: true,
-                  onResult: (v) => setState(() => _nameController.text = v),
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(OnboardingStrings.speakButton, style: theme.textTheme.titleMedium),
-              ],
-            ),
+          Row(
+            children: [
+              Expanded(child: Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium)),
+              ReadAloudButton(textToRead: OnboardingStrings.genderLabel, compact: true),
+            ],
           ),
-          const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.md),
           ShakeOnTrigger(
             trigger: _genderShakeTrigger,
@@ -143,7 +139,12 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Text(OnboardingStrings.ageLabel, style: theme.textTheme.titleMedium),
+          FieldLabelWithVoice(
+            label: OnboardingStrings.ageLabel,
+            readAloudText: OnboardingStrings.ageLabel,
+            mockTranscript: "25",
+            onSpeechResult: (v) => setState(() => _ageController.text = v),
+          ),
           const SizedBox(height: AppSpacing.sm),
           TextField(
             controller: _ageController,

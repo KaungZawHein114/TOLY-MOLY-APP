@@ -169,9 +169,15 @@ class ClientProfileDraft {
   final Gender? gender;
   final int? age;
   final String phone;
+  final String password;
+  // otpSent/lastDevOtpCode are set by basic_info_screen the moment the
+  // phone+password are submitted (it sends the OTP immediately, so a
+  // duplicate-phone error surfaces right there instead of two screens
+  // later). The phone-verification screen reads them so it doesn't have
+  // to send a second OTP itself.
+  final bool otpSent;
+  final String? lastDevOtpCode;
   final bool otpVerified;
-  final String? profilePicturePath;
-  final HearAboutSource? hearAboutSource;
   final bool rulesAgreed;
 
   const ClientProfileDraft({
@@ -179,9 +185,10 @@ class ClientProfileDraft {
     this.gender,
     this.age,
     this.phone = "",
+    this.password = "",
+    this.otpSent = false,
+    this.lastDevOtpCode,
     this.otpVerified = false,
-    this.profilePicturePath,
-    this.hearAboutSource,
     this.rulesAgreed = false,
   });
 
@@ -192,9 +199,10 @@ class ClientProfileDraft {
     Gender? gender,
     int? age,
     String? phone,
+    String? password,
+    bool? otpSent,
+    String? lastDevOtpCode,
     bool? otpVerified,
-    String? profilePicturePath,
-    HearAboutSource? hearAboutSource,
     bool? rulesAgreed,
   }) {
     return ClientProfileDraft(
@@ -202,9 +210,10 @@ class ClientProfileDraft {
       gender: gender ?? this.gender,
       age: age ?? this.age,
       phone: phone ?? this.phone,
+      password: password ?? this.password,
+      otpSent: otpSent ?? this.otpSent,
+      lastDevOtpCode: lastDevOtpCode ?? this.lastDevOtpCode,
       otpVerified: otpVerified ?? this.otpVerified,
-      profilePicturePath: profilePicturePath ?? this.profilePicturePath,
-      hearAboutSource: hearAboutSource ?? this.hearAboutSource,
       rulesAgreed: rulesAgreed ?? this.rulesAgreed,
     );
   }
@@ -216,6 +225,9 @@ class TaskerProfileDraft {
   final Gender? gender;
   final int? age;
   final String phone;
+  final String password;
+  final bool otpSent;
+  final String? lastDevOtpCode;
   final bool otpVerified;
   final Set<TaskerSkill> skills;
   // Each selected skill gets its own experience duration (e.g. "1 year" for
@@ -223,8 +235,6 @@ class TaskerProfileDraft {
   // whole profile.
   final Map<TaskerSkill, ExperienceLevel> skillExperience;
   final String customSkill;
-  final String? profilePicturePath;
-  final HearAboutSource? hearAboutSource;
   final bool rulesAgreed;
 
   const TaskerProfileDraft({
@@ -232,12 +242,13 @@ class TaskerProfileDraft {
     this.gender,
     this.age,
     this.phone = "",
+    this.password = "",
+    this.otpSent = false,
+    this.lastDevOtpCode,
     this.otpVerified = false,
     this.skills = const {},
     this.skillExperience = const {},
     this.customSkill = "",
-    this.profilePicturePath,
-    this.hearAboutSource,
     this.rulesAgreed = false,
   });
 
@@ -248,12 +259,13 @@ class TaskerProfileDraft {
     Gender? gender,
     int? age,
     String? phone,
+    String? password,
+    bool? otpSent,
+    String? lastDevOtpCode,
     bool? otpVerified,
     Set<TaskerSkill>? skills,
     Map<TaskerSkill, ExperienceLevel>? skillExperience,
     String? customSkill,
-    String? profilePicturePath,
-    HearAboutSource? hearAboutSource,
     bool? rulesAgreed,
   }) {
     return TaskerProfileDraft(
@@ -261,12 +273,13 @@ class TaskerProfileDraft {
       gender: gender ?? this.gender,
       age: age ?? this.age,
       phone: phone ?? this.phone,
+      password: password ?? this.password,
+      otpSent: otpSent ?? this.otpSent,
+      lastDevOtpCode: lastDevOtpCode ?? this.lastDevOtpCode,
       otpVerified: otpVerified ?? this.otpVerified,
       skills: skills ?? this.skills,
       skillExperience: skillExperience ?? this.skillExperience,
       customSkill: customSkill ?? this.customSkill,
-      profilePicturePath: profilePicturePath ?? this.profilePicturePath,
-      hearAboutSource: hearAboutSource ?? this.hearAboutSource,
       rulesAgreed: rulesAgreed ?? this.rulesAgreed,
     );
   }

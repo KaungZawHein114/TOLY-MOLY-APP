@@ -16,7 +16,9 @@
       "Bash(git add *)",
       "Bash(git commit -m ' *)",
       "Bash(git commit *)",
-      "Bash(python3 -c ' *)"
+      "Bash(python3 -c ' *)",
+      "Bash(cat /c/TM/.claude/settings.local.json 2>/dev/null | grep -i \"baseRef\\\\|worktree\"; cat ~/.claude/settings.json 2>/dev/null | grep -i \"baseRef\\\\|worktree\")",
+      "Bash(git check-ignore *)"
     ]
   }
 }

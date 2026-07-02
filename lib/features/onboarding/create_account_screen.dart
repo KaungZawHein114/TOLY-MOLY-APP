@@ -8,9 +8,12 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
+import '../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../core/widgets/onboarding/read_aloud_button.dart';
+import '../auth/data/auth_failure.dart';
+import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
 import 'onboarding_state.dart';
 
@@ -33,6 +36,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
   String? _roleError;
   String? _loginError;
   bool _obscureLoginPassword = true;
+  bool _isLoggingIn = false;
 
   @override
   void dispose() {
@@ -55,19 +59,30 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     context.push(Routes.onboardingBasicInfo);
   }
 
-  /// Dev shortcut (Phase 1 has no auth): require the two fields to be filled,
-  /// then jump straight into the chosen role's shell — no validation beyond
-  /// "not empty", no backend.
-  void _login(UserRole role) {
-    final filled = _loginPhoneController.text.trim().isNotEmpty &&
-        _loginPasswordController.text.isNotEmpty;
+  Future<void> _login() async {
+    if (_isLoggingIn) return;
+    final phone = _loginPhoneController.text.trim();
+    final password = _loginPasswordController.text;
+    final filled = phone.isNotEmpty && password.isNotEmpty;
     setState(() {
       _loginError = filled ? null : OnboardingStrings.loginFieldsRequiredError;
     });
     if (!filled) return;
-    context.go(
-      role == UserRole.client ? Routes.customerHome : Routes.dashboard,
-    );
+
+    setState(() => _isLoggingIn = true);
+    try {
+      final session = await ref.read(authRepositoryProvider).login(
+            phoneNumber: phone,
+            password: password,
+          );
+      if (!mounted) return;
+      context.go(session.user.role == "CLIENT" ? Routes.customerHome : Routes.dashboard);
+    } on AuthFailure catch (e) {
+      if (!mounted) return;
+      setState(() => _loginError = e.message);
+    } finally {
+      if (mounted) setState(() => _isLoggingIn = false);
+    }
   }
 
   @override
@@ -116,24 +131,11 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ],
       ),
       bottomBar: isLogin
-          ? Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                LargeButton(
-                  label: OnboardingStrings.loginAsClientButton,
-                  icon: Icons.login,
-                  gradient: AppColors.purpleGradient,
-                  onTap: () => _login(UserRole.client),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                LargeButton(
-                  label: OnboardingStrings.loginAsTaskerButton,
-                  icon: Icons.login,
-                  filled: false,
-                  outlineColor: AppColors.purple700,
-                  onTap: () => _login(UserRole.tasker),
-                ),
-              ],
+          ? LargeButton(
+              label: _isLoggingIn ? OnboardingStrings.submittingLabel : OnboardingStrings.loginButton,
+              icon: _isLoggingIn ? null : Icons.login,
+              gradient: AppColors.purpleGradient,
+              onTap: _login,
             )
           : LargeButton(
               label: OnboardingStrings.continueButton,
@@ -206,7 +208,12 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ],
       ),
       const SizedBox(height: AppSpacing.xl),
-      Text(OnboardingStrings.phoneLabel, style: theme.textTheme.titleMedium),
+      FieldLabelWithVoice(
+        label: OnboardingStrings.phoneLabel,
+        readAloudText: OnboardingStrings.phoneLabel,
+        mockTranscript: "09123456789",
+        onSpeechResult: (v) => setState(() => _loginPhoneController.text = v),
+      ),
       const SizedBox(height: AppSpacing.sm),
       TextField(
         controller: _loginPhoneController,
@@ -228,7 +235,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
         ),
       ),
       const SizedBox(height: AppSpacing.xl),
-      Text(OnboardingStrings.passwordLabel, style: theme.textTheme.titleMedium),
+      FieldLabelWithVoice(
+        label: OnboardingStrings.passwordLabel,
+        readAloudText: OnboardingStrings.passwordLabel,
+      ),
       const SizedBox(height: AppSpacing.sm),
       TextField(
         controller: _loginPasswordController,

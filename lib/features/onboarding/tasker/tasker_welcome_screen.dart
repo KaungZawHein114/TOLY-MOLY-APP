@@ -18,7 +18,7 @@ class TaskerWelcomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 6, totalSteps: 6),
+      progress: const OnboardingProgress(step: 5, totalSteps: 5),
       mascotState: PhoWaYokeState.success,
       mascotMessage: OnboardingStrings.completionUnverifiedMessage,
       title: OnboardingStrings.completionTitle,

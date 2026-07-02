@@ -6,7 +6,6 @@ import 'package:toly_moly/main.dart';
 import 'package:toly_moly/core/constants/app_strings.dart';
 import 'package:toly_moly/core/constants/onboarding_strings.dart';
 import 'package:toly_moly/core/constants/profile_strings.dart';
-import 'package:toly_moly/core/constants/task_posting_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 
 void main() {
@@ -41,7 +40,7 @@ void main() {
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
   });
 
-  testWidgets('Post a task quick action navigates to the task posting flow (Screen 1)',
+  testWidgets('Post a task quick action navigates to the AI Task Assistant',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
@@ -52,7 +51,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text(TaskPostingStrings.categoryTitle), findsWidgets);
+    expect(find.text("AI Task Assistant"), findsOneWidget);
   });
 
   testWidgets('Find a worker quick action navigates to WorkerListScreen', (tester) async {

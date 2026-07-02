@@ -6,6 +6,12 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 TOLY MOLY — an on-demand service marketplace for Myanmar (Yangon-first) connecting customers with local workers (plumbing, cleaning, electrical, etc.). Flutter app, currently **Phase 1: a fully offline MVP** — hardcoded data, synchronous mock AI, no backend/database/network. See `docs/ARCHITECTURE.md` (full technical reference) and `docs/TEAM_PLAN.md` (ownership/roadmap) for details beyond this file.
 
+A Django REST Framework + PostgreSQL backend now exists under `backend/`
+for user onboarding (registration, OTP, JWT auth) — see
+`docs/superpowers/specs/2026-06-29-onboarding-backend-auth-design.md`. The
+Flutter app itself is not yet wired to it; that's a separate follow-up
+phase, and every other feature remains fully offline as described below.
+
 ## Commands
 
 ```bash

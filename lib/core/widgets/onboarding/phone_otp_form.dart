@@ -5,6 +5,7 @@ import '../../constants/onboarding_strings.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../large_button.dart';
+import 'field_label_with_voice.dart';
 
 /// Used by [PhoneOtpForm] to switch in the verified-success container with a
 /// small scale+fade entrance instead of an instant swap — a rare, one-time
@@ -30,21 +31,46 @@ class _SuccessPop extends StatelessWidget {
   }
 }
 
-/// Shared phone-number + mock-OTP verification widget. Used by both the
-/// client and tasker phone-verification steps so the demo OTP behaviour
-/// (12345) lives in exactly one place.
+/// Shared phone-number + OTP verification widget, used by both the client
+/// and tasker phone-verification steps. Talks to the real backend via the
+/// two callbacks — this widget itself knows nothing about Dio/Riverpod/the
+/// auth repository, only "send returns an error message or a dev-mode code"
+/// and "verify returns an error message or null".
 class PhoneOtpForm extends StatefulWidget {
   final String initialPhone;
   final bool initiallyVerified;
+
+  /// True when the OTP was already sent before this screen even appeared
+  /// (basic_info_screen sends it immediately on phone+password submit, so
+  /// a duplicate-phone error shows right there instead of two screens
+  /// later). Skips straight to the code-entry box instead of waiting for
+  /// a "Send OTP" tap.
+  final bool alreadySent;
+
+  /// Dev-mode code from that earlier send, shown immediately if present.
+  final String? initialDevCode;
+
   final ValueChanged<String> onPhoneChanged;
   final VoidCallback onVerified;
+
+  /// Returns the dev-mode OTP code on success (shown directly in the UI
+  /// since there's no real SMS gateway yet — see backend spec §2), or
+  /// throws with a user-facing message on failure.
+  final Future<String?> Function(String phone) onSendOtp;
+
+  /// Returns null on success, or a user-facing error message on failure.
+  final Future<String?> Function(String code) onVerifyOtp;
 
   const PhoneOtpForm({
     super.key,
     required this.initialPhone,
     required this.initiallyVerified,
+    this.alreadySent = false,
+    this.initialDevCode,
     required this.onPhoneChanged,
     required this.onVerified,
+    required this.onSendOtp,
+    required this.onVerifyOtp,
   });
 
   @override
@@ -58,13 +84,17 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
 
   bool _otpSent = false;
   bool _verified = false;
+  bool _sending = false;
+  bool _verifying = false;
   String? _otpError;
+  String? _devOtpCode;
 
   @override
   void initState() {
     super.initState();
     _verified = widget.initiallyVerified;
-    _otpSent = widget.initiallyVerified;
+    _otpSent = widget.initiallyVerified || widget.alreadySent;
+    _devOtpCode = widget.initialDevCode;
   }
 
   @override
@@ -74,33 +104,53 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
     super.dispose();
   }
 
-  void _sendOtp() {
-    if (_phoneController.text.trim().isEmpty) return;
-    HapticFeedback.lightImpact();
+  Future<void> _sendOtp() async {
+    if (_phoneController.text.trim().isEmpty || _sending) return;
     setState(() {
-      _otpSent = true;
+      _sending = true;
       _otpError = null;
     });
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(OnboardingStrings.otpSentMessage),
-        backgroundColor: AppColors.purple700,
-      ),
-    );
+    try {
+      final devCode = await widget.onSendOtp(_phoneController.text.trim());
+      if (!mounted) return;
+      HapticFeedback.lightImpact();
+      setState(() {
+        _otpSent = true;
+        _devOtpCode = devCode;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(devCode == null
+              ? OnboardingStrings.otpSentMessage
+              : "${OnboardingStrings.otpSentMessage} — $devCode"),
+          backgroundColor: AppColors.purple700,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+    } finally {
+      if (mounted) setState(() => _sending = false);
+    }
   }
 
-  void _verifyOtp() {
-    if (_otpController.text.trim() == OnboardingStrings.demoOtp) {
+  Future<void> _verifyOtp() async {
+    if (_verifying) return;
+    setState(() {
+      _verifying = true;
+      _otpError = null;
+    });
+    final error = await widget.onVerifyOtp(_otpController.text.trim());
+    if (!mounted) return;
+    if (error == null) {
       HapticFeedback.heavyImpact();
-      setState(() {
-        _verified = true;
-        _otpError = null;
-      });
+      setState(() => _verified = true);
       widget.onVerified();
     } else {
       HapticFeedback.vibrate();
-      setState(() => _otpError = OnboardingStrings.otpInvalidError);
+      setState(() => _otpError = error);
     }
+    setState(() => _verifying = false);
   }
 
   @override
@@ -109,7 +159,17 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(OnboardingStrings.phoneLabel, style: theme.textTheme.titleMedium),
+        FieldLabelWithVoice(
+          label: OnboardingStrings.phoneLabel,
+          readAloudText: OnboardingStrings.phoneLabel,
+          mockTranscript: _verified ? null : "09123456789",
+          onSpeechResult: _verified
+              ? null
+              : (v) {
+                  setState(() => _phoneController.text = v);
+                  widget.onPhoneChanged(v);
+                },
+        ),
         const SizedBox(height: AppSpacing.sm),
         TextField(
           controller: _phoneController,
@@ -157,24 +217,36 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
           )
         else ...[
           LargeButton(
-            label: OnboardingStrings.sendOtpButton,
-            icon: Icons.sms_outlined,
+            label: _sending ? OnboardingStrings.submittingLabel : OnboardingStrings.sendOtpButton,
+            icon: _sending ? null : Icons.sms_outlined,
             filled: false,
             outlineColor: AppColors.purple700,
             onTap: _sendOtp,
           ),
           if (_otpSent) ...[
             const SizedBox(height: AppSpacing.lg),
-            Text(OnboardingStrings.otpLabel, style: theme.textTheme.titleMedium),
+            FieldLabelWithVoice(
+              label: OnboardingStrings.otpLabel,
+              readAloudText: OnboardingStrings.otpLabel,
+              mockTranscript: _devOtpCode ?? "123456",
+              onSpeechResult: (v) => setState(() => _otpController.text = v),
+            ),
+            if (_devOtpCode != null) ...[
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                "Dev OTP: $_devOtpCode",
+                style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+              ),
+            ],
             const SizedBox(height: AppSpacing.sm),
             TextField(
               controller: _otpController,
               keyboardType: TextInputType.number,
-              maxLength: 5,
+              maxLength: 6,
               style: theme.textTheme.bodyLarge,
               decoration: InputDecoration(
                 counterText: "",
-                hintText: "12345",
+                hintText: "123456",
                 errorText: _otpError,
                 contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
                 border: OutlineInputBorder(
@@ -185,7 +257,7 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
             ),
             const SizedBox(height: AppSpacing.lg),
             LargeButton(
-              label: OnboardingStrings.verifyOtpButton,
+              label: _verifying ? OnboardingStrings.submittingLabel : OnboardingStrings.verifyOtpButton,
               gradient: AppColors.purpleGradient,
               onTap: _verifyOtp,
             ),

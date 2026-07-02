@@ -9,6 +9,8 @@ import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/phone_otp_form.dart';
+import '../../auth/data/auth_failure.dart';
+import '../../auth/providers/auth_provider.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -20,7 +22,7 @@ class TaskerPhoneVerificationScreen extends ConsumerWidget {
     final draft = ref.watch(taskerDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 2, totalSteps: 6),
+      progress: const OnboardingProgress(step: 2, totalSteps: 5),
       mascotState: draft.otpVerified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.phoneVerificationTitle,
       title: OnboardingStrings.phoneVerificationTitle,
@@ -29,9 +31,27 @@ class TaskerPhoneVerificationScreen extends ConsumerWidget {
       body: PhoneOtpForm(
         initialPhone: draft.phone,
         initiallyVerified: draft.otpVerified,
+        alreadySent: draft.otpSent,
+        initialDevCode: draft.lastDevOtpCode,
         onPhoneChanged: (v) {
           final notifier = ref.read(taskerDraftProvider.notifier);
           notifier.state = notifier.state.copyWith(phone: v);
+        },
+        onSendOtp: (phone) async {
+          try {
+            final result = await ref.read(authRepositoryProvider).sendOtp(phone);
+            return result.devCode;
+          } on AuthFailure catch (e) {
+            throw e.message;
+          }
+        },
+        onVerifyOtp: (code) async {
+          try {
+            await ref.read(authRepositoryProvider).verifyOtp(phoneNumber: draft.phone, code: code);
+            return null;
+          } on AuthFailure catch (e) {
+            return e.message;
+          }
         },
         onVerified: () {
           final notifier = ref.read(taskerDraftProvider.notifier);

@@ -49,6 +49,17 @@ dependencies:
   cloud_functions: ^5.1.3
   flutter_tts: ^4.2.5
 
+  # Onboarding backend integration (Phase 2) — talks to the Django REST API
+  # under backend/. dio for HTTP, flutter_secure_storage for JWT persistence.
+  dio: ^5.7.0
+  flutter_secure_storage: ^9.2.2
+
+  # AI Task Posting (Phase 2) — on-device speech recognition (Google speech
+  # service via the OS) for voice input, instead of recording audio and
+  # uploading it to the backend's Whisper endpoint. Location is demo-only (a
+  # fixed coordinate in ai_task_posting_screen.dart), so no GPS package.
+  speech_to_text: ^7.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
