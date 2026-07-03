@@ -21,14 +21,23 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
+    // IndexedStack slot 0 = Home (nav index 0).
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
     expect(find.text(AppStrings.homeCategoriesTitle), findsOneWidget);
 
-    await tester.tap(find.text(AppStrings.activityTabLabel));
+    // Chat tab (nav index 1) → IndexedStack slot 1 (ActivityScreen, Messages).
+    await tester.tap(find.text(AppStrings.chatTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 1);
 
+    // Pending tab (nav index 2) → IndexedStack slot 1 (ActivityScreen, Bookings).
+    await tester.tap(find.text(AppStrings.pendingTabLabel));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 1);
+
+    // Account tab (nav index 3) → IndexedStack slot 2.
     await tester.tap(find.text(AppStrings.profileTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
