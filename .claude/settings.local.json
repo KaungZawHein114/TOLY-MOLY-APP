@@ -1,4 +1,4 @@
-{
+
   "permissions": {
     "allow": [
       "PowerShell(flutter --version)",
@@ -17,8 +17,8 @@
       "Bash(git commit -m ' *)",
       "Bash(git commit *)",
       "Bash(python3 -c ' *)",
-      "Bash(cat /c/TM/.claude/settings.local.json 2>/dev/null | grep -i \"baseRef\\\\|worktree\"; cat ~/.claude/settings.json 2>/dev/null | grep -i \"baseRef\\\\|worktree\")",
-      "Bash(git check-ignore *)"
+      "Bash(git fetch *)",
+      "Bash(git rev-list *)"
     ]
   }
 }
