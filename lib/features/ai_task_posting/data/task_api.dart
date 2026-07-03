@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../../core/config/local_config.dart';
+import '../../../core/config/api_config.dart';
 import '../../auth/data/token_storage.dart';
 import 'task_failure.dart';
 

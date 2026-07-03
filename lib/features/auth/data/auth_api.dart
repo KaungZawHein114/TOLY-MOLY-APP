@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../../core/config/local_config.dart';
+import '../../../core/config/api_config.dart';
 import 'auth_failure.dart';
 
 /// Thin wrapper around the seven `/api/auth/*` endpoints from

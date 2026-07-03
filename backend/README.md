@@ -116,36 +116,44 @@ doesn't start it for you.
 
 ### Connecting to your backend (`apiBaseUrl`)
 
-The API base URL lives in a **gitignored** per-developer file so it never
-causes conflicts when you push:
+The app **auto-detects the correct URL** based on what it's running on — you
+do not need to change anything for the emulator, iOS simulator, web, or
+desktop:
 
-```
-lib/core/config/local_config.dart   ← gitignored, edit freely
-lib/core/config/local_config.dart.example  ← committed template
-```
-
-**First-time setup (do this once after cloning):**
-
-```bash
-# from the repo root
-copy lib\core\config\local_config.dart.example lib\core\config\local_config.dart   # Windows
-# cp lib/core/config/local_config.dart.example lib/core/config/local_config.dart   # macOS/Linux
-```
-
-Then open `lib/core/config/local_config.dart` and set the URL for your machine:
-
-| Running the app on... | Set `apiBaseUrl` to |
+| Running on... | URL used (automatic) |
 |---|---|
-| Android emulator | `http://10.0.2.2:8000` (emulator's alias for the host machine) |
-| iOS simulator / Windows desktop / Chrome | `http://127.0.0.1:8000` |
-| Physical phone (same Wi-Fi as your PC) | `http://<your-PC's-LAN-IP>:8000` (find it with `ipconfig` on Windows / `ifconfig` on macOS/Linux) |
+| Android emulator | `http://10.0.2.2:8000` |
+| iOS simulator | `http://127.0.0.1:8000` |
+| Web browser | `http://127.0.0.1:8000` |
+| Windows / macOS desktop | `http://127.0.0.1:8000` |
+| **Physical Android phone** | `physicalDeviceUrl` from `local_config.dart` ← only this needs editing |
 
-After changing it, **hot-restart** the app (not hot-reload — it's a `const`,
-so a plain hot-reload won't pick up the change).
+**First-time setup (only needed for physical device testing):**
 
-> **Never commit `local_config.dart`** — it's in `.gitignore`. Each developer
-> keeps their own copy with their own IP. The `.example` file is the one that
-> goes into version control.
+1. Copy the template (once, after cloning):
+
+   ```bash
+   # Windows
+   copy lib\core\config\local_config.dart.example lib\core\config\local_config.dart
+   # macOS/Linux
+   cp lib/core/config/local_config.dart.example lib/core/config/local_config.dart
+   ```
+
+2. Open `lib/core/config/local_config.dart` and change `physicalDeviceUrl`
+   to your PC's current LAN IP:
+
+   ```dart
+   const String physicalDeviceUrl = "http://192.168.x.x:8000";
+   ```
+
+   Find your IP with `ipconfig` (Windows) or `ifconfig` (macOS/Linux) — look
+   for the IPv4 address under your Wi-Fi adapter.
+
+3. **Hot-restart** the app after editing (not hot-reload — it's read at
+   startup).
+
+> **Never commit `local_config.dart`** — it's in `.gitignore`. The
+> `.example` file is the committed template.
 
 ### Physical phone over Wi-Fi: two extra one-time steps
 
