@@ -116,17 +116,23 @@ doesn't start it for you.
 
 ### Connecting to your backend (`apiBaseUrl`)
 
-The app's API base URL is a hardcoded constant in
-`lib/features/auth/data/auth_api.dart`:
+The API base URL lives in a **gitignored** per-developer file so it never
+causes conflicts when you push:
 
-```dart
-const String apiBaseUrl = "http://192.168.8.102:8000";
+```
+lib/core/config/local_config.dart   ← gitignored, edit freely
+lib/core/config/local_config.dart.example  ← committed template
 ```
 
-This value depends on **where you're running the Flutter app**, not where
-the Django server runs (the server always runs on your machine), and it's
-checked in pointed at whoever last edited it — you will almost certainly
-need to change it for your own setup:
+**First-time setup (do this once after cloning):**
+
+```bash
+# from the repo root
+copy lib\core\config\local_config.dart.example lib\core\config\local_config.dart   # Windows
+# cp lib/core/config/local_config.dart.example lib/core/config/local_config.dart   # macOS/Linux
+```
+
+Then open `lib/core/config/local_config.dart` and set the URL for your machine:
 
 | Running the app on... | Set `apiBaseUrl` to |
 |---|---|
@@ -134,13 +140,12 @@ need to change it for your own setup:
 | iOS simulator / Windows desktop / Chrome | `http://127.0.0.1:8000` |
 | Physical phone (same Wi-Fi as your PC) | `http://<your-PC's-LAN-IP>:8000` (find it with `ipconfig` on Windows / `ifconfig` on macOS/Linux) |
 
-Edit that one line locally for your setup (don't commit a value that only
-works for your machine — if everyone needs a different value, consider
-moving it to a build-time `--dart-define` later, but for now it's a manual
-edit per developer).
-
 After changing it, **hot-restart** the app (not hot-reload — it's a `const`,
 so a plain hot-reload won't pick up the change).
+
+> **Never commit `local_config.dart`** — it's in `.gitignore`. Each developer
+> keeps their own copy with their own IP. The `.example` file is the one that
+> goes into version control.
 
 ### Physical phone over Wi-Fi: two extra one-time steps
 
