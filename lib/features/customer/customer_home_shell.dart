@@ -6,25 +6,23 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import 'chat_screen.dart';
 import 'client_profile_screen.dart';
 import 'home_screen.dart';
-import '../customer/activity_screen.dart';
+import 'pending_screen.dart';
 
 // Which bottom-nav tab is active. Public because the task-posting flow's
-// success modal switches to the Activity tab (index 2) after publishing.
+// success modal may switch tabs after publishing.
 final customerTabIndexProvider = StateProvider<int>((ref) => 0);
 
 /// Bottom-nav shell for the customer flow: Home / Chat / Pending / Account.
 ///
-/// Tab indices:
-///   0 → Home
-///   1 → Chat      (ActivityScreen with Messages sub-tab pre-selected)
-///   2 → Pending   (ActivityScreen with Bookings sub-tab pre-selected)
-///   3 → Account
-///
-/// Chat and Pending share a single ActivityScreen instance. Tapping either
-/// tab simply switches activityTabProvider's sub-tab (0 = Messages,
-/// 1 = Bookings) so state is preserved between taps.
+/// Each tab maps 1-to-1 to a dedicated screen — no shared screens, no
+/// content duplication between tabs:
+///   0 → Home     (CustomerHomeScreen)
+///   1 → Chat     (ChatScreen — conversations only)
+///   2 → Pending  (PendingScreen — bookings only)
+///   3 → Account  (ClientProfileScreen)
 class CustomerHomeShell extends ConsumerWidget {
   const CustomerHomeShell({super.key});
 
@@ -38,22 +36,18 @@ class CustomerHomeShell extends ConsumerWidget {
           ? ChatbotFab(onTap: () => context.push('${Routes.chatbot}?role=client'))
           : null,
       body: IndexedStack(
-        index: index == 2 ? 1 : index == 3 ? 2 : index,
+        index: index,
         children: const [
-          CustomerHomeScreen(),  // 0 → Home
-          ActivityScreen(),      // 1 → Chat  /  2 → Pending (same widget, sub-tab differs)
-          ClientProfileScreen(), // 3 → Account
+          CustomerHomeScreen(),  // 0 — Home
+          ChatScreen(),          // 1 — Chat (conversations only)
+          PendingScreen(),       // 2 — Pending (bookings only)
+          ClientProfileScreen(), // 3 — Account
         ],
       ),
       bottomNavigationBar: NavigationBar(
         selectedIndex: index,
-        onDestinationSelected: (i) {
-          // When switching to Chat (1) or Pending (2), also update
-          // ActivityScreen's internal sub-tab so the right content shows.
-          if (i == 1) ref.read(activityTabProvider.notifier).state = 0;
-          if (i == 2) ref.read(activityTabProvider.notifier).state = 1;
-          ref.read(customerTabIndexProvider.notifier).state = i;
-        },
+        onDestinationSelected: (i) =>
+            ref.read(customerTabIndexProvider.notifier).state = i,
         backgroundColor: AppColors.lightSurface,
         indicatorColor: AppColors.purple100,
         destinations: const [
