@@ -84,6 +84,8 @@ class AppStrings {
   static const String activityTabLabel = "လုပ်ဆောင်ချက်များ";
   static const String chatTabLabel = "စကားပြော";
   static const String pendingTabLabel = "စောင့်ဆိုင်း";
+  static const String jobsTabLabel = "အလုပ်များ";
+  static const String rewardsTabLabel = "ဆုလာဘ်";
   static const String profileTabLabel = "ပရိုဖိုင်";
   static const String comingSoonTitle = "မကြာမီ လာမည်";
   static const String comingSoonMessage = "ဒီအပိုင်းကို မကြာမီ ထည့်သွင်းပေးပါမယ်နော်";
