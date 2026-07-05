@@ -6,4 +6,4 @@
 //                        First-time Windows setup: open PowerShell as Admin and run:
 //                        netsh advfirewall firewall add rule name="Django Dev" dir=in action=allow protocol=TCP localport=8000
 
-const String apiBaseUrl = "http://10.0.2.2:8000";
+const String apiBaseUrl = "http://127.0.0.1:8000/";
