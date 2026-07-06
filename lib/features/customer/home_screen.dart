@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
@@ -7,7 +8,43 @@ import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
+import '../profile/data/profile_repository.dart';
+import '../profile/data/profile_repository_impl.dart';
 import 'widgets/category_section.dart';
+
+// ============================================================================
+// ACCOUNT NAME — backend-connected (`GET /api/profile/`), screen-local per
+// CLAUDE.md's Riverpod convention. First frame never blocks on the network:
+// the header falls back to [AppStrings.homeDemoClientName] until this loads
+// (or if the request fails), same pattern as the profile screens' loading
+// state.
+// ============================================================================
+
+class _HomeNameState {
+  final bool loading;
+  final String? name;
+  const _HomeNameState({this.loading = true, this.name});
+}
+
+class _HomeNameNotifier extends StateNotifier<_HomeNameState> {
+  final ProfileRepository _repo;
+  _HomeNameNotifier(this._repo) : super(const _HomeNameState()) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await _repo.getProfile();
+      state = _HomeNameState(loading: false, name: data.name);
+    } catch (_) {
+      state = const _HomeNameState(loading: false);
+    }
+  }
+}
+
+final _homeNameProvider = StateNotifierProvider.autoDispose<_HomeNameNotifier, _HomeNameState>(
+  (ref) => _HomeNameNotifier(ProfileRepositoryImpl()),
+);
 
 /// Customer landing screen — a clean local-service marketplace dashboard.
 ///
@@ -141,42 +178,56 @@ class CustomerHomeScreen extends StatelessWidget {
 
 // ── Header ──────────────────────────────────────────────────────────────────
 
-class _HeroHeader extends StatelessWidget {
+class _HeroHeader extends ConsumerWidget {
   const _HeroHeader();
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final accountName = ref.watch(_homeNameProvider).name ?? AppStrings.homeDemoClientName;
     return Container(
       padding: const EdgeInsets.fromLTRB(
-          AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.xxxl),
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
       decoration: const BoxDecoration(
         color: AppColors.purple700,
         borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(AppRadius.xl + 4),
+          bottom: Radius.circular(AppRadius.xl),
         ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Top row: logo + notification bell
+          // Single row: logo + greeting/name + notification bell.
           Row(
             children: [
-              Image.asset('assets/logo_circle.png', width: 32, height: 32),
+              Image.asset('assets/logo_circle.png', width: 40, height: 40),
               const SizedBox(width: AppSpacing.sm),
-              Flexible(
-                child: Text(
-                  'TOLY MOLY',
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.titleMedium?.copyWith(
-                    color: AppColors.onBrand,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: 0.5,
-                  ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      AppStrings.homeGreeting,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.onBrand.withValues(alpha: 0.85),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      accountName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        color: AppColors.onBrand,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
                 ),
               ),
-              const Spacer(),
               Semantics(
                 label: AppStrings.homeNotificationsEmpty,
                 button: true,
@@ -191,23 +242,7 @@ class _HeroHeader extends StatelessWidget {
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.lg),
-          // Greeting
-          Text(
-            AppStrings.homeGreeting,
-            style: theme.textTheme.headlineSmall?.copyWith(
-              color: AppColors.onBrand,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            AppStrings.homeDemoClientName,
-            style: theme.textTheme.bodyLarge?.copyWith(
-              color: AppColors.onBrand.withValues(alpha: 0.85),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(height: AppSpacing.sm),
           // Tagline chip
           IntrinsicWidth(
             child: Container(

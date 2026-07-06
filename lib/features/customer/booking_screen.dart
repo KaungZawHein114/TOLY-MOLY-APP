@@ -7,6 +7,7 @@ import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/app_section_card.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/onboarding/speech_to_text_button.dart';
 import 'task_request_state.dart';
@@ -142,92 +143,102 @@ class _BookingScreenState extends ConsumerState<BookingScreen> {
         padding: const EdgeInsets.all(AppSpacing.xl),
         children: [
           _WorkerStrip(worker: worker),
-          const SizedBox(height: AppSpacing.xl + 2),
-          Text(AppStrings.scheduleCategoryLabel, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm + 2),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-            decoration: BoxDecoration(
-              color: AppColors.purple100,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Text(worker.skill, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.purple700)),
-          ),
-          const SizedBox(height: AppSpacing.xl + 2),
-          Text(AppStrings.scheduleLocationLabel, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm + 2),
-          TextField(
-            controller: _townshipController,
-            decoration: InputDecoration(
-              hintText: AppStrings.scheduleTownshipPlaceholder,
-              contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
-              border: OutlineInputBorder(
+          const SizedBox(height: AppSpacing.xl),
+          AppSectionCard(
+            title: AppStrings.scheduleCategoryLabel,
+            icon: Icons.category_outlined,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+              decoration: BoxDecoration(
+                color: AppColors.purple100,
                 borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
               ),
+              child: Text(worker.skill, style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.purple700)),
             ),
           ),
-          const SizedBox(height: AppSpacing.sm + 2),
-          TextField(
-            controller: _addressController,
-            decoration: InputDecoration(
-              hintText: AppStrings.scheduleAddressPlaceholder,
-              contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
-              ),
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xl + 2),
-          Text(AppStrings.scheduleDateLabel, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm + 2),
-          _OptionWrap(
-            options: _days,
-            selectedIndex: dateIdx,
-            onSelect: (i) => ref.read(_scheduleDateIndexProvider.notifier).state = i,
-          ),
-          const SizedBox(height: AppSpacing.xl + 2),
-          Text(AppStrings.scheduleTimeLabel, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm + 2),
-          _OptionWrap(
-            options: _slots,
-            selectedIndex: timeIdx,
-            onSelect: (i) => ref.read(_scheduleTimeIndexProvider.notifier).state = i,
-          ),
-          const SizedBox(height: AppSpacing.xl + 2),
-          Text(AppStrings.scheduleDescriptionLabel, style: theme.textTheme.titleMedium),
-          const SizedBox(height: AppSpacing.sm + 2),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _descriptionController,
-                  maxLines: 4,
+          AppSectionCard(
+            title: AppStrings.scheduleLocationLabel,
+            icon: Icons.location_on_outlined,
+            child: Column(
+              children: [
+                TextField(
+                  controller: _townshipController,
                   decoration: InputDecoration(
-                    hintText: AppStrings.scheduleDescriptionPlaceholder,
-                    contentPadding: const EdgeInsets.all(AppSpacing.lg),
+                    hintText: AppStrings.scheduleTownshipPlaceholder,
+                    contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(AppRadius.md),
                       borderSide: BorderSide.none,
                     ),
                   ),
                 ),
-              ),
-              const SizedBox(width: AppSpacing.sm),
-              SpeechToTextButton(
-                semanticPrompt: AppStrings.scheduleDescriptionPlaceholder,
-                mockTranscript: "ရေယိုနေတယ်",
-                onResult: (v) => setState(() => _descriptionController.text = v),
-              ),
-            ],
+                const SizedBox(height: AppSpacing.sm + 2),
+                TextField(
+                  controller: _addressController,
+                  decoration: InputDecoration(
+                    hintText: AppStrings.scheduleAddressPlaceholder,
+                    contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.md, horizontal: AppSpacing.md),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          AppSectionCard(
+            title: AppStrings.scheduleDateLabel,
+            icon: Icons.calendar_today_outlined,
+            child: _OptionWrap(
+              options: _days,
+              selectedIndex: dateIdx,
+              onSelect: (i) => ref.read(_scheduleDateIndexProvider.notifier).state = i,
+            ),
+          ),
+          AppSectionCard(
+            title: AppStrings.scheduleTimeLabel,
+            icon: Icons.access_time_outlined,
+            child: _OptionWrap(
+              options: _slots,
+              selectedIndex: timeIdx,
+              onSelect: (i) => ref.read(_scheduleTimeIndexProvider.notifier).state = i,
+            ),
+          ),
+          AppSectionCard(
+            title: AppStrings.scheduleDescriptionLabel,
+            icon: Icons.description_outlined,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: _descriptionController,
+                    maxLines: 4,
+                    decoration: InputDecoration(
+                      hintText: AppStrings.scheduleDescriptionPlaceholder,
+                      contentPadding: const EdgeInsets.all(AppSpacing.lg),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(AppRadius.md),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                SpeechToTextButton(
+                  semanticPrompt: AppStrings.scheduleDescriptionPlaceholder,
+                  mockTranscript: "ရေယိုနေတယ်",
+                  onResult: (v) => setState(() => _descriptionController.text = v),
+                ),
+              ],
+            ),
           ),
           if (_error != null) ...[
-            const SizedBox(height: AppSpacing.sm),
             Text(_error!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
+            const SizedBox(height: AppSpacing.sm),
           ],
-          const SizedBox(height: AppSpacing.xxl + 4),
+          const SizedBox(height: AppSpacing.md),
           LargeButton(
             label: AppStrings.scheduleSubmitCta,
             icon: Icons.send,
