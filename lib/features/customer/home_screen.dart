@@ -73,31 +73,6 @@ class CustomerHomeScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: AppColors.lightBg,
       body: SafeArea(
-<<<<<<< HEAD
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
-          children: [
-            const _HomeHeader(),
-            const SizedBox(height: AppSpacing.lg),
-            StaggeredEntrance(
-              children: [
-                LargeButton(
-                  label: AppStrings.homePostTaskAction,
-                  icon: Icons.add_circle_outline,
-                  gradient: AppColors.purpleGradient,
-                  onTap: () => context.push(Routes.voiceTaskPosting),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Manual alternative to the voice flow: the original
-                // step-by-step task-posting pages (Routes.postTask).
-                LargeButton(
-                  label: AppStrings.homePostTaskManualAction,
-                  icon: Icons.checklist_rtl,
-                  filled: false,
-                  outlineColor: AppColors.indigo700,
-                  onTap: () => context.push(Routes.postTask),
-=======
         child: CustomScrollView(
           slivers: [
             // ── Gradient hero header ────────────────────────────────────────
@@ -130,7 +105,6 @@ class CustomerHomeScreen extends StatelessWidget {
                       ),
                     ),
                   ],
->>>>>>> 826b7889affffd3cebe1bd187c89553ad361913f
                 ),
               ),
             ),

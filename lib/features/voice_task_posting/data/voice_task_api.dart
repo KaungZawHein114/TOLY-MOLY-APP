@@ -1,6 +1,6 @@
 import 'package:dio/dio.dart';
 
-import '../../auth/data/auth_api.dart' show apiBaseUrl;
+import '../../../core/config/api_config.dart';
 import '../../auth/data/token_storage.dart';
 import '../models/extracted_task.dart';
 

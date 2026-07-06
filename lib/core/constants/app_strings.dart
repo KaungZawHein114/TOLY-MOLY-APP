@@ -66,14 +66,10 @@ class AppStrings {
   static const String workerHomeGreeting = "မင်္ဂလာပါ";
   static const String homeNotificationsEmpty = "အကြောင်းကြားစာ မရှိသေးပါ";
   static const String homePostTaskAction = "အလုပ်တင်မည်";
-<<<<<<< HEAD
   static const String homePostTaskManualAction = "အဆင့်ဆင့် ကိုယ်တိုင်ဖြည့်မည်";
-  static const String homeFindWorkerAction = "အလုပ်သမားရှာမည်";
-=======
   static const String homePostTaskSubtitle = "ဝန်ဆောင်မှုတောင်းဆိုပါ";
   static const String homeFindWorkerAction = "လုပ်သားရှာမည်";
   static const String homeFindWorkerSubtitle = "ကျွမ်းကျင်သူများ ကြည့်ရှုပါ";
->>>>>>> 826b7889affffd3cebe1bd187c89553ad361913f
   static const String homeBrowseServicesTitle = "ဝန်ဆောင်မှုများ ရှာဖွေမည်";
   static const String homeRecommendedTitle = "အကြံပြုသော လုပ်သားများ";
   static const String homeRecommendedSubtitle = "နီးနားဆုံး၊ အဆင့်မြင့်ဆုံး";
