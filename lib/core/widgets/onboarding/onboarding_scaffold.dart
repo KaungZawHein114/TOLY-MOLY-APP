@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../../features/auth/audio/auth_audio_button.dart';
 import '../../../features/onboarding/onboarding_models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -28,6 +29,12 @@ class OnboardingScaffold extends StatelessWidget {
   final Widget bottomBar;
   final VoidCallback? onBack;
   final String? readAloudText;
+
+  /// AUTH-ONLY: when set, the header's read-aloud control plays this
+  /// pre-recorded clip (a key from `AuthAudioKeys`) instead of speaking
+  /// [readAloudText] via TTS. Takes precedence over [readAloudText]. Non-auth
+  /// screens (e.g. task posting) leave this null and keep the TTS button.
+  final String? readAloudAudioKey;
   final OnboardingLayoutMode layout;
 
   const OnboardingScaffold({
@@ -41,6 +48,7 @@ class OnboardingScaffold extends StatelessWidget {
     this.subtitle,
     this.onBack,
     this.readAloudText,
+    this.readAloudAudioKey,
     this.layout = OnboardingLayoutMode.form,
   });
 
@@ -148,7 +156,9 @@ class OnboardingScaffold extends StatelessWidget {
                                 centered: layout == OnboardingLayoutMode.moment,
                               ),
                               const SizedBox(height: AppSpacing.lg),
-                              if (title != null || readAloudText != null) ...[
+                              if (title != null ||
+                                  readAloudText != null ||
+                                  readAloudAudioKey != null) ...[
                                 Row(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
@@ -171,7 +181,14 @@ class OnboardingScaffold extends StatelessWidget {
                                       )
                                     else
                                       const Spacer(),
-                                    if (readAloudText != null)
+                                    // AUTH: pre-recorded clip; otherwise the TTS
+                                    // read-aloud button (unchanged for non-auth).
+                                    if (readAloudAudioKey != null)
+                                      AuthAudioButton(
+                                        audioKey: readAloudAudioKey!,
+                                        semanticLabel: title,
+                                      )
+                                    else if (readAloudText != null)
                                       ReadAloudButton(textToRead: readAloudText!),
                                   ],
                                 ),

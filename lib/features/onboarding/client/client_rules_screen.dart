@@ -9,6 +9,7 @@ import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/rules_agreement_panel.dart';
+import '../../auth/audio/auth_audio_map.dart';
 import '../../auth/data/auth_failure.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../onboarding_models.dart';
@@ -74,6 +75,7 @@ class _ClientRulesScreenState extends ConsumerState<ClientRulesScreen> {
       body: RulesAgreementPanel(
         rulesText: OnboardingStrings.rulesBodyText,
         agreementLabel: OnboardingStrings.rulesAgreeClientLabel,
+        audioKey: AuthAudioKeys.rules,
         agreed: draft.rulesAgreed,
         errorText: _error,
         onChanged: (v) {

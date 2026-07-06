@@ -11,6 +11,7 @@ import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
+import '../../auth/audio/auth_audio_map.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -70,7 +71,7 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.skillsMascotMessage,
       title: OnboardingStrings.skillsTitle,
-      readAloudText: OnboardingStrings.skillsMascotMessage,
+      readAloudAudioKey: AuthAudioKeys.experience,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -115,6 +116,7 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
           FieldLabelWithVoice(
             label: OnboardingStrings.customSkillLabel,
             readAloudText: OnboardingStrings.customSkillLabel,
+            audioKey: AuthAudioKeys.customSkill, // no recording yet → listen button hides
             mockTranscript: "ပန်းခြံပြုပြင်ခြင်း",
             onSpeechResult: (v) {
               _customSkillController.text = v;

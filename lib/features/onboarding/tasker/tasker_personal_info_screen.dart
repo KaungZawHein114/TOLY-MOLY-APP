@@ -11,8 +11,9 @@ import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
+import '../../auth/audio/auth_audio_button.dart';
+import '../../auth/audio/auth_audio_map.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -87,7 +88,8 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.taskerPersonalMascotMessage,
       title: OnboardingStrings.personalInfoTitle,
-      readAloudText: OnboardingStrings.taskerPersonalMascotMessage,
+      // No recorded clip for the whole-screen prompt; each field below has its
+      // own recorded listen button instead (no TTS on auth screens).
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -95,6 +97,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           FieldLabelWithVoice(
             label: OnboardingStrings.nameLabel,
             readAloudText: OnboardingStrings.nameLabel,
+            audioKey: AuthAudioKeys.name,
             mockTranscript: "Aung Aung",
             onSpeechResult: (v) => setState(() => _nameController.text = v),
           ),
@@ -116,7 +119,11 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           Row(
             children: [
               Expanded(child: Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium)),
-              ReadAloudButton(textToRead: OnboardingStrings.genderLabel, compact: true),
+              const AuthAudioButton(
+                audioKey: AuthAudioKeys.gender,
+                semanticLabel: OnboardingStrings.genderLabel,
+                compact: true,
+              ),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -142,6 +149,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           FieldLabelWithVoice(
             label: OnboardingStrings.ageLabel,
             readAloudText: OnboardingStrings.ageLabel,
+            audioKey: AuthAudioKeys.age,
             mockTranscript: "25",
             onSpeechResult: (v) => setState(() => _ageController.text = v),
           ),

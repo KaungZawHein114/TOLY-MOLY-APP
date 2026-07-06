@@ -10,6 +10,7 @@ import '../../core/widgets/large_button.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
 import '../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
+import '../auth/audio/auth_audio_map.dart';
 import '../auth/data/auth_failure.dart';
 import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
@@ -124,6 +125,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
           FieldLabelWithVoice(
             label: OnboardingStrings.nameLabel,
             readAloudText: OnboardingStrings.nameLabel,
+            audioKey: AuthAudioKeys.name,
             mockTranscript: "Aye Aye",
             onSpeechResult: (v) => setState(() => _nameController.text = v),
           ),
@@ -144,6 +146,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
           FieldLabelWithVoice(
             label: OnboardingStrings.phoneLabel,
             readAloudText: OnboardingStrings.phoneLabel,
+            audioKey: AuthAudioKeys.phone,
             mockTranscript: "09123456789",
             onSpeechResult: (v) => setState(() => _phoneController.text = v),
           ),
@@ -172,6 +175,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
           FieldLabelWithVoice(
             label: OnboardingStrings.passwordLabel,
             readAloudText: OnboardingStrings.passwordLabel,
+            audioKey: AuthAudioKeys.password,
           ),
           const SizedBox(height: AppSpacing.sm),
           TextField(

@@ -31,6 +31,7 @@ import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../../features/ai_task_posting/screens/ai_task_posting_screen.dart';
+import '../../features/auth/audio/auth_audio_nav_observer.dart';
 import '../../features/voice_task_posting/screens/voice_task_intro_screen.dart';
 import '../../features/voice_task_posting/screens/voice_task_review_screen.dart';
 import '../data/demo_data.dart';
@@ -328,6 +329,10 @@ final GoRouter appRouter = GoRouter(
       const _RootBackHandler(child: WelcomeScreen()),
   routes: [
     ShellRoute(
+      // Stops any playing auth voice clip the moment the user navigates
+      // between screens (push/pop/reset). Idle — and therefore a no-op —
+      // everywhere outside the auth flow, so nothing else is affected.
+      observers: [AuthAudioNavObserver()],
       builder: (context, state, child) => _RootBackHandler(child: child),
       routes: [
         ..._onboardingRoutes,

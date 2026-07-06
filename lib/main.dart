@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'core/constants/app_strings.dart';
 import 'core/routing/app_router.dart';
 import 'core/theme/app_theme.dart';
+import 'features/auth/audio/auth_audio_controller.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -18,6 +21,9 @@ void main() async {
   } catch (_) {
     // No Firebase config present — continue in offline/mock mode.
   }
+  // Warm the auth voice clips so the first speaker tap plays instantly.
+  // Best-effort: failures are swallowed inside the controller.
+  unawaited(AuthAudioController.instance.preload());
   runApp(const ProviderScope(child: TolyMolyApp()));
 }
 

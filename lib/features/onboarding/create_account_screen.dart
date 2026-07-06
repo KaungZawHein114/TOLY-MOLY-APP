@@ -11,7 +11,8 @@ import '../../core/widgets/mascot/mascot_state.dart';
 import '../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../core/widgets/onboarding/onboarding_selection_card.dart';
-import '../../core/widgets/onboarding/read_aloud_button.dart';
+import '../auth/audio/auth_audio_button.dart';
+import '../auth/audio/auth_audio_map.dart';
 import '../auth/data/auth_failure.dart';
 import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
@@ -148,19 +149,10 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
 
   List<Widget> _roleFields(ThemeData theme, UserRole? role) {
     return [
-      Row(
-        children: [
-          ReadAloudButton(textToRead: OnboardingStrings.signupInstructions),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Text(
-              OnboardingStrings.readAloudButton,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            ),
-          ),
-        ],
-      ),
-      const SizedBox(height: AppSpacing.xl),
+      // No pre-recorded clip for the signup instruction yet, so no speaker is
+      // shown here (auth screens never fall back to TTS). Each field below
+      // still carries its own recorded listen button. Add a `signup` entry to
+      // authAudioMap + an AuthAudioButton here to reinstate it.
       Text(OnboardingStrings.chooseRolePrompt, style: theme.textTheme.titleMedium),
       const SizedBox(height: AppSpacing.md),
       Row(
@@ -197,7 +189,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
     return [
       Row(
         children: [
-          ReadAloudButton(textToRead: OnboardingStrings.loginInstructions),
+          const AuthAudioButton(audioKey: AuthAudioKeys.login),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Text(
@@ -211,6 +203,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       FieldLabelWithVoice(
         label: OnboardingStrings.phoneLabel,
         readAloudText: OnboardingStrings.phoneLabel,
+        audioKey: AuthAudioKeys.phone,
         mockTranscript: "09123456789",
         onSpeechResult: (v) => setState(() => _loginPhoneController.text = v),
       ),
@@ -238,6 +231,7 @@ class _CreateAccountScreenState extends ConsumerState<CreateAccountScreen> {
       FieldLabelWithVoice(
         label: OnboardingStrings.passwordLabel,
         readAloudText: OnboardingStrings.passwordLabel,
+        audioKey: AuthAudioKeys.password,
       ),
       const SizedBox(height: AppSpacing.sm),
       TextField(

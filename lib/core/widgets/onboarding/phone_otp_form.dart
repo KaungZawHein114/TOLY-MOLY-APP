@@ -53,6 +53,12 @@ class PhoneOtpForm extends StatefulWidget {
   final ValueChanged<String> onPhoneChanged;
   final VoidCallback onVerified;
 
+  /// AUTH-ONLY: pre-recorded clip keys (from `AuthAudioKeys`) for the phone and
+  /// OTP field labels. When set, those field listen buttons play recordings
+  /// instead of TTS. Leaving them null keeps the live TTS buttons.
+  final String? phoneAudioKey;
+  final String? otpAudioKey;
+
   /// Returns the dev-mode OTP code on success (shown directly in the UI
   /// since there's no real SMS gateway yet — see backend spec §2), or
   /// throws with a user-facing message on failure.
@@ -71,6 +77,8 @@ class PhoneOtpForm extends StatefulWidget {
     required this.onVerified,
     required this.onSendOtp,
     required this.onVerifyOtp,
+    this.phoneAudioKey,
+    this.otpAudioKey,
   });
 
   @override
@@ -162,6 +170,7 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
         FieldLabelWithVoice(
           label: OnboardingStrings.phoneLabel,
           readAloudText: OnboardingStrings.phoneLabel,
+          audioKey: widget.phoneAudioKey,
           mockTranscript: _verified ? null : "09123456789",
           onSpeechResult: _verified
               ? null
@@ -228,6 +237,7 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
             FieldLabelWithVoice(
               label: OnboardingStrings.otpLabel,
               readAloudText: OnboardingStrings.otpLabel,
+              audioKey: widget.otpAudioKey,
               mockTranscript: _devOtpCode ?? "123456",
               onSpeechResult: (v) => setState(() => _otpController.text = v),
             ),

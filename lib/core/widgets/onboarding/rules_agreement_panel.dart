@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../features/auth/audio/auth_audio_button.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import 'read_aloud_button.dart';
@@ -15,6 +16,10 @@ class RulesAgreementPanel extends StatelessWidget {
   final ValueChanged<bool> onChanged;
   final String? errorText;
 
+  /// AUTH-ONLY: when set, the read-aloud control plays this pre-recorded clip
+  /// (a key from `AuthAudioKeys`) instead of speaking [rulesText] via TTS.
+  final String? audioKey;
+
   const RulesAgreementPanel({
     super.key,
     required this.rulesText,
@@ -22,6 +27,7 @@ class RulesAgreementPanel extends StatelessWidget {
     required this.agreed,
     required this.onChanged,
     this.errorText,
+    this.audioKey,
   });
 
   @override
@@ -30,7 +36,13 @@ class RulesAgreementPanel extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Align(alignment: Alignment.centerRight, child: ReadAloudButton(textToRead: rulesText)),
+        Align(
+          alignment: Alignment.centerRight,
+          // AUTH: pre-recorded clip; otherwise the live TTS read-aloud button.
+          child: audioKey != null
+              ? AuthAudioButton(audioKey: audioKey!)
+              : ReadAloudButton(textToRead: rulesText),
+        ),
         const SizedBox(height: AppSpacing.sm),
         Container(
           height: 220,

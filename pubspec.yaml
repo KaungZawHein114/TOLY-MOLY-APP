@@ -49,6 +49,12 @@ dependencies:
   cloud_functions: ^5.1.3
   flutter_tts: ^4.2.5
 
+  # Pre-recorded audio playback. Used ONLY by the auth (onboarding) speaker
+  # buttons, which play clips from `recordings/auth/` instead of TTS. Every
+  # other screen keeps using flutter_tts above. See
+  # lib/features/auth/audio/ for the map, controller, and button.
+  audioplayers: ^6.1.0
+
   # Onboarding backend integration (Phase 2) — talks to the Django REST API
   # under backend/. dio for HTTP, flutter_secure_storage for JWT persistence.
   dio: ^5.7.0
@@ -87,6 +93,10 @@ flutter:
     - assets/mascot/
     - assets/logo_circle.png
     - assets/img.png
+    # Pre-recorded auth voice clips (played by the onboarding speaker buttons
+    # via lib/features/auth/audio/). Kept outside assets/ on purpose; the
+    # AudioCache prefix is set to '' so these paths resolve as-is.
+    - recordings/auth/
 
   # To add individual assets to your application:
   #   - images/a_dot_burr.jpeg

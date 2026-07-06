@@ -22,9 +22,7 @@ class ClientWelcomeScreen extends StatelessWidget {
       mascotState: PhoWaYokeState.success,
       mascotMessage: OnboardingStrings.completionUnverifiedMessage,
       title: OnboardingStrings.completionTitle,
-      readAloudText: "${OnboardingStrings.completionUnverifiedMessage} "
-          "${OnboardingStrings.completionContinuePrompt} "
-          "${OnboardingStrings.completionUseNowPrompt}",
+      // No recorded clip for the completion screen (auth screens don't use TTS).
       layout: OnboardingLayoutMode.moment,
       body: StaggeredEntrance(
         children: [
