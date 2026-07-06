@@ -36,7 +36,17 @@ class CustomerHomeScreen extends StatelessWidget {
                   label: AppStrings.homePostTaskAction,
                   icon: Icons.add_circle_outline,
                   gradient: AppColors.purpleGradient,
-                  onTap: () => context.push(Routes.aiTaskPosting),
+                  onTap: () => context.push(Routes.voiceTaskPosting),
+                ),
+                const SizedBox(height: AppSpacing.md),
+                // Manual alternative to the voice flow: the original
+                // step-by-step task-posting pages (Routes.postTask).
+                LargeButton(
+                  label: AppStrings.homePostTaskManualAction,
+                  icon: Icons.checklist_rtl,
+                  filled: false,
+                  outlineColor: AppColors.indigo700,
+                  onTap: () => context.push(Routes.postTask),
                 ),
                 const SizedBox(height: AppSpacing.md),
                 LargeButton(

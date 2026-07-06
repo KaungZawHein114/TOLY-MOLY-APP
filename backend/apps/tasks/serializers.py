@@ -36,6 +36,14 @@ class AnalyzeTaskSerializer(serializers.Serializer):
     known_fields = serializers.DictField(required=False, default=dict)
 
 
+class ExtractTaskSerializer(serializers.Serializer):
+    """One-shot voice/text extraction — the whole spoken description in a
+    single field. No history or known_fields: this flow makes one pass and
+    goes straight to review (see services.extract_task)."""
+
+    transcript = serializers.CharField()
+
+
 class BudgetOptionsSerializer(serializers.Serializer):
     category = serializers.CharField()
     urgency = serializers.ChoiceField(choices=Task.URGENCY_CHOICES, default=Task.URGENCY_NORMAL)

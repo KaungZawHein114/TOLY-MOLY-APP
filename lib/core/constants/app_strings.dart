@@ -66,6 +66,7 @@ class AppStrings {
   static const String workerHomeGreeting = "မင်္ဂလာပါ";
   static const String homeNotificationsEmpty = "အကြောင်းကြားစာ မရှိသေးပါ";
   static const String homePostTaskAction = "အလုပ်တင်မည်";
+  static const String homePostTaskManualAction = "အဆင့်ဆင့် ကိုယ်တိုင်ဖြည့်မည်";
   static const String homeFindWorkerAction = "အလုပ်သမားရှာမည်";
   static const String homeBrowseServicesTitle = "ဝန်ဆောင်မှုများ ရှာဖွေမည်";
   static const String homeCategoriesTitle = "ဝန်ဆောင်မှု အမျိုးအစားများ";

@@ -31,6 +31,8 @@ import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../../features/ai_task_posting/screens/ai_task_posting_screen.dart';
+import '../../features/voice_task_posting/screens/voice_task_intro_screen.dart';
+import '../../features/voice_task_posting/screens/voice_task_review_screen.dart';
 import '../data/demo_data.dart';
 import '../theme/app_spacing.dart';
 import '../../features/customer/activity_screen.dart';
@@ -58,6 +60,8 @@ class Routes {
   static const String customerHome = '/customer/home';
   static const String postTask = '/customer/post-task';
   static const String aiTaskPosting = '/customer/post-task/ai';
+  static const String voiceTaskPosting = '/customer/post-task/voice';
+  static const String voiceTaskReview = '/customer/post-task/voice/review';
   static const String postTaskTypeLocation = '/customer/post-task/type-location';
   static const String postTaskDateTime = '/customer/post-task/date-time';
   static const String postTaskWorkersTier = '/customer/post-task/workers-tier';
@@ -195,6 +199,20 @@ final List<RouteBase> _customerRoutes = [
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
       child: const AiTaskPostingScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.voiceTaskPosting,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      key: state.pageKey,
+      child: const VoiceTaskIntroScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.voiceTaskReview,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      key: state.pageKey,
+      child: const VoiceTaskReviewScreen(),
     ),
   ),
   GoRoute(

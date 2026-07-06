@@ -40,7 +40,7 @@ void main() {
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
   });
 
-  testWidgets('Post a task quick action navigates to the AI Task Assistant',
+  testWidgets('Post a task quick action navigates to the voice task flow',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
@@ -51,7 +51,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text("AI Task Assistant"), findsOneWidget);
+    // Post a task now opens the voice-first extraction flow (its AppBar title).
+    expect(find.text('အသံဖြင့် အလုပ်တင်ရန်'), findsOneWidget);
   });
 
   testWidgets('Find a worker quick action navigates to WorkerListScreen', (tester) async {
@@ -98,7 +99,16 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     // First category in demo_data.dart is "Home Cleaning" -> skill "Cleaner".
-    await tester.tap(find.text("အိမ်သန့်ရှင်းရေး"));
+    // With the extra "post step by step" button now on the home screen, the
+    // category grid can sit below the fold — scroll it into view before tapping.
+    final cleaningCard = find.text("အိမ်သန့်ရှင်းရေး");
+    await tester.dragUntilVisible(
+      cleaningCard,
+      find.byType(ListView).first,
+      const Offset(0, -200),
+    );
+    await tester.pump(const Duration(milliseconds: 400));
+    await tester.tap(cleaningCard);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 

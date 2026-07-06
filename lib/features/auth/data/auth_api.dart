@@ -9,7 +9,7 @@ import 'auth_failure.dart';
 /// Android emulator, or `http://127.0.0.1:8000` for iOS simulator/desktop/
 /// web. This IP changes whenever the PC reconnects to Wi-Fi — re-check with
 /// `ipconfig` (Windows) if the app stops reaching the server.
-const String apiBaseUrl = "http://192.168.8.102:8000";
+const String apiBaseUrl = "http://192.168.100.66:8000";
 
 /// Thin wrapper around the seven `/api/auth/*` endpoints from
 /// backend/apps/authentication/urls.py. Knows nothing about tokens or
@@ -48,19 +48,24 @@ class AuthApi {
     return _post("/api/auth/send-otp", {"phone_number": phoneNumber});
   }
 
-  Future<Map<String, dynamic>> verifyOtp({required String phoneNumber, required String code}) {
-    return _post("/api/auth/verify-otp", {"phone_number": phoneNumber, "code": code});
+  Future<Map<String, dynamic>> verifyOtp(
+      {required String phoneNumber, required String code}) {
+    return _post(
+        "/api/auth/verify-otp", {"phone_number": phoneNumber, "code": code});
   }
 
-  Future<Map<String, dynamic>> login({required String phoneNumber, required String password}) {
-    return _post("/api/auth/login", {"phone_number": phoneNumber, "password": password});
+  Future<Map<String, dynamic>> login(
+      {required String phoneNumber, required String password}) {
+    return _post(
+        "/api/auth/login", {"phone_number": phoneNumber, "password": password});
   }
 
   Future<Map<String, dynamic>> refresh(String refreshToken) {
     return _post("/api/auth/refresh", {"refresh_token": refreshToken});
   }
 
-  Future<void> logout({required String accessToken, required String refreshToken}) {
+  Future<void> logout(
+      {required String accessToken, required String refreshToken}) {
     return _post(
       "/api/auth/logout",
       {"refresh_token": refreshToken},
@@ -106,7 +111,8 @@ class AuthApi {
       final code = data["code"];
       if (code is String) {
         final detail = data["detail"];
-        return AuthFailure(code: code, message: detail is String ? detail : code);
+        return AuthFailure(
+            code: code, message: detail is String ? detail : code);
       }
       // Plain DRF field-validation error, e.g. {"password": ["..."]}.
       final firstKey = data.keys.isNotEmpty ? data.keys.first : null;
@@ -118,7 +124,8 @@ class AuthApi {
     }
     return const AuthFailure(
       code: "network_error",
-      message: "Couldn't reach the server. Check your connection and try again.",
+      message:
+          "Couldn't reach the server. Check your connection and try again.",
     );
   }
 }

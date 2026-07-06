@@ -10,6 +10,7 @@ from apps.tasks.serializers import (
     PUBLISH_REQUIRED_FIELDS,
     AnalyzeTaskSerializer,
     BudgetOptionsSerializer,
+    ExtractTaskSerializer,
     PublishTaskSerializer,
     TaskSerializer,
 )
@@ -17,6 +18,7 @@ from apps.tasks.services import (
     AIServiceUnavailable,
     analyze_task,
     compute_budget_options,
+    extract_task,
     transcribe_audio,
 )
 
@@ -57,6 +59,23 @@ class AnalyzeTaskView(APIView):
         data = serializer.validated_data
         try:
             result = analyze_task(data["message"], data["history"], data["known_fields"])
+        except AIServiceUnavailable as exc:
+            return _ai_unavailable_response(exc)
+        return Response(result, status=status.HTTP_200_OK)
+
+
+class ExtractTaskView(APIView):
+    """One-shot voice/text task extraction — see services.extract_task.
+    Client dictates once; this returns every field the AI could pull out,
+    and the app shows the rest as "Not given" on the review screen."""
+
+    permission_classes = [IsAuthenticated, IsClient]
+
+    def post(self, request):
+        serializer = ExtractTaskSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        try:
+            result = extract_task(serializer.validated_data["transcript"])
         except AIServiceUnavailable as exc:
             return _ai_unavailable_response(exc)
         return Response(result, status=status.HTTP_200_OK)
