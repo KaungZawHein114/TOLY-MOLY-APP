@@ -12,6 +12,7 @@ import '../../../core/widgets/onboarding/rules_agreement_panel.dart';
 import '../../auth/audio/auth_audio_map.dart';
 import '../../auth/data/auth_failure.dart';
 import '../../auth/providers/auth_provider.dart';
+import '../../profile/data/skills_repository_impl.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 
@@ -50,6 +51,11 @@ class _TaskerRulesScreenState extends ConsumerState<TaskerRulesScreen> {
             age: draft.age!,
             role: "TASKER",
           );
+      // Seed the profile's Skills section from whatever the tasker picked
+      // during signup, so they don't have to re-enter it manually. Best
+      // effort: a failed sync here shouldn't block the account that was
+      // just successfully created.
+      await _syncSkillsToBackend(draft);
       if (!mounted) return;
       context.push(Routes.taskerWelcome);
     } on AuthFailure catch (e) {
@@ -57,6 +63,26 @@ class _TaskerRulesScreenState extends ConsumerState<TaskerRulesScreen> {
       setState(() => _error = e.message);
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
+    }
+  }
+
+  Future<void> _syncSkillsToBackend(TaskerProfileDraft draft) async {
+    final repo = SkillsRepositoryImpl();
+    for (final skill in draft.skills) {
+      try {
+        await repo.create(
+          skillName: skill.label,
+          experienceYears: draft.skillExperience[skill]?.years ?? 0,
+        );
+      } catch (_) {
+        // Ignore — one failed skill shouldn't stop the rest from syncing.
+      }
+    }
+    final customSkill = draft.customSkill.trim();
+    if (customSkill.isNotEmpty) {
+      try {
+        await repo.create(skillName: customSkill, experienceYears: 0);
+      } catch (_) {}
     }
   }
 

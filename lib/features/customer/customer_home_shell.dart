@@ -6,61 +6,69 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import 'chat_screen.dart';
 import 'client_profile_screen.dart';
 import 'home_screen.dart';
-import '../customer/activity_screen.dart';
+import 'pending_screen.dart';
 
-// Which bottom-nav tab is active. Public (not file-private) because the
-// task-posting flow's success modal switches to the Activity tab after
-// publishing — still feature-local in spirit (one provider, one concern),
-// just not restricted to this file the way other screens' local state is.
+// Which bottom-nav tab is active. Public because the task-posting flow's
+// success modal may switch tabs after publishing.
 final customerTabIndexProvider = StateProvider<int>((ref) => 0);
 
-/// Bottom-nav shell for the customer flow: Home / Activity / Profile.
-/// Tabs are local state (IndexedStack), not separate GoRouter routes — the
-/// global back-button handler and ShellRoute are untouched by this; pushed
-/// screens (worker list/profile, booking, post-task) still navigate via
-/// context.push as before, on top of whichever tab is active.
+/// Bottom-nav shell for the customer flow: Home / Chat / Pending / Account.
+///
+/// Each tab maps 1-to-1 to a dedicated screen — no shared screens, no
+/// content duplication between tabs:
+///   0 → Home     (CustomerHomeScreen)
+///   1 → Chat     (ChatScreen — conversations only)
+///   2 → Pending  (PendingScreen — bookings only)
+///   3 → Account  (ClientProfileScreen)
 class CustomerHomeShell extends ConsumerWidget {
   const CustomerHomeShell({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(customerTabIndexProvider);
+
     return Scaffold(
-      // Floating AI assistant — only on the Home (dashboard) tab.
+      // Floating AI assistant — only on the Home tab.
       floatingActionButton: index == 0
           ? ChatbotFab(onTap: () => context.push('${Routes.chatbot}?role=client'))
           : null,
       body: IndexedStack(
         index: index,
         children: const [
-          CustomerHomeScreen(),
-          ActivityScreen(),
-          ClientProfileScreen(),
+          CustomerHomeScreen(),  // 0 — Home
+          ChatScreen(),          // 1 — Chat (conversations only)
+          PendingScreen(),       // 2 — Pending (bookings only)
+          ClientProfileScreen(), // 3 — Account
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: index,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.purple700,
-        unselectedItemColor: AppColors.textSecondary,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (i) =>
+            ref.read(customerTabIndexProvider.notifier).state = i,
         backgroundColor: AppColors.lightSurface,
-        onTap: (i) => ref.read(customerTabIndexProvider.notifier).state = i,
-        items: const [
-          BottomNavigationBarItem(
+        indicatorColor: AppColors.purple100,
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_rounded),
             label: AppStrings.homeTabLabel,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            activeIcon: Icon(Icons.assignment),
-            label: AppStrings.activityTabLabel,
+          NavigationDestination(
+            icon: Icon(Icons.chat_bubble_outline_rounded),
+            selectedIcon: Icon(Icons.chat_bubble_rounded),
+            label: AppStrings.chatTabLabel,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+          NavigationDestination(
+            icon: Icon(Icons.pending_actions_outlined),
+            selectedIcon: Icon(Icons.pending_actions_rounded),
+            label: AppStrings.pendingTabLabel,
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
             label: AppStrings.profileTabLabel,
           ),
         ],

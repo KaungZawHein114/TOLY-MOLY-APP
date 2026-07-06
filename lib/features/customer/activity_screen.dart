@@ -97,7 +97,7 @@ class ActivityScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: activeTab == 0 ? const _MessagesView() : const _BookingsView(),
+            child: activeTab == 0 ? const ActivityMessagesView() : const ActivityBookingsView(),
           ),
         ],
       ),
@@ -179,8 +179,9 @@ class _TabButton extends StatelessWidget {
   }
 }
 
-class _MessagesView extends ConsumerWidget {
-  const _MessagesView();
+/// Public: used by [ChatScreen] to render only the conversation list.
+class ActivityMessagesView extends ConsumerWidget {
+  const ActivityMessagesView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -389,8 +390,9 @@ class _ChatTile extends StatelessWidget {
   }
 }
 
-class _BookingsView extends ConsumerWidget {
-  const _BookingsView();
+/// Public: used by [PendingScreen] to render only the bookings list.
+class ActivityBookingsView extends ConsumerWidget {
+  const ActivityBookingsView({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
