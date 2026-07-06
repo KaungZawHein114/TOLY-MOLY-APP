@@ -140,6 +140,27 @@ extension ExperienceLevelLabel on ExperienceLevel {
   }
 }
 
+/// Whole-year approximation used when syncing onboarding skill selections to
+/// the backend's integer `experience_years` field.
+extension ExperienceLevelYears on ExperienceLevel {
+  int get years {
+    switch (this) {
+      case ExperienceLevel.underSixMonths:
+        return 0;
+      case ExperienceLevel.sixMonths:
+        return 1;
+      case ExperienceLevel.oneYear:
+        return 1;
+      case ExperienceLevel.twoYears:
+        return 2;
+      case ExperienceLevel.threeYearsPlus:
+        return 3;
+      case ExperienceLevel.fiveYearsPlus:
+        return 5;
+    }
+  }
+}
+
 /// Converts a non-negative int to Burmese numerals, e.g. 12 -> "၁၂".
 String toBurmeseDigits(int value) {
   const digits = ["၀", "၁", "၂", "၃", "၄", "၅", "၆", "၇", "၈", "၉"];

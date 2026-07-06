@@ -22,6 +22,45 @@ class ProfileStrings {
   // (No location/address here by design — see the Address verification step.)
   static const String publicInfoTitle = "ကိုယ်ရေးအချက်အလက်";
   static const String skillsLabel = "ကျွမ်းကျင်မှုများ";
+  static const String accountStatusLabel = "အကောင့် အခြေအနေ";
+  static const String statusUnverified = "အတည်ပြုရန် လိုအပ်သည်";
+  static const String statusPending = "စိစစ်နေဆဲ";
+  static const String statusVerified = "အတည်ပြုပြီး";
+
+  // ── Age/Gender inline edit ───────────────────────────────────────────────
+  static const String saveButton = "သိမ်းမည်";
+  static const String cancelButton = "မလုပ်တော့ပါ";
+  static const String saveSuccessMessage = "အောင်မြင်စွာ သိမ်းဆည်းပြီးပါပြီ";
+  static const String saveFailedMessage = "သိမ်းဆည်းမှု မအောင်မြင်ပါ၊ ထပ်စမ်းကြည့်ပါ";
+  static const String loadFailedMessage = "အချက်အလက် ရယူ၍မရပါ၊ ထပ်စမ်းကြည့်ပါ";
+
+  // ── Phone change flow ────────────────────────────────────────────────────
+  static const String changePhoneCta = "ဖုန်းနံပါတ် ပြောင်းမည်";
+  static const String newPhoneLabel = "ဖုန်းနံပါတ် အသစ်";
+  static const String newPhonePlaceholder = "09xxxxxxxxx";
+  static const String sendOtpCta = "OTP ကုဒ် ပို့မည်";
+  static const String otpSentMessage = "OTP ကုဒ် ပို့ပြီးပါပြီ";
+  static const String otpLabel = "OTP ကုဒ်";
+  static const String verifyAndSaveCta = "အတည်ပြုပြီး သိမ်းမည်";
+  static const String phoneChangeSuccessMessage = "ဖုန်းနံပါတ် ပြောင်းလဲပြီးပါပြီ";
+
+  // ── Skills CRUD ──────────────────────────────────────────────────────────
+  static const String addSkillCta = "ကျွမ်းကျင်မှု ထည့်မည်";
+  static const String editSkillCta = "ပြင်ဆင်မည်";
+  static const String deleteSkillCta = "ဖျက်မည်";
+  static const String skillNameLabel = "ကျွမ်းကျင်မှု အမည်";
+  static const String skillYearsLabel = "အတွေ့အကြုံ (နှစ်)";
+  static const String noSkillsMessage = "ကျွမ်းကျင်မှု မထည့်ရသေးပါ";
+  static const String deleteSkillConfirmTitle = "ဖျက်မှာ သေချာပါသလား";
+  static const String deleteSkillConfirmMessage = "ဤကျွမ်းကျင်မှုကို ဖျက်ပါတော့မည်။";
+  static const String deleteConfirmCta = "ဖျက်မည်";
+
+  // ── Promotion video (demo only) ──────────────────────────────────────────
+  static const String promoVideoTitle = "မိတ်ဆက် ဗီဒီယို";
+  static const String promoVideoDescription =
+      "မိမိကိုယ်ကို ဖောက်သည်များအား မိတ်ဆက်ရန် ဗီဒီယို တစ်ခု ထည့်ပါ (မဖြစ်မနေ မလိုအပ်ပါ)။";
+  static const String promoVideoAddCta = "ဗီဒီယို ထည့်မည်";
+  static const String promoVideoAddedLabel = "ထည့်ပြီးပါပြီ";
 
   // ── Verification section ────────────────────────────────────────────────
   static const String verificationTitle = "အတည်ပြုမှု အခြေအနေ";
@@ -62,9 +101,7 @@ class ProfileStrings {
   static const String placeholderVideo = "စက္ကန့် ၃၀–၆၀"; // video length hint
   static const String placeholderCaptured = "ထည့်သွင်းပြီး (Demo)"; // captured
 
-  // ── Gated CTAs ───────────────────────────────────────────────────────────
-  static const String postTaskCta = "အလုပ်တင်မည်";
-  static const String acceptTaskCta = "အလုပ်လက်ခံမည်";
+  // ── Become tasker/client CTAs ────────────────────────────────────────────
   // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
   static const String becomeTaskerTitle = "ဝန်ဆောင်မှုပေးချင်လား?";
   static const String becomeTaskerSubtitle = "အလုပ်လုပ်ပြီး ဝင်ငွေရယူနိုင်ပါတယ်";
@@ -73,11 +110,6 @@ class ProfileStrings {
   static const String becomeClientTitle = "ဝန်ဆောင်မှု ရယူလိုပါသလား?";
   static const String becomeClientSubtitle = "အလုပ်ရှာပြီး ဝန်ဆောင်မှု တောင်းခံလိုက်ပါ";
   static const String becomeClientCta = "အလုပ်ပေးသူအဖြစ် ပြောင်းမည်";
-  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
-  static const String postTaskLockedHint =
-      "အတည်ပြုပြီးမှ အလုပ်တင်နိုင်ပါမည်";
-  static const String acceptTaskLockedHint =
-      "အတည်ပြုပြီးမှ အလုပ်လက်ခံနိုင်ပါမည်";
 
   // ── Stats section ────────────────────────────────────────────────────────
   static const String statsTitle = "စာရင်းအချက်အလက်";

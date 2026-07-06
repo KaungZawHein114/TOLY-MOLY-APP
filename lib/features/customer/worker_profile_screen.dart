@@ -3,10 +3,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/profile_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/app_section_card.dart';
 import '../../core/widgets/demo_card.dart';
 import '../../core/widgets/large_button.dart';
 import 'task_posting/task_posting_models.dart';
@@ -84,35 +86,40 @@ class WorkerProfileScreen extends ConsumerWidget {
             padding: const EdgeInsets.all(AppSpacing.xl),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                Row(
-                  children: [
-                    _Stat(
-                      icon: Icons.star,
-                      iconColor: AppColors.star,
-                      value: worker.rating.toString(),
-                      label: "${worker.reviews} reviews",
-                    ),
-                    _Stat(
-                      icon: Icons.location_on,
-                      iconColor: AppColors.purple700,
-                      value: "${(worker.distanceMiles * 1.609).toStringAsFixed(1)} km",
-                      label: "away",
-                    ),
-                    _Stat(
-                      icon: Icons.assignment_turned_in,
-                      iconColor: AppColors.success,
-                      value: "${worker.completedTasks}",
-                      label: AppStrings.tasksCompletedSuffix,
-                    ),
-                  ],
+                AppSectionCard(
+                  title: ProfileStrings.statsTitle,
+                  icon: Icons.insights_outlined,
+                  child: Row(
+                    children: [
+                      _Stat(
+                        icon: Icons.star,
+                        iconColor: AppColors.star,
+                        value: worker.rating.toString(),
+                        label: "${worker.reviews} reviews",
+                      ),
+                      _Stat(
+                        icon: Icons.location_on,
+                        iconColor: AppColors.purple700,
+                        value: "${(worker.distanceMiles * 1.609).toStringAsFixed(1)} km",
+                        label: "away",
+                      ),
+                      _Stat(
+                        icon: Icons.assignment_turned_in,
+                        iconColor: AppColors.success,
+                        value: "${worker.completedTasks}",
+                        label: AppStrings.tasksCompletedSuffix,
+                      ),
+                    ],
+                  ),
                 ),
-                const SizedBox(height: AppSpacing.xl),
                 _AvailabilityBanner(available: worker.isAvailableNow),
                 const SizedBox(height: AppSpacing.xl),
-                Text("အကြောင်း", style: theme.textTheme.titleMedium),
-                const SizedBox(height: AppSpacing.xs + 2),
-                Text(worker.bio, style: theme.textTheme.bodyMedium),
-                const SizedBox(height: AppSpacing.xxl + 4),
+                AppSectionCard(
+                  title: "အကြောင်း",
+                  icon: Icons.info_outline,
+                  child: Text(worker.bio, style: theme.textTheme.bodyMedium),
+                ),
+                const SizedBox(height: AppSpacing.md),
                 LargeButton(
                   label: AppStrings.scheduleWorkerCta,
                   icon: Icons.calendar_month,

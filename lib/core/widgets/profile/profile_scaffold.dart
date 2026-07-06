@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import '../../constants/profile_strings.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
-import '../onboarding/read_aloud_button.dart';
 import '../onboarding/staggered_entrance.dart';
 
 /// Shared visual shell for both profile screens, echoing the onboarding
@@ -19,12 +18,8 @@ class ProfileScaffold extends StatelessWidget {
   final Widget badge;
   final String? profilePicturePath;
 
-  /// Mock "edit profile" / "change photo" actions (dummy in Phase 1).
-  final VoidCallback onEdit;
+  /// Mock "change photo" action (dummy in Phase 1 — never uploaded/persisted).
   final VoidCallback onEditPhoto;
-
-  /// Text the header's read-aloud control announces.
-  final String readAloudText;
 
   /// The ordered cards rendered in the white scroll panel.
   final List<Widget> sections;
@@ -35,9 +30,7 @@ class ProfileScaffold extends StatelessWidget {
     required this.roleLabel,
     required this.badge,
     required this.profilePicturePath,
-    required this.onEdit,
     required this.onEditPhoto,
-    required this.readAloudText,
     required this.sections,
   });
 
@@ -57,27 +50,6 @@ class ProfileScaffold extends StatelessWidget {
                   AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxxl),
               child: Column(
                 children: [
-                  Row(
-                    children: [
-                      ReadAloudButton(textToRead: readAloudText, compact: true),
-                      const Spacer(),
-                      Semantics(
-                        label: ProfileStrings.editProfile,
-                        button: true,
-                        child: IconButton(
-                          onPressed: onEdit,
-                          icon: const Icon(Icons.edit_outlined,
-                              color: AppColors.onBrand),
-                          style: IconButton.styleFrom(
-                            minimumSize: const Size(48, 48),
-                            backgroundColor:
-                                AppColors.onBrandMuted.withValues(alpha: 0.15),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppSpacing.sm),
                   _EditableAvatar(
                     picked: profilePicturePath != null,
                     onEditPhoto: onEditPhoto,

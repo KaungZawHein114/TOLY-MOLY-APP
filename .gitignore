@@ -45,3 +45,6 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 .worktrees/
+
+# Per-developer local config (API base URL, etc.) — copy from local_config.dart.example
+lib/core/config/local_config.dart

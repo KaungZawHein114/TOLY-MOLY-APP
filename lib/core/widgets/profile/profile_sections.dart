@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../constants/onboarding_strings.dart';
 import '../../constants/profile_strings.dart';
 import '../../data/demo_data.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 import '../../../features/onboarding/onboarding_models.dart';
+import '../../../features/profile/models/profile_models.dart';
+import '../app_section_card.dart';
 import '../large_button.dart';
+import '../onboarding/read_aloud_button.dart';
+import '../onboarding/speech_to_text_button.dart';
 
-/// A titled, soft-shadowed card used for each profile section. Sits on the
-/// white panel, so it uses a faint fill + shadow (no border) to separate —
-/// matching the project's "fill + shadow over Border.all" rule.
+/// Thin, profile-flavored alias over the design system's [AppSectionCard] —
+/// kept so every existing profile call site (icon/title/child/trailing) stays
+/// unchanged while actually rendering the shared component. New screens
+/// should reach for [AppSectionCard] directly instead of this alias.
 class ProfileSectionCard extends StatelessWidget {
   final String title;
   final IconData icon;
@@ -27,34 +33,11 @@ class ProfileSectionCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.lightBg,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(color: AppColors.shadowSm, blurRadius: 12, offset: const Offset(0, 4)),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(icon, size: AppSizes.iconMd, color: AppColors.purple700),
-              const SizedBox(width: AppSpacing.sm),
-              Expanded(
-                child: Text(title, style: theme.textTheme.titleMedium),
-              ),
-              if (trailing != null) trailing!,
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          child,
-        ],
-      ),
+    return AppSectionCard(
+      title: title,
+      icon: icon,
+      trailing: trailing,
+      child: child,
     );
   }
 }
@@ -297,9 +280,6 @@ class VerificationSection extends StatelessWidget {
   final Map<VerificationDoc, VerificationDocStatus> docStatuses;
   final ValueChanged<VerificationDoc> onAction;
   final String hint;
-  final String ctaLabel;
-  final String ctaLockedHint;
-  final VoidCallback onCtaWhenUnlocked;
 
   const VerificationSection({
     super.key,
@@ -307,9 +287,6 @@ class VerificationSection extends StatelessWidget {
     required this.docStatuses,
     required this.onAction,
     required this.hint,
-    required this.ctaLabel,
-    required this.ctaLockedHint,
-    required this.onCtaWhenUnlocked,
   });
 
   @override
@@ -318,7 +295,6 @@ class VerificationSection extends StatelessWidget {
     final state = verificationStateFor(docStatuses, requiredDocs);
     final done = completedDocCount(docStatuses, requiredDocs);
     final total = requiredDocs.length;
-    final verified = state == VerificationState.verified;
     final stateColor = _stateColor(state);
 
     return Column(
@@ -380,15 +356,6 @@ class VerificationSection extends StatelessWidget {
             status: docStatuses[doc] ?? VerificationDocStatus.notStarted,
             onAction: () => onAction(doc),
           ),
-
-        const SizedBox(height: AppSpacing.xs),
-        _GatedCta(
-          label: ctaLabel,
-          lockedHint: ctaLockedHint,
-          unlocked: verified,
-          onTap: onCtaWhenUnlocked,
-        ),
-        const SizedBox(height: AppSpacing.lg),
       ],
     );
   }
@@ -446,7 +413,12 @@ class VerificationStepCard extends StatelessWidget {
               Expanded(
                 child: Text(doc.label, style: theme.textTheme.titleMedium),
               ),
-              const SizedBox(width: AppSpacing.sm),
+              const SizedBox(width: AppSpacing.xs),
+              ReadAloudButton(
+                textToRead: "${doc.label}။ ${_docDescription(doc)}",
+                compact: true,
+              ),
+              const SizedBox(width: AppSpacing.xs),
               _StatusBadge(status: status),
             ],
           ),
@@ -692,74 +664,6 @@ class _VerificationActionButton extends StatelessWidget {
   }
 }
 
-/// Primary action that is enabled only when verification is complete. When
-/// locked it renders a disabled, lock-marked button plus a helper line.
-class _GatedCta extends StatelessWidget {
-  final String label;
-  final String lockedHint;
-  final bool unlocked;
-  final VoidCallback onTap;
-
-  const _GatedCta({
-    required this.label,
-    required this.lockedHint,
-    required this.unlocked,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    if (unlocked) {
-      return LargeButton(
-        label: label,
-        icon: Icons.add_circle_outline,
-        gradient: AppColors.purpleGradient,
-        onTap: onTap,
-      );
-    }
-    return Column(
-      children: [
-        Semantics(
-          label: "$label — $lockedHint",
-          button: true,
-          enabled: false,
-          child: Container(
-            height: AppSizes.buttonHeight,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.onboardingDivider,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.lock_outline,
-                    size: AppSizes.iconMd, color: AppColors.textSecondary),
-                const SizedBox(width: AppSpacing.sm),
-                Flexible(
-                  child: Text(
-                    label,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium
-                        ?.copyWith(color: AppColors.textSecondary),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(
-          lockedHint,
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.warning),
-        ),
-      ],
-    );
-  }
-}
-
 // ============================================================================
 // AVAILABILITY EDITOR (tasker) — UI-only toggles, local state.
 // ============================================================================
@@ -919,6 +823,764 @@ class ProfileLogoutButton extends StatelessWidget {
       filled: false,
       outlineColor: AppColors.error,
       onTap: () => _confirm(context),
+    );
+  }
+}
+
+// ============================================================================
+// AGE / GENDER — inline editable row, backend-connected. Pure UI: the actual
+// PUT call and provider update happen inside [onSave]'s caller.
+// ============================================================================
+
+class AgeGenderEditor extends StatefulWidget {
+  final int age;
+  final Gender gender;
+  final Future<bool> Function(int age, Gender gender) onSave;
+
+  /// When false, gender is shown read-only (no picker, no edit affordance)
+  /// and only age can be changed — used by the Tasker profile, where gender
+  /// is fixed at signup.
+  final bool allowGenderEdit;
+
+  const AgeGenderEditor({
+    super.key,
+    required this.age,
+    required this.gender,
+    required this.onSave,
+    this.allowGenderEdit = true,
+  });
+
+  @override
+  State<AgeGenderEditor> createState() => _AgeGenderEditorState();
+}
+
+class _AgeGenderEditorState extends State<AgeGenderEditor> {
+  bool _editing = false;
+  bool _saving = false;
+  late final TextEditingController _ageController =
+      TextEditingController(text: widget.age.toString());
+  late Gender _gender = widget.gender;
+
+  @override
+  void didUpdateWidget(AgeGenderEditor old) {
+    super.didUpdateWidget(old);
+    if (!_editing) {
+      _ageController.text = widget.age.toString();
+      _gender = widget.gender;
+    }
+  }
+
+  @override
+  void dispose() {
+    _ageController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _save() async {
+    final age = int.tryParse(_ageController.text.trim());
+    if (age == null || age < 16 || age > 100) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(OnboardingStrings.ageRangeError)));
+      return;
+    }
+    setState(() => _saving = true);
+    final ok = await widget.onSave(age, _gender);
+    if (!mounted) return;
+    setState(() {
+      _saving = false;
+      if (ok) _editing = false;
+    });
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? ProfileStrings.saveSuccessMessage : ProfileStrings.saveFailedMessage),
+    ));
+  }
+
+  void _cancel() {
+    setState(() {
+      _editing = false;
+      _ageController.text = widget.age.toString();
+      _gender = widget.gender;
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (!_editing) {
+      if (!widget.allowGenderEdit) {
+        // Gender is fixed (Tasker) — only the age row gets an inline edit
+        // icon, beside its value, instead of a separate button below.
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: ProfileInfoRow(
+                    icon: Icons.cake_outlined,
+                    label: OnboardingStrings.ageLabel,
+                    value: "${toBurmeseDigits(widget.age)} နှစ်",
+                  ),
+                ),
+                Semantics(
+                  label: ProfileStrings.editProfile,
+                  button: true,
+                  child: IconButton(
+                    onPressed: () => setState(() => _editing = true),
+                    icon: const Icon(Icons.edit_outlined),
+                    style: IconButton.styleFrom(
+                      minimumSize: const Size(44, 44),
+                      foregroundColor: AppColors.purple700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            ProfileInfoRow(
+              icon: Icons.wc_outlined,
+              label: OnboardingStrings.genderLabel,
+              value: widget.gender.label,
+            ),
+          ],
+        );
+      }
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProfileInfoRow(
+            icon: Icons.cake_outlined,
+            label: OnboardingStrings.ageLabel,
+            value: "${toBurmeseDigits(widget.age)} နှစ်",
+          ),
+          ProfileInfoRow(
+            icon: Icons.wc_outlined,
+            label: OnboardingStrings.genderLabel,
+            value: widget.gender.label,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _editing = true),
+              icon: const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
+              label: const Text(ProfileStrings.editProfile),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 44),
+                foregroundColor: AppColors.purple700,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(OnboardingStrings.ageLabel, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          controller: _ageController,
+          keyboardType: TextInputType.number,
+          enabled: !_saving,
+          style: theme.textTheme.bodyLarge,
+          decoration: InputDecoration(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+          ),
+        ),
+        if (widget.allowGenderEdit) ...[
+          const SizedBox(height: AppSpacing.md),
+          Text(OnboardingStrings.genderLabel, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.sm),
+          Row(
+            children: Gender.values.map((g) {
+              final selected = _gender == g;
+              return Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xxs),
+                  child: ChoiceChip(
+                    label: Text("${g.emoji} ${g.label}"),
+                    selected: selected,
+                    onSelected: _saving ? null : (_) => setState(() => _gender = g),
+                    selectedColor: AppColors.purple100,
+                    labelStyle: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w600,
+                      color: selected ? AppColors.purple700 : AppColors.textPrimary,
+                    ),
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.lg),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _saving ? null : _cancel,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  side: const BorderSide(color: AppColors.onboardingDivider),
+                ),
+                child: const Text(ProfileStrings.cancelButton),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  backgroundColor: AppColors.purple700,
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onBrand),
+                      )
+                    : const Text(ProfileStrings.saveButton),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// PHONE NUMBER — Edit -> new number -> send OTP -> enter OTP -> verify+save.
+// Pure UI/orchestration: [onSendOtp]/[onVerifyAndSave] own the actual network
+// calls; this widget only walks the 3-step flow and reports outcomes.
+// ============================================================================
+
+enum _PhoneEditStep { idle, enteringPhone, enteringOtp }
+
+class PhoneNumberEditor extends StatefulWidget {
+  final String currentPhone;
+
+  /// Returns an error message to show, or null on success.
+  final Future<String?> Function(String newPhone) onSendOtp;
+
+  /// Returns true on success (caller already persisted the new number).
+  final Future<bool> Function(String newPhone, String otp) onVerifyAndSave;
+
+  const PhoneNumberEditor({
+    super.key,
+    required this.currentPhone,
+    required this.onSendOtp,
+    required this.onVerifyAndSave,
+  });
+
+  @override
+  State<PhoneNumberEditor> createState() => _PhoneNumberEditorState();
+}
+
+class _PhoneNumberEditorState extends State<PhoneNumberEditor> {
+  _PhoneEditStep _step = _PhoneEditStep.idle;
+  bool _busy = false;
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
+
+  @override
+  void dispose() {
+    _phoneController.dispose();
+    _otpController.dispose();
+    super.dispose();
+  }
+
+  void _reset() {
+    setState(() {
+      _step = _PhoneEditStep.idle;
+      _busy = false;
+      _phoneController.clear();
+      _otpController.clear();
+    });
+  }
+
+  Future<void> _sendOtp() async {
+    final phone = _phoneController.text.trim();
+    if (phone.isEmpty) return;
+    setState(() => _busy = true);
+    final error = await widget.onSendOtp(phone);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (error != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(error)));
+      return;
+    }
+    setState(() => _step = _PhoneEditStep.enteringOtp);
+    ScaffoldMessenger.of(context)
+        .showSnackBar(const SnackBar(content: Text(ProfileStrings.otpSentMessage)));
+  }
+
+  Future<void> _verifyAndSave() async {
+    final phone = _phoneController.text.trim();
+    final otp = _otpController.text.trim();
+    if (otp.isEmpty) return;
+    setState(() => _busy = true);
+    final ok = await widget.onVerifyAndSave(phone, otp);
+    if (!mounted) return;
+    setState(() => _busy = false);
+    if (ok) {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(ProfileStrings.phoneChangeSuccessMessage)));
+      _reset();
+    } else {
+      ScaffoldMessenger.of(context)
+          .showSnackBar(const SnackBar(content: Text(ProfileStrings.saveFailedMessage)));
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    if (_step == _PhoneEditStep.idle) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ProfileInfoRow(
+            icon: Icons.phone_outlined,
+            label: OnboardingStrings.phoneLabel,
+            value: widget.currentPhone,
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => setState(() => _step = _PhoneEditStep.enteringPhone),
+              icon: const Icon(Icons.edit_outlined, size: AppSizes.iconSm),
+              label: const Text(ProfileStrings.changePhoneCta),
+              style: TextButton.styleFrom(
+                minimumSize: const Size(0, 44),
+                foregroundColor: AppColors.purple700,
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
+    if (_step == _PhoneEditStep.enteringPhone) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(ProfileStrings.newPhoneLabel, style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.xs),
+          TextField(
+            controller: _phoneController,
+            keyboardType: TextInputType.phone,
+            enabled: !_busy,
+            style: theme.textTheme.bodyLarge,
+            decoration: InputDecoration(
+              hintText: ProfileStrings.newPhonePlaceholder,
+              contentPadding:
+                  const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: _busy ? null : _reset,
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                    side: const BorderSide(color: AppColors.onboardingDivider),
+                  ),
+                  child: const Text(ProfileStrings.cancelButton),
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: FilledButton(
+                  onPressed: _busy ? null : _sendOtp,
+                  style: FilledButton.styleFrom(
+                    minimumSize: const Size(0, 48),
+                    backgroundColor: AppColors.purple700,
+                  ),
+                  child: _busy
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child:
+                              CircularProgressIndicator(strokeWidth: 2, color: AppColors.onBrand),
+                        )
+                      : const Text(ProfileStrings.sendOtpCta),
+                ),
+              ),
+            ],
+          ),
+        ],
+      );
+    }
+
+    // enteringOtp
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(ProfileStrings.otpLabel, style: theme.textTheme.bodyMedium),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          controller: _otpController,
+          keyboardType: TextInputType.number,
+          enabled: !_busy,
+          style: theme.textTheme.bodyLarge,
+          decoration: InputDecoration(
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.md),
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(AppRadius.md)),
+          ),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                onPressed: _busy ? null : _reset,
+                style: OutlinedButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  side: const BorderSide(color: AppColors.onboardingDivider),
+                ),
+                child: const Text(ProfileStrings.cancelButton),
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: FilledButton(
+                onPressed: _busy ? null : _verifyAndSave,
+                style: FilledButton.styleFrom(
+                  minimumSize: const Size(0, 48),
+                  backgroundColor: AppColors.purple700,
+                ),
+                child: _busy
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.onBrand),
+                      )
+                    : const Text(ProfileStrings.verifyAndSaveCta),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// SKILLS — list + add/edit/delete, backend-connected via callbacks. Pure UI:
+// the CRUD network calls and provider updates live in the callbacks' caller.
+// ============================================================================
+
+class SkillsManager extends StatelessWidget {
+  final List<TaskerSkillEntry> skills;
+  final bool loading;
+  final Future<bool> Function(String name, int years) onAdd;
+  final Future<bool> Function(int id, String name, int years) onEdit;
+  final Future<bool> Function(int id) onDelete;
+
+  const SkillsManager({
+    super.key,
+    required this.skills,
+    required this.loading,
+    required this.onAdd,
+    required this.onEdit,
+    required this.onDelete,
+  });
+
+  Future<void> _openAddDialog(BuildContext context) async {
+    final result = await showDialog<_SkillDialogResult>(
+      context: context,
+      builder: (ctx) => const _SkillDialog(),
+    );
+    if (result == null || !context.mounted) return;
+    final ok = await onAdd(result.name, result.years);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? ProfileStrings.saveSuccessMessage : ProfileStrings.saveFailedMessage),
+    ));
+  }
+
+  Future<void> _openEditDialog(BuildContext context, TaskerSkillEntry skill) async {
+    final result = await showDialog<_SkillDialogResult>(
+      context: context,
+      builder: (ctx) => _SkillDialog(initialName: skill.skillName, initialYears: skill.experienceYears),
+    );
+    if (result == null || !context.mounted) return;
+    final ok = await onEdit(skill.id, result.name, result.years);
+    if (!context.mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(ok ? ProfileStrings.saveSuccessMessage : ProfileStrings.saveFailedMessage),
+    ));
+  }
+
+  Future<void> _confirmDelete(BuildContext context, TaskerSkillEntry skill) async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text(ProfileStrings.deleteSkillConfirmTitle),
+        content: const Text(ProfileStrings.deleteSkillConfirmMessage),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text(ProfileStrings.logoutCancel),
+          ),
+          FilledButton(
+            style: FilledButton.styleFrom(backgroundColor: AppColors.error),
+            onPressed: () => Navigator.of(ctx).pop(true),
+            child: const Text(ProfileStrings.deleteConfirmCta),
+          ),
+        ],
+      ),
+    );
+    if (shouldDelete != true || !context.mounted) return;
+    await onDelete(skill.id);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (loading)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+            child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+          )
+        else if (skills.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
+            child: Text(
+              ProfileStrings.noSkillsMessage,
+              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+            ),
+          )
+        else
+          for (final skill in skills)
+            Container(
+              margin: const EdgeInsets.only(bottom: AppSpacing.sm),
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+              decoration: BoxDecoration(
+                color: AppColors.purple100,
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(skill.skillName,
+                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700)),
+                        Text(
+                          "${toBurmeseDigits(skill.experienceYears)} ${ProfileStrings.skillYearsLabel}",
+                          style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: () => _openEditDialog(context, skill),
+                    icon: const Icon(Icons.edit_outlined, color: AppColors.purple700),
+                    tooltip: ProfileStrings.editSkillCta,
+                  ),
+                  IconButton(
+                    onPressed: () => _confirmDelete(context, skill),
+                    icon: const Icon(Icons.delete_outline, color: AppColors.error),
+                    tooltip: ProfileStrings.deleteSkillCta,
+                  ),
+                ],
+              ),
+            ),
+        const SizedBox(height: AppSpacing.xs),
+        OutlinedButton.icon(
+          onPressed: () => _openAddDialog(context),
+          icon: const Icon(Icons.add),
+          label: const Text(ProfileStrings.addSkillCta),
+          style: OutlinedButton.styleFrom(
+            minimumSize: const Size(double.infinity, 48),
+            foregroundColor: AppColors.purple700,
+            side: const BorderSide(color: AppColors.purple700),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _SkillDialogResult {
+  final String name;
+  final int years;
+  const _SkillDialogResult(this.name, this.years);
+}
+
+class _SkillDialog extends StatefulWidget {
+  final String? initialName;
+  final int? initialYears;
+  const _SkillDialog({this.initialName, this.initialYears});
+
+  @override
+  State<_SkillDialog> createState() => _SkillDialogState();
+}
+
+class _SkillDialogState extends State<_SkillDialog> {
+  late final TextEditingController _nameController =
+      TextEditingController(text: widget.initialName ?? "");
+  late final TextEditingController _yearsController =
+      TextEditingController(text: widget.initialYears?.toString() ?? "");
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _yearsController.dispose();
+    super.dispose();
+  }
+
+  void _submit() {
+    final name = _nameController.text.trim();
+    final years = int.tryParse(_yearsController.text.trim()) ?? 0;
+    if (name.isEmpty) return;
+    Navigator.of(context).pop(_SkillDialogResult(name, years));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(widget.initialName == null ? ProfileStrings.addSkillCta : ProfileStrings.editSkillCta),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: _nameController,
+                  decoration: InputDecoration(labelText: ProfileStrings.skillNameLabel),
+                  autofocus: true,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              SpeechToTextButton(
+                semanticPrompt: ProfileStrings.skillNameLabel,
+                mockTranscript: "ပန်းခြံပြုပြင်ခြင်း",
+                compact: true,
+                onResult: (v) => setState(() => _nameController.text = v),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _yearsController,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(labelText: ProfileStrings.skillYearsLabel),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.of(context).pop(),
+          child: const Text(ProfileStrings.cancelButton),
+        ),
+        FilledButton(
+          style: FilledButton.styleFrom(backgroundColor: AppColors.purple700),
+          onPressed: _submit,
+          child: const Text(ProfileStrings.saveButton),
+        ),
+      ],
+    );
+  }
+}
+
+// ============================================================================
+// PROMOTION VIDEO — demo-only (no upload/recording/backend). Tapping Add
+// flips straight to an "Added" confirmation.
+// ============================================================================
+
+class PromotionVideoCard extends StatelessWidget {
+  final bool added;
+  final VoidCallback onAdd;
+
+  const PromotionVideoCard({super.key, required this.added, required this.onAdd});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          ProfileStrings.promoVideoDescription,
+          style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: AppSpacing.md),
+        AnimatedSwitcher(
+          duration: AppMotion.medium,
+          child: added
+              ? Container(
+                  key: const ValueKey("added"),
+                  height: 56,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.success.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.check_circle, color: AppColors.success, size: AppSizes.iconMd),
+                      const SizedBox(width: AppSpacing.sm),
+                      Text(
+                        ProfileStrings.promoVideoAddedLabel,
+                        style: theme.textTheme.titleMedium
+                            ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                )
+              : Semantics(
+                  key: const ValueKey("add"),
+                  label: ProfileStrings.promoVideoAddCta,
+                  button: true,
+                  child: Material(
+                    color: AppColors.blue100,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        onAdd();
+                      },
+                      child: Container(
+                        height: 56,
+                        alignment: Alignment.center,
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(Icons.videocam_outlined, color: AppColors.purple700, size: AppSizes.iconMd),
+                            const SizedBox(width: AppSpacing.sm),
+                            Text(
+                              ProfileStrings.promoVideoAddCta,
+                              style: theme.textTheme.titleMedium?.copyWith(color: AppColors.purple700),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+        ),
+      ],
     );
   }
 }

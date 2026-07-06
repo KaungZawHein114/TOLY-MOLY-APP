@@ -21,18 +21,27 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
+    // Each nav tab maps 1-to-1 to its IndexedStack slot.
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
     expect(find.text(AppStrings.homeCategoriesTitle), findsOneWidget);
 
-    await tester.tap(find.text(AppStrings.activityTabLabel));
+    // Chat tab → slot 1 (ChatScreen — conversations only).
+    await tester.tap(find.text(AppStrings.chatTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 1);
 
-    await tester.tap(find.text(AppStrings.profileTabLabel));
+    // Pending tab → slot 2 (PendingScreen — bookings only).
+    await tester.tap(find.text(AppStrings.pendingTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 2);
+
+    // Account tab → slot 3.
+    await tester.tap(find.text(AppStrings.profileTabLabel));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 3);
 
     await tester.tap(find.text(AppStrings.homeTabLabel));
     await tester.pump();
@@ -97,6 +106,14 @@ void main() {
     appRouter.go(Routes.customerHome);
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
+
+    // Category grid is below the hero header and action cards — scroll to it.
+    await tester.dragUntilVisible(
+      find.text("အိမ်သန့်ရှင်းရေး"),
+      find.byType(CustomScrollView),
+      const Offset(0, -200),
+    );
+    await tester.pump();
 
     // First category in demo_data.dart is "Home Cleaning" -> skill "Cleaner".
     // With the extra "post step by step" button now on the home screen, the

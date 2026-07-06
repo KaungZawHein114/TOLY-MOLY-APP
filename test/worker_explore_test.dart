@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -36,6 +37,11 @@ void main() {
 
     // Profile: no rate, CTA has no rate suffix.
     expect(find.textContaining("MMK"), findsNothing);
+    await tester.dragUntilVisible(
+      find.text(AppStrings.scheduleWorkerCta),
+      find.byType(CustomScrollView),
+      const Offset(0, -300),
+    );
     await tester.tap(find.text(AppStrings.scheduleWorkerCta));
     await settle(tester);
 

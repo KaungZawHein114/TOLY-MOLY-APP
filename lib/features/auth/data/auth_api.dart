@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 
+import '../../../core/config/api_config.dart';
 import 'auth_failure.dart';
 
 /// Base URL for the Django backend (see backend/README — `python manage.py
@@ -9,7 +10,7 @@ import 'auth_failure.dart';
 /// Android emulator, or `http://127.0.0.1:8000` for iOS simulator/desktop/
 /// web. This IP changes whenever the PC reconnects to Wi-Fi — re-check with
 /// `ipconfig` (Windows) if the app stops reaching the server.
-const String apiBaseUrl = "http://192.168.100.66:8000";
+const String apiBaseUrl = "http://192.168.8.102:8000";
 
 /// Thin wrapper around the seven `/api/auth/*` endpoints from
 /// backend/apps/authentication/urls.py. Knows nothing about tokens or

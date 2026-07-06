@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/constants/onboarding_strings.dart';
@@ -12,147 +13,275 @@ import '../../core/widgets/mascot/mascot_message_card.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
 import '../../core/widgets/profile/profile_scaffold.dart';
 import '../../core/widgets/profile/profile_sections.dart';
+import '../auth/providers/auth_provider.dart';
 import '../onboarding/onboarding_models.dart';
+import '../profile/data/profile_repository.dart';
+import '../profile/data/profile_repository_impl.dart';
+import '../profile/models/profile_models.dart';
+
+// ============================================================================
+// PROFILE PROVIDER — backend-connected (name/phone/age/gender/accountStatus).
+// Screen-local per CLAUDE.md's Riverpod convention — this is the one screen
+// that reads/writes client profile data, so there is no cross-screen state
+// to share. Same shape as the tasker screen's provider (both talk to the
+// same generic `/api/profile/*` endpoints); duplicated per-screen rather than
+// shared, matching this project's "no global provider files" rule.
+// ============================================================================
+
+class _ProfileUiState {
+  final bool loading;
+  final String? error;
+  final UserProfileData? data;
+
+  const _ProfileUiState({this.loading = true, this.error, this.data});
+
+  _ProfileUiState copyWith({bool? loading, String? error, UserProfileData? data}) => _ProfileUiState(
+        loading: loading ?? this.loading,
+        error: error,
+        data: data ?? this.data,
+      );
+}
+
+class _ProfileNotifier extends StateNotifier<_ProfileUiState> {
+  final ProfileRepository _repo;
+  _ProfileNotifier(this._repo) : super(const _ProfileUiState()) {
+    load();
+  }
+
+  Future<void> load() async {
+    state = state.copyWith(loading: true, error: null);
+    try {
+      final data = await _repo.getProfile();
+      state = _ProfileUiState(loading: false, data: data);
+    } catch (_) {
+      state = state.copyWith(loading: false, error: ProfileStrings.loadFailedMessage);
+    }
+  }
+
+  Future<bool> updateAgeGender({required int age, required Gender gender}) async {
+    final current = state.data;
+    if (current == null) return false;
+    try {
+      final updated = await _repo.updateAgeGender(current, age: age, gender: gender.name);
+      state = state.copyWith(data: updated);
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<bool> updatePhone(String phoneNumber) async {
+    final current = state.data;
+    if (current == null) return false;
+    try {
+      await _repo.updatePhone(phoneNumber);
+      state = state.copyWith(data: current.copyWith(phoneNumber: phoneNumber));
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+}
+
+final _profileProvider = StateNotifierProvider.autoDispose<_ProfileNotifier, _ProfileUiState>(
+  (ref) => _ProfileNotifier(ProfileRepositoryImpl()),
+);
+
+// ============================================================================
+// VERIFICATION DEMO PROVIDER — LOCAL ONLY, never calls the backend. Client
+// verification only requires NRC + Face (no address/video — that's the
+// tasker-only trust bar). Drives the displayed account-status badge together
+// with the real backend status (see [_displayedVerificationState]).
+// ============================================================================
+
+class _VerificationDemoState {
+  final bool nrcAdded;
+  final bool faceAdded;
+
+  const _VerificationDemoState({this.nrcAdded = false, this.faceAdded = false});
+
+  int get doneCount => [nrcAdded, faceAdded].where((v) => v).length;
+  bool get allAdded => doneCount == 2;
+  double get progress => doneCount / 2;
+
+  _VerificationDemoState copyWith({bool? nrcAdded, bool? faceAdded}) => _VerificationDemoState(
+        nrcAdded: nrcAdded ?? this.nrcAdded,
+        faceAdded: faceAdded ?? this.faceAdded,
+      );
+}
+
+class _VerificationDemoNotifier extends StateNotifier<_VerificationDemoState> {
+  _VerificationDemoNotifier() : super(const _VerificationDemoState());
+
+  void markAdded(VerificationDoc doc) {
+    switch (doc) {
+      case VerificationDoc.nrc:
+        state = state.copyWith(nrcAdded: true);
+      case VerificationDoc.faceSelfie:
+        state = state.copyWith(faceAdded: true);
+      case VerificationDoc.permanentAddress:
+      case VerificationDoc.pitchingVideo:
+        break; // not part of the client's 2-item demo checklist.
+    }
+  }
+}
+
+// Not autoDispose: once a step is marked done (and especially once the
+// account reaches the PENDING display state), it must stay done for the rest
+// of the session — autoDispose would wipe it back to unfilled the moment the
+// screen briefly has no listeners (e.g. mid-navigation).
+final _verificationDemoProvider =
+    StateNotifierProvider<_VerificationDemoNotifier, _VerificationDemoState>(
+  (ref) => _VerificationDemoNotifier(),
+);
+
+/// account-wide badge: backend VERIFIED always wins; otherwise the 2-item
+/// demo checklist can only ever show as far as PENDING, never VERIFIED —
+/// only the backend can actually mark an account VERIFIED.
+VerificationState _displayedVerificationState(String backendStatus, _VerificationDemoState demo) {
+  if (backendStatus == "VERIFIED") return VerificationState.verified;
+  if (demo.allAdded) return VerificationState.pending;
+  return VerificationState.notVerified;
+}
+
+Gender _genderFromBackend(String value) =>
+    Gender.values.firstWhere((g) => g.name == value, orElse: () => Gender.other);
 
 /// Client (service-seeker) profile — the Profile tab of [CustomerHomeShell].
-/// Renders [demoClientProfile]'s PUBLIC data, the verification gate that
-/// controls task posting, and static stats. The profile's PRIVATE registration
-/// data (phone, password, source, account type) is intentionally NOT rendered
-/// — it exists on [ClientProfile.registration] for a future backend only.
-class ClientProfileScreen extends StatefulWidget {
+///
+/// Backend-connected: name, phone, age, gender, account status, logout (see
+/// [_profileProvider]). Demo-only (never touches Django/Postgres): profile
+/// picture, the NRC/Face verification checklist, switch role (see
+/// [_verificationDemoProvider]).
+class ClientProfileScreen extends ConsumerStatefulWidget {
   const ClientProfileScreen({super.key});
 
   @override
-  State<ClientProfileScreen> createState() => _ClientProfileScreenState();
+  ConsumerState<ClientProfileScreen> createState() => _ClientProfileScreenState();
 }
 
-class _ClientProfileScreenState extends State<ClientProfileScreen> {
-  // Source of truth for this screen. Verification is mutable locally so the
-  // mock document captures can advance status and flip the gate live;
-  // everything else is static.
-  final ClientProfile _profile = demoClientProfile;
-  late final Map<VerificationDoc, VerificationDocStatus> _docStatuses = {
-    ..._profile.docStatuses,
-  };
+class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
+  // Demo-only local avatar toggle (Section 1 — never uploaded/persisted).
+  bool _pictureChosen = false;
 
-  VerificationState get _state =>
-      verificationStateFor(_docStatuses, ClientProfile.requiredDocs);
-
-  // Mock capture: advance the document one step (notStarted -> pending ->
-  // completed) so the demo can walk through every status.
-  void _advanceDoc(VerificationDoc doc) {
-    setState(() {
-      final current = _docStatuses[doc] ?? VerificationDocStatus.notStarted;
-      _docStatuses[doc] = current == VerificationDocStatus.notStarted
-          ? VerificationDocStatus.pending
-          : VerificationDocStatus.completed;
-    });
-  }
-
-  void _editNotSupported() {
+  void _mockEditPhoto() {
+    HapticFeedback.selectionClick();
+    setState(() => _pictureChosen = !_pictureChosen);
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text(ProfileStrings.editNotSupported)),
     );
   }
 
+  Future<bool> _onSaveAgeGender(int age, Gender gender) {
+    return ref.read(_profileProvider.notifier).updateAgeGender(age: age, gender: gender);
+  }
+
+  Future<String?> _onSendOtp(String newPhone) async {
+    try {
+      await ref.read(authRepositoryProvider).sendOtp(newPhone);
+      return null;
+    } catch (_) {
+      return ProfileStrings.saveFailedMessage;
+    }
+  }
+
+  Future<bool> _onVerifyAndSavePhone(String newPhone, String otp) async {
+    try {
+      await ref.read(authRepositoryProvider).verifyOtp(phoneNumber: newPhone, code: otp);
+    } catch (_) {
+      return false;
+    }
+    return ref.read(_profileProvider.notifier).updatePhone(newPhone);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final verified = _state == VerificationState.verified;
-    final ratingText = _profile.rating == null
-        ? ProfileStrings.ratingNotAvailable
-        : _profile.rating!.toStringAsFixed(1);
+    final profileState = ref.watch(_profileProvider);
+    final verification = ref.watch(_verificationDemoProvider);
+    final theme = Theme.of(context);
+
+    final profile = profileState.data;
+
+    // First frame never blocks on the network: while the profile is still
+    // loading (or failed), the scaffold still renders with a lightweight
+    // skeleton state instead of an empty screen.
+    final displayName = profile?.name ?? "...";
+    final backendStatus = profile?.accountStatus ?? "UNVERIFIED";
+    final verifiedState = _displayedVerificationState(backendStatus, verification);
+    final verified = verifiedState == VerificationState.verified;
 
     return ProfileScaffold(
-      name: _profile.fullName,
+      name: displayName,
       roleLabel: ProfileStrings.clientRoleLabel,
-      badge: VerificationBadgePill(state: _state),
-      profilePicturePath: _profile.profilePicturePath,
-      onEdit: _editNotSupported,
-      onEditPhoto: _editNotSupported,
-      readAloudText: "${_profile.fullName}။ ${ProfileStrings.clientRoleLabel}။ "
-          "${verified ? ProfileStrings.mascotClientVerified : ProfileStrings.mascotClientUnverified}",
+      badge: VerificationBadgePill(state: verifiedState),
+      profilePicturePath: _pictureChosen ? "demo" : null,
+      onEditPhoto: _mockEditPhoto,
       sections: [
         // Mascot guidance — selective use, per the verification/profile rule.
         MascotMessageCard(
           state: verified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
-          message: verified
-              ? ProfileStrings.mascotClientVerified
-              : ProfileStrings.mascotClientUnverified,
+          message: verified ? ProfileStrings.mascotClientVerified : ProfileStrings.mascotClientUnverified,
           mascotSize: 64,
         ),
         const SizedBox(height: AppSpacing.lg),
 
-        // ── Public information ──
+        // ── Personal information (backend: age, gender — editable) ──
         ProfileSectionCard(
           title: ProfileStrings.publicInfoTitle,
           icon: Icons.person_outline,
-          child: Column(
-            children: [
-              ProfileInfoRow(
-                icon: Icons.cake_outlined,
-                label: OnboardingStrings.ageLabel,
-                value: "${toBurmeseDigits(_profile.age)} နှစ်",
-              ),
-              ProfileInfoRow(
-                icon: Icons.wc_outlined,
-                label: OnboardingStrings.genderLabel,
-                value: _profile.gender.label,
-              ),
-              // NOTE: no address row — location is captured in the Address
-              // verification step (GPS), not stored as profile info.
-            ],
-          ),
+          child: profileState.loading && profile == null
+              ? const Padding(
+                  padding: EdgeInsets.symmetric(vertical: AppSpacing.lg),
+                  child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                )
+              : profile == null
+                  ? Text(profileState.error ?? ProfileStrings.loadFailedMessage,
+                      style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.error))
+                  : AgeGenderEditor(
+                      age: profile.age,
+                      gender: _genderFromBackend(profile.gender),
+                      onSave: _onSaveAgeGender,
+                      allowGenderEdit: false,
+                    ),
         ),
 
-        // ── Verification (gates task posting) ──
+        // ── Phone number (backend: OTP-gated change) ──
+        if (profile != null)
+          ProfileSectionCard(
+            title: OnboardingStrings.phoneLabel,
+            icon: Icons.phone_outlined,
+            child: PhoneNumberEditor(
+              currentPhone: profile.phoneNumber,
+              onSendOtp: _onSendOtp,
+              onVerifyAndSave: _onVerifyAndSavePhone,
+            ),
+          ),
+
+        // ── Verification (DEMO ONLY — local Riverpod state; gates task posting) ──
         VerificationSection(
-          requiredDocs: ClientProfile.requiredDocs,
-          docStatuses: _docStatuses,
-          onAction: _advanceDoc,
+          requiredDocs: const [VerificationDoc.nrc, VerificationDoc.faceSelfie],
+          docStatuses: {
+            VerificationDoc.nrc:
+                verification.nrcAdded ? VerificationDocStatus.completed : VerificationDocStatus.notStarted,
+            VerificationDoc.faceSelfie:
+                verification.faceAdded ? VerificationDocStatus.completed : VerificationDocStatus.notStarted,
+          },
+          onAction: (doc) => ref.read(_verificationDemoProvider.notifier).markAdded(doc),
           hint: ProfileStrings.verificationClientHint,
-          ctaLabel: ProfileStrings.postTaskCta,
-          ctaLockedHint: ProfileStrings.postTaskLockedHint,
-          // Only reachable once verified — wires straight into the task
-          // posting flow (blocked otherwise by the gate above).
-          onCtaWhenUnlocked: () => context.push(Routes.postTask),
         ),
 
-        // ── Stats ──
-        ProfileSectionCard(
-          title: ProfileStrings.statsTitle,
-          icon: Icons.insights_outlined,
-          child: Row(
-            children: [
-              ProfileStat(
-                icon: Icons.post_add_outlined,
-                iconColor: AppColors.purple700,
-                value: toBurmeseDigits(_profile.tasksPosted),
-                label: ProfileStrings.statTasksPosted,
-              ),
-              ProfileStat(
-                icon: Icons.assignment_turned_in_outlined,
-                iconColor: AppColors.success,
-                value: toBurmeseDigits(_profile.tasksCompleted),
-                label: ProfileStrings.statTasksCompleted,
-              ),
-              ProfileStat(
-                icon: Icons.star_outline,
-                iconColor: AppColors.star,
-                value: ratingText,
-                label: ProfileStrings.statRating,
-              ),
-            ],
-          ),
-        ),
-
+        // ── Switch role (DEMO ONLY — navigation only, no backend) ──
         BecomeTaskerSignupCard(
           onTap: () => context.push(Routes.taskerPersonal),
         ),
 
-        // ── Logout ──
+        // ── Logout (backend: clears JWT + local storage) ──
         const SizedBox(height: AppSpacing.sm),
         ProfileLogoutButton(
-          onConfirm: () => context.go(Routes.onboardingWelcome),
+          onConfirm: () async {
+            await ref.read(authRepositoryProvider).logout();
+            if (context.mounted) context.go(Routes.onboardingWelcome);
+          },
         ),
       ],
     );
@@ -259,19 +388,29 @@ class BecomeTaskerSignupCard extends StatelessWidget {
                       vertical: AppSpacing.sm,
                     ),
                     decoration: BoxDecoration(
-                      color: AppColors.warning,
+                      color: AppColors.onBrand,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
                     alignment: Alignment.center,
-                    child: Text(
-                      ProfileStrings.becomeTaskerCta,
-                      textAlign: TextAlign.center,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w800,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            ProfileStrings.becomeTaskerCta,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: theme.textTheme.labelLarge?.copyWith(
+                              color: AppColors.purple700,
+                              fontWeight: FontWeight.w800,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        const Icon(Icons.arrow_forward_rounded,
+                            color: AppColors.purple700, size: AppSizes.iconSm),
+                      ],
                     ),
                   ),
                 ],

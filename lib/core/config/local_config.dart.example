@@ -1,0 +1,21 @@
+// Copy this file to local_config.dart (same directory) — it is gitignored.
+//
+// You only need to edit ONE line, and only if you are testing on a PHYSICAL
+// Android phone. For every other target the app detects the right URL
+// automatically:
+//
+//   Android emulator  →  http://10.0.2.2:8000   (auto)
+//   iOS simulator     →  http://127.0.0.1:8000   (auto)
+//   Web browser       →  http://127.0.0.1:8000   (auto)
+//   Windows/Mac desktop →  http://127.0.0.1:8000  (auto)
+//   Physical Android phone → physicalDeviceUrl below  ← edit this
+//
+// To find your PC's LAN IP:
+//   Windows  →  ipconfig   (look for IPv4 under your Wi-Fi adapter)
+//   macOS/Linux  →  ifconfig | grep "inet "
+//
+// The phone and PC must be on the same Wi-Fi network.
+// One-time Windows Firewall rule (run as Administrator):
+//   netsh advfirewall firewall add rule name="Django Dev" dir=in action=allow protocol=TCP localport=8000
+
+const String physicalDeviceUrl = "http://10.0.2.2:8000";

@@ -66,15 +66,31 @@ class AppStrings {
   static const String workerHomeGreeting = "မင်္ဂလာပါ";
   static const String homeNotificationsEmpty = "အကြောင်းကြားစာ မရှိသေးပါ";
   static const String homePostTaskAction = "အလုပ်တင်မည်";
+<<<<<<< HEAD
   static const String homePostTaskManualAction = "အဆင့်ဆင့် ကိုယ်တိုင်ဖြည့်မည်";
   static const String homeFindWorkerAction = "အလုပ်သမားရှာမည်";
+=======
+  static const String homePostTaskSubtitle = "ဝန်ဆောင်မှုတောင်းဆိုပါ";
+  static const String homeFindWorkerAction = "လုပ်သားရှာမည်";
+  static const String homeFindWorkerSubtitle = "ကျွမ်းကျင်သူများ ကြည့်ရှုပါ";
+>>>>>>> 826b7889affffd3cebe1bd187c89553ad361913f
   static const String homeBrowseServicesTitle = "ဝန်ဆောင်မှုများ ရှာဖွေမည်";
+  static const String homeRecommendedTitle = "အကြံပြုသော လုပ်သားများ";
+  static const String homeRecommendedSubtitle = "နီးနားဆုံး၊ အဆင့်မြင့်ဆုံး";
+  static const String homeSeeAll = "အားလုံးကြည့်မည်";
+  static const String homeAiHelperTitle = "ဘာလုပ်ရမလဲ မသိသေးဘူးလား?";
+  static const String homeAiHelperSubtitle = "AI ကူညီမှု တောင်းဆိုမည်";
+  static const String homeAvailableNow = "အသင့်ရှိသည်";
   static const String homeCategoriesTitle = "ဝန်ဆောင်မှု အမျိုးအစားများ";
   static const String homeCategoriesSubtitle = "သင်လိုအပ်သော ဝန်ဆောင်မှုကို ရွေးချယ်ပါ";
   static const String homeCategoriesSearchHint = "လုပ်ငန်းအမျိုးအစား ရှာရန်...";
   static const String homeCategoriesSearchEmpty = "ရှာဖွေမှုနှင့် ကိုက်ညီသော ဝန်ဆောင်မှု မရှိပါ";
   static const String homeTabLabel = "ပင်မ";
   static const String activityTabLabel = "လုပ်ဆောင်ချက်များ";
+  static const String chatTabLabel = "စကားပြော";
+  static const String pendingTabLabel = "စောင့်ဆိုင်း";
+  static const String jobsTabLabel = "အလုပ်များ";
+  static const String rewardsTabLabel = "ဆုလာဘ်";
   static const String profileTabLabel = "ပရိုဖိုင်";
   static const String comingSoonTitle = "မကြာမီ လာမည်";
   static const String comingSoonMessage = "ဒီအပိုင်းကို မကြာမီ ထည့်သွင်းပေးပါမယ်နော်";

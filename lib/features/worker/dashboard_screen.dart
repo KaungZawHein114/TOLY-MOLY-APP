@@ -8,6 +8,8 @@ import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import '../profile/data/profile_repository.dart';
+import '../profile/data/profile_repository_impl.dart';
 import 'widgets/job_card.dart';
 import 'widgets/job_filter_bar.dart';
 import 'widgets/job_search_bar.dart';
@@ -15,6 +17,37 @@ import 'widgets/job_search_bar.dart';
 // ============================================================================
 // LOCAL UI STATE (Riverpod), declared in this screen file.
 // ============================================================================
+
+// ── Account name — backend-connected (`GET /api/profile/`). First frame
+// never blocks on the network: the header falls back to just the generic
+// greeting until this loads (or if the request fails). Same pattern as the
+// customer Home screen's [_HomeNameNotifier]. ──
+
+class _WorkerNameState {
+  final bool loading;
+  final String? name;
+  const _WorkerNameState({this.loading = true, this.name});
+}
+
+class _WorkerNameNotifier extends StateNotifier<_WorkerNameState> {
+  final ProfileRepository _repo;
+  _WorkerNameNotifier(this._repo) : super(const _WorkerNameState()) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final data = await _repo.getProfile();
+      state = _WorkerNameState(loading: false, name: data.name);
+    } catch (_) {
+      state = const _WorkerNameState(loading: false);
+    }
+  }
+}
+
+final _workerNameProvider = StateNotifierProvider.autoDispose<_WorkerNameNotifier, _WorkerNameState>(
+  (ref) => _WorkerNameNotifier(ProfileRepositoryImpl()),
+);
 
 class AttendanceStatus {
   final bool isCheckedIn;
@@ -488,24 +521,39 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
 /// the old "Worker Dashboard" AppBar title), with the switch-role and
 /// notification actions on the right — same shape as the customer Home
 /// header, just mirrored.
-class _WorkerHomeHeader extends StatelessWidget {
+class _WorkerHomeHeader extends ConsumerWidget {
   final VoidCallback onSwitchRole;
   const _WorkerHomeHeader({required this.onSwitchRole});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final name = ref.watch(_workerNameProvider).name;
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Image.asset("assets/logo_circle.png", width: 36, height: 36),
-        const SizedBox(width: AppSpacing.md),
+        Image.asset("assets/logo_circle.png", width: 40, height: 40),
+        const SizedBox(width: AppSpacing.sm),
         Expanded(
-          child: Text(
-            AppStrings.workerHomeGreeting,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.headlineSmall,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (name != null)
+                Text(
+                  AppStrings.workerHomeGreeting,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                ),
+              Text(
+                name ?? AppStrings.workerHomeGreeting,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+              ),
+            ],
           ),
         ),
         Semantics(
