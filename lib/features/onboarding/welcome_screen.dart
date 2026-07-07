@@ -31,7 +31,8 @@ class WelcomeScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(AppSpacing.xxl),
                 child: ConstrainedBox(
                   constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight - AppSpacing.xxl * 2,
+                    minHeight: (constraints.maxHeight - AppSpacing.xxl * 2)
+                        .clamp(0.0, double.infinity),
                   ),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -72,7 +73,8 @@ class WelcomeScreen extends StatelessWidget {
                         icon: Icons.arrow_forward,
                         filled: false,
                         outlineColor: AppColors.onBrand,
-                        onTap: () => context.push(Routes.onboardingCreateAccount),
+                        onTap: () =>
+                            context.push(Routes.onboardingCreateAccount),
                       ),
                     ],
                   ),

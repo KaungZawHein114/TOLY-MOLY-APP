@@ -125,6 +125,40 @@ class OnboardingStrings {
   static const String completionContinueButton = "Profile ဆက်ဖြည့်မည်";
   static const String completionUseNowButton = "ယခုအသုံးပြုမည်";
 
+  // ── Onboarding voice mode (Slice 2, spec §4.1/§4.6) ──────────────────────
+  // Pho Wa Yoke greets, shows a sample script, listens, extracts the fields,
+  // and shows them PRE-FILLED for confirmation. Never submits blind; manual
+  // entry stays available.
+  static const String voiceFillCta = "အသံနဲ့ ဖြည့်မယ်";
+  static const String voiceFillCtaSubtitle =
+      "ဖိုးဝရုပ်ကို ကိုယ့်အကြောင်း ပြောပြလိုက်ရုံပါပဲ။";
+  static const String voiceOnboardingTitle = "အသံဖြင့် အချက်အလက် ဖြည့်ခြင်း";
+  static const String voiceOnboardingGreeting =
+      "မင်္ဂလာပါ။ ကိုယ့်အကြောင်း ပြောပြပေးပါနော် — ကျွန်တော်ဖြည့်ပေးပါမယ်။";
+  static const String voiceOnboardingScriptLabel = "ဒီလို ပြောနိုင်ပါတယ် —";
+  static const String voiceScriptClient =
+      "\"ကျွန်တော် အောင်အောင်ပါ။ အသက် ၂၅ နှစ်၊ ကျားပါ။ ဖုန်းက ၀၉၇၈၉၁၂၃၄၅၆ ပါ။\"";
+  static const String voiceScriptTasker =
+      "\"ကျွန်တော် အောင်အောင်ပါ။ အသက် ၂၅ နှစ်၊ ကျားပါ။ ဖုန်းက ၀၉၇၈၉၁၂၃၄၅၆ ပါ။ "
+      "သန့်ရှင်းရေးနဲ့ ပိုက်ပြင်တာ လုပ်တတ်ပါတယ်။\"";
+  static const String voiceListeningHint = "မိုက်ကို နှိပ်ပြီး ပြောပါ";
+  static const String voiceExtracting = "အချက်အလက်တွေ ဖတ်နေပါတယ်…";
+  static const String voiceReviewPrompt =
+      "ကြားရတာတွေ ဒီမှာပါ။ မှန်ရင် အတည်ပြုပါ၊ မှားရင် ပြန်ပြောနိုင်ပါတယ်။";
+  static const String voiceNothingHeard =
+      "ကောင်းကောင်း မကြားလိုက်ပါ။ ထပ်ပြောကြည့်ပါ သို့မဟုတ် ကိုယ်တိုင် ဖြည့်ပါ။";
+  static const String voiceNotGiven = "မပြောရသေးပါ";
+  static const String voiceConfirmButton = "မှန်ပါတယ်၊ ဆက်သွားမည်";
+  static const String voiceRetryButton = "ပြန်ပြောမည်";
+  static const String voiceManualButton = "ကိုယ်တိုင် ဖြည့်မည်";
+  static const String voiceFieldName = "အမည်";
+  static const String voiceFieldGender = "လိင်";
+  static const String voiceFieldAge = "အသက်";
+  static const String voiceFieldPhone = "ဖုန်းနံပါတ်";
+  static const String voiceFieldSkills = "ကျွမ်းကျင်မှုများ";
+  static const String voiceAppliedMessage = "🎙️ အသံဖြင့် ဖြည့်ပြီးပါပြီ — စစ်ဆေးပြီး ဆက်သွားပါ";
+  static const String voiceOfflineNote = "အော့ဖ်လိုင်း — ကြားနိုင်သမျှ ဖြည့်ထားပါသည်";
+
   // ── Generic ───────────────────────────────────────────────────────────
   static const String backButtonSemantic = "နောက်သို့";
   static const String continueGeneric = "ရှေ့ဆက်မည်";

@@ -36,7 +36,7 @@ class WorkerHomeShell extends ConsumerWidget {
     return Scaffold(
       // Floating AI assistant — only on the Home tab.
       floatingActionButton: index == 0
-          ? ChatbotFab(onTap: () => context.push('${Routes.chatbot}?role=tasker'))
+          ? AgentFab(onTap: () => context.push('${Routes.chatbot}?role=tasker'))
           : null,
       body: IndexedStack(
         index: index,

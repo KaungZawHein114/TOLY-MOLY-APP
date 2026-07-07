@@ -12,19 +12,22 @@ import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // The AI Task Scoper (Task Posting only) proxies OpenAI through Firebase.
-  // This init is best-effort and guarded: if Firebase isn't configured yet,
-  // the app still runs fully offline and every AI call falls back to the
-  // synchronous mock.
-  try {
-    await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  } catch (_) {
-    // No Firebase config present — continue in offline/mock mode.
-  }
-  // Warm the auth voice clips so the first speaker tap plays instantly.
-  // Best-effort: failures are swallowed inside the controller.
-  unawaited(AuthAudioController.instance.preload());
   runApp(const ProviderScope(child: TolyMolyApp()));
+
+  // Keep startup cheap: render the first frame first, then do best-effort
+  // Firebase/audio warmup in the background so a slow plugin init cannot block
+  // the app launch on Android.
+  unawaited(Future<void>(() async {
+    try {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    } catch (_) {
+      // No Firebase config present — continue in offline/mock mode.
+    }
+    // Best-effort: failures are swallowed inside the controller.
+    await AuthAudioController.instance.preload();
+  }));
 }
 
 class TolyMolyApp extends StatelessWidget {

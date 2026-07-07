@@ -168,6 +168,10 @@ class AppStrings {
   static const String chatbotTyping = "ရိုက်နေသည်…";
   static const String chatbotPostTaskCta = "အလုပ်တင်မည် (Post a Task)";
   static const String chatbotFindTaskCta = "အလုပ်ရှာမည် (Find a Task)";
+  // Slice 3 (spec §4.5): more navigable intents. Each is a SUGGESTED button the
+  // user taps — the assistant never auto-jumps.
+  static const String chatbotFindTaskerCta = "အလုပ်သမား ရှာမည် (Browse Workers)";
+  static const String chatbotEditProfileCta = "ပရိုဖိုင် ပြင်မည် (Edit Profile)";
   static const String chatbotOfflineHint = "အော့ဖ်လိုင်း"; // shown when reply came from mock
 
   static const String currency = "MMK";

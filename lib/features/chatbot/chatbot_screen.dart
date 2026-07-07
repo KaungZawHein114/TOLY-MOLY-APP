@@ -4,12 +4,12 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/app_strings.dart';
 import '../../core/data/demo_data.dart';
-import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/ai_service.dart';
 import '../../features/worker/dashboard_screen.dart' show jobSearchFocusNode;
 import '../../features/worker/worker_home_shell.dart' show workerTabIndexProvider;
+import 'chat_nav.dart';
 
 // LOCAL UI STATE (Riverpod), declared in this screen file.
 // Seeded with a welcome message so the screen is never empty on first frame.
@@ -38,7 +38,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
   static const List<String> _quickPrompts = [
     "Fix my sink",
-    "Clean my apartment",
+    "Find a plumber",
     "Find plumbing jobs",
     "How do I post a task?",
   ];
@@ -96,21 +96,27 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     });
   }
 
-  // Routes the inline action button under a bot message.
+  // Routes the suggested navigation button under a bot message, via the
+  // intent → Routes.* table (spec §4.5). The user taps it — never an auto-jump.
   void _handleAction(String action) {
-    switch (action) {
-      case 'post_task':
-        context.push(Routes.postTask);
-        break;
-      case 'find_task':
-        // Land the tasker on the dashboard that holds the job search bar, and
-        // best-effort focus it (no-op if the field isn't on screen yet).
-        ref.read(workerTabIndexProvider.notifier).state = 0;
-        context.go(Routes.dashboard);
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          jobSearchFocusNode.requestFocus();
-        });
-        break;
+    final target = chatNavTargetFor(action, widget.role);
+    if (target == null) return;
+
+    if (target.focusJobSearch) {
+      // Land the tasker on the dashboard that holds the job search bar, and
+      // best-effort focus it (no-op if the field isn't on screen yet).
+      ref.read(workerTabIndexProvider.notifier).state = 0;
+      context.go(target.route);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        jobSearchFocusNode.requestFocus();
+      });
+      return;
+    }
+
+    if (target.reset) {
+      context.go(target.route);
+    } else {
+      context.push(target.route);
     }
   }
 
@@ -146,6 +152,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
                 }
                 return _Bubble(
                   message: messages[i],
+                  role: widget.role,
                   onAction: _handleAction,
                 );
               },
@@ -161,15 +168,18 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
 class _Bubble extends StatelessWidget {
   final ChatMessage message;
+  final String role;
   final ValueChanged<String> onAction;
-  const _Bubble({required this.message, required this.onAction});
+  const _Bubble(
+      {required this.message, required this.role, required this.onAction});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final fromUser = message.fromUser;
-    final hasAction =
-        !fromUser && message.action != null && kChatActions.contains(message.action);
+    // A suggested-nav button shows only when the action maps to a destination.
+    final navTarget =
+        fromUser ? null : chatNavTargetFor(message.action, role);
 
     return Align(
       alignment: fromUser ? Alignment.centerRight : Alignment.centerLeft,
@@ -203,7 +213,12 @@ class _Bubble extends StatelessWidget {
               ),
             ),
           ),
-          if (hasAction) _ActionButton(action: message.action!, onTap: onAction),
+          if (navTarget != null)
+            _ActionButton(
+              action: message.action!,
+              target: navTarget,
+              onTap: onAction,
+            ),
         ],
       ),
     );
@@ -212,26 +227,27 @@ class _Bubble extends StatelessWidget {
 
 class _ActionButton extends StatelessWidget {
   final String action;
+  final ChatNavTarget target;
   final ValueChanged<String> onTap;
-  const _ActionButton({required this.action, required this.onTap});
+  const _ActionButton(
+      {required this.action, required this.target, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
-    final isPost = action == 'post_task';
-    final label =
-        isPost ? AppStrings.chatbotPostTaskCta : AppStrings.chatbotFindTaskCta;
-    final icon = isPost ? Icons.add_circle_outline : Icons.search;
+    // Primary action (post_task) gets the stronger indigo; others the lighter.
+    final isPrimary = action == 'post_task';
     return Padding(
       padding: const EdgeInsets.only(top: AppSpacing.xs, bottom: AppSpacing.sm),
       child: FilledButton.icon(
         style: FilledButton.styleFrom(
-          backgroundColor: isPost ? AppColors.indigo700 : AppColors.indigo500,
+          backgroundColor:
+              isPrimary ? AppColors.indigo700 : AppColors.indigo500,
           foregroundColor: AppColors.onBrand,
           minimumSize: const Size(0, 48), // ≥48px touch target
         ),
         onPressed: () => onTap(action),
-        icon: Icon(icon, size: AppSizes.iconMd),
-        label: Text(label),
+        icon: Icon(target.icon, size: AppSizes.iconMd),
+        label: Text(target.label),
       ),
     );
   }

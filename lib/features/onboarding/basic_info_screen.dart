@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/agent/agent_session.dart';
 import '../../core/constants/onboarding_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/utils/ai_service.dart';
 import '../../core/widgets/large_button.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
 import '../../core/widgets/onboarding/field_label_with_voice.dart';
@@ -15,6 +17,7 @@ import '../auth/data/auth_failure.dart';
 import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
 import 'onboarding_state.dart';
+import 'widgets/voice_onboarding_sheet.dart';
 
 /// Step 2 of signup: name, phone, and password — reached only after a role
 /// has been chosen on [CreateAccountScreen].
@@ -110,6 +113,50 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
     }
   }
 
+  // Onboarding voice mode (spec §4.1/§4.6): Pho Wa Yoke listens, extracts the
+  // fields, and (on the user's confirm) pre-fills them here. The user still sees
+  // and edits the real form and walks the normal steps — nothing is submitted.
+  Future<void> _openVoiceFill() async {
+    final role = ref.read(selectedRoleProvider) ?? UserRole.client;
+    ref.read(agentModeProvider.notifier).state = AgentMode.onboarding;
+    ref.read(agentSessionProvider.notifier).state = AgentSession.active;
+
+    final result = await showVoiceOnboarding(context, role: role);
+    if (!mounted || result == null) return;
+    _applyExtraction(result, role);
+  }
+
+  void _applyExtraction(OnboardingExtraction e, UserRole role) {
+    // Refresh the two fields visible on THIS screen; gender/age/skills are
+    // stored on the draft for the later steps' own initState/build to pick up.
+    if (e.name.isNotEmpty) _nameController.text = e.name;
+    if (e.phone.isNotEmpty) _phoneController.text = e.phone;
+
+    if (role == UserRole.tasker) {
+      final n = ref.read(taskerDraftProvider.notifier);
+      n.state = n.state.copyWith(
+        name: e.name.isNotEmpty ? e.name : null,
+        phone: e.phone.isNotEmpty ? e.phone : null,
+        gender: e.gender,
+        age: e.age,
+        skills: e.skills.isNotEmpty ? e.skills.toSet() : null,
+      );
+    } else {
+      final n = ref.read(clientDraftProvider.notifier);
+      n.state = n.state.copyWith(
+        name: e.name.isNotEmpty ? e.name : null,
+        phone: e.phone.isNotEmpty ? e.phone : null,
+        gender: e.gender,
+        age: e.age,
+      );
+    }
+
+    setState(() {}); // reflect the updated controllers
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text(OnboardingStrings.voiceAppliedMessage)),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -122,6 +169,8 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          _VoiceFillBanner(onTap: _openVoiceFill),
+          const SizedBox(height: AppSpacing.xl),
           FieldLabelWithVoice(
             label: OnboardingStrings.nameLabel,
             readAloudText: OnboardingStrings.nameLabel,
@@ -208,6 +257,74 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
         icon: _isSubmitting ? null : Icons.arrow_forward,
         gradient: AppColors.purpleGradient,
         onTap: _continue,
+      ),
+    );
+  }
+}
+
+/// Indigo (AI-accent) CTA that opens the onboarding voice-fill sheet — the
+/// accessibility headline: speak once instead of typing every field.
+class _VoiceFillBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _VoiceFillBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(AppRadius.lg);
+    return Material(
+      color: Colors.transparent,
+      borderRadius: radius,
+      child: InkWell(
+        borderRadius: radius,
+        onTap: onTap,
+        child: Ink(
+          decoration: BoxDecoration(
+            gradient: AppColors.indigoGradient,
+            borderRadius: radius,
+            boxShadow: [
+              BoxShadow(
+                color: AppColors.indigo700.withValues(alpha: 0.3),
+                blurRadius: 14,
+                offset: const Offset(0, 6),
+              ),
+            ],
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            child: Row(
+              children: [
+                Container(
+                  width: AppSizes.avatarSm,
+                  height: AppSizes.avatarSm,
+                  decoration: const BoxDecoration(
+                    color: AppColors.onBrand,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: const Icon(Icons.mic_rounded,
+                      color: AppColors.indigo700, size: AppSizes.iconMd),
+                ),
+                const SizedBox(width: AppSpacing.md),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(OnboardingStrings.voiceFillCta,
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(color: AppColors.onBrand)),
+                      const SizedBox(height: AppSpacing.xxs),
+                      Text(OnboardingStrings.voiceFillCtaSubtitle,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.onBrandMuted)),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.auto_awesome, color: AppColors.onBrand),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -47,6 +47,14 @@ class AppColors {
     end: Alignment.bottomRight,
   );
 
+  // The AI / intelligence accent gradient (Indigo, per CLAUDE.md's color
+  // table). Used by agentic AI CTAs such as the tasker-match shortlist button.
+  static const LinearGradient indigoGradient = LinearGradient(
+    colors: [indigo500, indigo700],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+
   // Foreground used on top of brand gradients/solid brand fills.
   static const Color onBrand = Color(0xFFFFFFFF);
   static Color onBrandMuted = const Color(0xFFFFFFFF).withValues(alpha: 0.9);

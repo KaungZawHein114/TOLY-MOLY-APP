@@ -7,6 +7,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import 'task_execution_state.dart';
+import 'widgets/task_handling_cards.dart';
 
 /// Digital Task Check-In: Leaving For Task -> Arrived & Started -> Task
 /// Completed -> (client confirmation, out of scope — no client-side screen
@@ -46,6 +47,8 @@ class TaskExecutionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final all = ref.watch(taskExecutionProvider);
     final execution = executionFor(all, booking.id);
+    final isCompleted = execution.status == ExecutionStatus.completed;
+    final task = bookingTaskMap(booking);
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.executionPageTitle)),
@@ -62,6 +65,21 @@ class TaskExecutionScreen extends ConsumerWidget {
             onStarted: () => _advance(context, ref, ExecutionStatus.started),
             onCompleted: () => _advance(context, ref, ExecutionStatus.completed),
           ),
+          // Task-Handling mode (tasker, spec §4.8): brief + gentle reminder
+          // before/during the job; the completion summary + suggested tier after.
+          // Kept BELOW the primary action so the action stays reachable.
+          if (!isCompleted) ...[
+            const SizedBox(height: AppSpacing.xl),
+            TaskerBriefCard(task: task),
+            const SizedBox(height: AppSpacing.md),
+            TaskerReminderBanner(timeSlot: booking.timeSlot),
+          ],
+          if (isCompleted) ...[
+            const SizedBox(height: AppSpacing.xl),
+            // Demo timing: completed within its window (onTime). No client rating
+            // captured yet, so the tier engine (rules) would use its own signals.
+            CompletionSummaryCard(task: task, timing: const {'onTime': true}),
+          ],
         ],
       ),
     );

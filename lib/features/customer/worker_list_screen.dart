@@ -2,13 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/agent/agent_session.dart';
 import '../../core/constants/app_strings.dart';
+import '../../core/constants/task_posting_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
+import '../../core/widgets/mascot/mascot_state.dart';
+import '../../core/widgets/mascot/pho_wa_yoke.dart';
 import 'task_posting/task_posting_models.dart' show WorkerTier, WorkerTierInfo;
+import 'widgets/tasker_shortlist_sheet.dart';
 import 'widgets/worker_filter_bar.dart';
 
 /// Sort options. [recommended] is the MVP Matching Score formula (trust 40% +
@@ -79,6 +84,31 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
     ref.read(trustFilterProvider.notifier).state = null;
     ref.read(ratingFilterProvider.notifier).state = null;
     ref.read(townshipFilterProvider.notifier).state = null;
+  }
+
+  // Tasker-Finding mode (spec §4.3): hand the CURRENTLY filtered list to
+  // Pho Wa Yoke as candidates. The agent ranks + explains (LLM or offline
+  // fallback), the user picks one, and we open that tasker's profile — a
+  // prepare-and-confirm step, never an auto-selection.
+  Future<void> _openAiShortlist(List<Worker> candidates) async {
+    if (candidates.isEmpty) return;
+    ref.read(agentModeProvider.notifier).state = AgentMode.taskerFinding;
+    ref.read(agentSessionProvider.notifier).state = AgentSession.active;
+
+    final township = ref.read(townshipFilterProvider);
+    final task = <String, dynamic>{
+      'category': _skill ?? '',
+      if (township != null) 'township': township,
+      'urgent': false,
+    };
+
+    final pickedId = await showTaskerShortlist(
+      context,
+      task: task,
+      candidates: candidates,
+    );
+    if (!mounted || pickedId == null) return;
+    context.push('${Routes.workerProfile}/$pickedId');
   }
 
   @override
@@ -284,6 +314,8 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
             activeFilterChips: activeChips,
             onClearAll: activeChips.isEmpty ? null : _clearAllFilters,
           ),
+          if (list.isNotEmpty)
+            _AiMatchBanner(onTap: () => _openAiShortlist(list)),
           Expanded(
             child: list.isEmpty
                 ? _EmptyState(onReset: _clearAllFilters)
@@ -299,6 +331,74 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                   ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Indigo (AI-accent) CTA that launches the Tasker-Finding shortlist. Sits
+/// above the manual list so both the manual browse and the AI shortcut are
+/// always one tap away.
+class _AiMatchBanner extends StatelessWidget {
+  final VoidCallback onTap;
+  const _AiMatchBanner({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final radius = BorderRadius.circular(AppRadius.lg);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.xs, AppSpacing.lg, AppSpacing.sm),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: radius,
+        child: InkWell(
+          borderRadius: radius,
+          onTap: onTap,
+          child: Ink(
+            decoration: BoxDecoration(
+              gradient: AppColors.indigoGradient,
+              borderRadius: radius,
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.indigo700.withValues(alpha: 0.3),
+                  blurRadius: 14,
+                  offset: const Offset(0, 6),
+                ),
+              ],
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(AppSpacing.md),
+              child: Row(
+                children: [
+                  const PhoWaYoke(
+                      state: PhoWaYokeState.thinking, size: 44, decorative: true),
+                  const SizedBox(width: AppSpacing.md),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          TaskPostingStrings.matchCtaTitle,
+                          style: theme.textTheme.titleSmall
+                              ?.copyWith(color: AppColors.onBrand),
+                        ),
+                        const SizedBox(height: AppSpacing.xxs),
+                        Text(
+                          TaskPostingStrings.matchCtaSubtitle,
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(color: AppColors.onBrandMuted),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Icon(Icons.auto_awesome, color: AppColors.onBrand),
+                ],
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

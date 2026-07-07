@@ -14,6 +14,9 @@
 import 'package:cloud_functions/cloud_functions.dart';
 
 import '../constants/task_posting_strings.dart' show TaskPostingStrings;
+import '../data/demo_data.dart' show Worker;
+import '../../features/onboarding/onboarding_models.dart'
+    show Gender, TaskerSkill, TaskerSkillLabel, UserRole;
 import 'ai_mock.dart';
 
 /// Runtime switches for the AI layer. The real app leaves [useLiveAi] true
@@ -85,8 +88,97 @@ class ChatReply {
   });
 }
 
-/// The only actions the chatbot UI knows how to act on.
-const Set<String> kChatActions = {'post_task', 'find_task'};
+/// The only actions the chatbot UI knows how to act on. Each maps to a
+/// suggested navigation button via `chatNavTargetFor` (spec §4.5) — the
+/// assistant never auto-navigates.
+const Set<String> kChatActions = {
+  'post_task',
+  'find_task',
+  'find_tasker',
+  'edit_profile',
+};
+
+/// One AI-ranked tasker recommendation for the Tasker-Finding shortlist
+/// (spec §4.3). [workerId] is ALWAYS an id from the candidate list the app
+/// supplied — the model orders and explains, it never invents a tasker or a
+/// stat. [reason] is a short Burmese "why I picked them".
+class TaskerMatch {
+  final int workerId;
+  final String reason;
+  final AiSource source;
+  const TaskerMatch({
+    required this.workerId,
+    required this.reason,
+    required this.source,
+  });
+}
+
+/// Fields pulled from a spoken self-introduction for the Onboarding voice mode
+/// (spec §4.1/§4.6). Every field is what the user actually SAID — the extractor
+/// never invents, so any field it couldn't hear stays empty/null for the user to
+/// fill manually on the real form. [skills] is only meaningful for taskers.
+/// Password is deliberately never extracted (typed privately).
+class OnboardingExtraction {
+  final String name;
+  final Gender? gender;
+  final int? age;
+  final String phone;
+  final List<TaskerSkill> skills;
+  final AiSource source;
+  const OnboardingExtraction({
+    this.name = '',
+    this.gender,
+    this.age,
+    this.phone = '',
+    this.skills = const [],
+    required this.source,
+  });
+
+  /// True if the extractor found at least one usable field — lets the UI decide
+  /// whether to offer the pre-filled preview or send the user to manual entry.
+  bool get hasAnything =>
+      name.isNotEmpty ||
+      gender != null ||
+      age != null ||
+      phone.isNotEmpty ||
+      skills.isNotEmpty;
+}
+
+/// Gentle "make your waiting post more attractive" tips (spec §4.4 Phase 1).
+/// Wording only — the app decides WHEN to show them (time-since-post).
+class TaskFixTips {
+  final List<String> tips;
+  final AiSource source;
+  const TaskFixTips({required this.tips, required this.source});
+}
+
+/// Completion summary + a SUGGESTED tier move (spec §4.4 Phase 3). The delta is
+/// only a recommendation in [-1, 1]; the real tier change is applied by the
+/// backend's transparent rules + the client's rating, never by the model.
+class CompletionSummary {
+  final String summary;
+  final int suggestedTierDelta; // -1 | 0 | +1 — a suggestion, not an action
+  final String rationale;
+  final AiSource source;
+  const CompletionSummary({
+    required this.summary,
+    required this.suggestedTierDelta,
+    required this.rationale,
+    required this.source,
+  });
+}
+
+/// A tasker's per-task brief (spec §4.8): what the client wants + prep/tools.
+class TaskerBrief {
+  final String summary;
+  final List<String> suggestions;
+  final AiSource source;
+  const TaskerBrief({
+    required this.summary,
+    required this.suggestions,
+    required this.source,
+  });
+}
 
 class AiService {
   AiService._();
@@ -226,6 +318,240 @@ class AiService {
       intent: mock.intent,
       source: AiSource.mock,
     );
+  }
+
+  // ── Tasker-Finding: ranked shortlist with reasons (spec §4.3) ───────────
+  /// Ranks [candidates] for [task] and returns up to 3 [TaskerMatch]es, best
+  /// first. The app pre-filters + supplies the candidates; the model may ONLY
+  /// return ids from that set (any other id is dropped) and only writes the
+  /// one-line reason — exactly the "constrain to the provided list" safety used
+  /// by [suggestCategory]. Every displayed stat stays app data, not model output.
+  ///
+  /// On ANY failure (offline, timeout, bad response, no ids in-set) it falls
+  /// back to the deterministic [matchTaskersMock], so it never hangs and never
+  /// returns an invented tasker.
+  static Future<List<TaskerMatch>> matchTaskers({
+    required Map<String, dynamic> task,
+    required List<Worker> candidates,
+  }) async {
+    if (candidates.isEmpty) return const [];
+
+    // Compact, id-keyed payload of REAL fields only — nothing to hallucinate.
+    final candidatePayload = [
+      for (final w in candidates)
+        {
+          'id': w.id,
+          'name': w.name,
+          'skill': w.skill,
+          'rating': w.rating,
+          'reviews': w.reviews,
+          'distanceMiles': w.distanceMiles,
+          'currentTier': w.currentTier,
+          'completedTasks': w.completedTasks,
+          'isAvailableNow': w.isAvailableNow,
+          'isVerified': w.isVerified,
+          'township': w.township,
+        },
+    ];
+
+    final data = await _call('matchTaskers', {
+      'task': task,
+      'candidates': candidatePayload,
+    });
+
+    final rawMatches = data?['matches'];
+    if (rawMatches is List) {
+      final validIds = {for (final w in candidates) w.id};
+      final seen = <int>{};
+      final result = <TaskerMatch>[];
+      for (final m in rawMatches) {
+        if (m is Map) {
+          final id = _asInt(m['id']);
+          final reason = m['reason']?.toString().trim() ?? '';
+          // Drop any id not in the provided set, and any duplicate/empty reason.
+          if (id != null &&
+              validIds.contains(id) &&
+              seen.add(id) &&
+              reason.isNotEmpty) {
+            result.add(
+              TaskerMatch(workerId: id, reason: reason, source: AiSource.live),
+            );
+          }
+        }
+        if (result.length >= 3) break;
+      }
+      if (result.isNotEmpty) return result;
+    }
+
+    // Offline / invalid response — deterministic fallback (never invents).
+    return [
+      for (final r in matchTaskersMock(task, candidates))
+        TaskerMatch(
+          workerId: r.workerId,
+          reason: r.reason,
+          source: AiSource.mock,
+        ),
+    ];
+  }
+
+  // ── Onboarding voice mode: extract signup fields from speech (spec §4.1) ─
+  /// Extracts onboarding fields from a spoken [transcript]. The model is
+  /// constrained to a fixed gender set and (for taskers) the app's known skill
+  /// list — anything outside those is dropped, and `age`/`phone` are validated,
+  /// so it can only return real, in-vocabulary values. On ANY failure it falls
+  /// back to the synchronous offline extractor, so it never hangs. It NEVER
+  /// submits — the caller shows a pre-filled, editable form and asks the user to
+  /// confirm.
+  static Future<OnboardingExtraction> extractOnboarding({
+    required String transcript,
+    required UserRole role,
+  }) async {
+    final isTasker = role == UserRole.tasker;
+    final knownSkills = [
+      for (final s in TaskerSkill.values) {'id': s.name, 'label': s.label},
+    ];
+
+    final data = await _call('extractOnboarding', {
+      'role': isTasker ? 'tasker' : 'client',
+      'transcript': transcript,
+      'knownSkills': isTasker ? knownSkills : const [],
+    });
+
+    if (data != null) {
+      final name = data['name']?.toString().trim() ?? '';
+      final gender = _genderFrom(data['gender']);
+      final age = _validAge(_asInt(data['age']));
+      final phone = _digitsOnly(data['phone']);
+      final skills = isTasker ? _skillsFrom(data['skills']) : const <TaskerSkill>[];
+      final live = OnboardingExtraction(
+        name: name,
+        gender: gender,
+        age: age,
+        phone: phone,
+        skills: skills,
+        source: AiSource.live,
+      );
+      if (live.hasAnything) return live;
+    }
+
+    // Offline / empty response — synchronous best-effort extractor.
+    final mock = extractOnboardingMock(transcript, isTasker: isTasker);
+    return OnboardingExtraction(
+      name: mock.name,
+      gender: _genderFrom(mock.gender),
+      age: _validAge(mock.age),
+      phone: _digitsOnly(mock.phone),
+      skills: isTasker ? _skillsFrom(mock.skillIds) : const [],
+      source: AiSource.mock,
+    );
+  }
+
+  // ── Task-Handling mode (spec §4.4/§4.8) ─────────────────────────────────
+  /// Gentle fixes for a task that has waited [ageHours] with no taker. Wording
+  /// only; falls back to templated tips. Never hangs, never blocks.
+  static Future<TaskFixTips> suggestTaskFixes({
+    required Map<String, dynamic> task,
+    required int ageHours,
+  }) async {
+    final data = await _call('suggestTaskFixes', {
+      'task': task,
+      'ageHours': ageHours,
+    });
+    final tips = _asStringList(data?['tips']);
+    if (tips.isNotEmpty) {
+      return TaskFixTips(tips: tips.take(4).toList(), source: AiSource.live);
+    }
+    return TaskFixTips(
+      tips: taskFixTipsMock(task, ageHours),
+      source: AiSource.mock,
+    );
+  }
+
+  /// Summarizes a completed task and RECOMMENDS a tier move (spec §4.4 Phase 3).
+  /// The delta is a suggestion only, clamped to [-1, 1]; the app/backend rules +
+  /// client rating decide the real tier. Falls back to a templated summary.
+  static Future<CompletionSummary> summarizeCompletion({
+    required Map<String, dynamic> task,
+    Map<String, dynamic> timing = const {},
+    Map<String, dynamic> review = const {},
+  }) async {
+    final data = await _call('summarizeCompletion', {
+      'task': task,
+      'timing': timing,
+      'review': review,
+    });
+    final summary = data?['summary']?.toString().trim() ?? '';
+    if (summary.isNotEmpty) {
+      final delta = (_asInt(data?['suggestedTierDelta']) ?? 0).clamp(-1, 1);
+      return CompletionSummary(
+        summary: summary,
+        suggestedTierDelta: delta,
+        rationale: data?['rationale']?.toString().trim() ?? '',
+        source: AiSource.live,
+      );
+    }
+    final mock = completionSummaryMock(task: task, timing: timing, review: review);
+    return CompletionSummary(
+      summary: mock.summary,
+      suggestedTierDelta: mock.suggestedTierDelta,
+      rationale: mock.rationale,
+      source: AiSource.mock,
+    );
+  }
+
+  /// Briefs a tasker before a task: what the client wants + prep/tools (§4.8).
+  /// Wording only; falls back to a templated brief. Read aloud in the app.
+  static Future<TaskerBrief> briefTasker({
+    required Map<String, dynamic> task,
+  }) async {
+    final data = await _call('briefTasker', {'task': task});
+    final summary = data?['summary']?.toString().trim() ?? '';
+    if (summary.isNotEmpty) {
+      return TaskerBrief(
+        summary: summary,
+        suggestions: _asStringList(data?['suggestions']).take(4).toList(),
+        source: AiSource.live,
+      );
+    }
+    final mock = taskerBriefMock(task);
+    return TaskerBrief(
+      summary: mock.summary,
+      suggestions: mock.suggestions,
+      source: AiSource.mock,
+    );
+  }
+
+  static Gender? _genderFrom(Object? v) {
+    switch (v?.toString().toLowerCase()) {
+      case 'male':
+        return Gender.male;
+      case 'female':
+        return Gender.female;
+      case 'other':
+        return Gender.other;
+      default:
+        return null;
+    }
+  }
+
+  static int? _validAge(int? age) =>
+      (age != null && age >= 1 && age <= 120) ? age : null;
+
+  static String _digitsOnly(Object? v) =>
+      (v?.toString() ?? '').replaceAll(RegExp(r'\D'), '');
+
+  /// Maps a list of skill ids ([TaskerSkill.name] values) to enums, dropping any
+  /// id not in the enum — the same "constrain to the known set" safety used
+  /// everywhere else, so a bad id can never reach the form.
+  static List<TaskerSkill> _skillsFrom(Object? v) {
+    if (v is! List) return const [];
+    final byName = {for (final s in TaskerSkill.values) s.name: s};
+    final result = <TaskerSkill>[];
+    for (final item in v) {
+      final skill = byName[item.toString()];
+      if (skill != null && !result.contains(skill)) result.add(skill);
+    }
+    return result;
   }
 
   // ── Offline mock fallbacks ──────────────────────────────────────────────

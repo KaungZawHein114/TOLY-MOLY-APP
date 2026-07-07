@@ -12,6 +12,11 @@
 //   analyzePrice({ title, category, ... })         -> { low, high, currency }
 //   evaluateTask({ title, category, ... })         -> { score, strengths, ... }
 //   chatAssistant({ message, role, history })      -> { intent, action, message }
+//   matchTaskers({ task, candidates })             -> { matches: [{ id, reason }] }
+//   extractOnboarding({ role, transcript, ... })   -> { name, gender, age, phone, skills }
+//   suggestTaskFixes({ task, ageHours })           -> { tips: [..] }
+//   summarizeCompletion({ task, timing, review })  -> { summary, suggestedTierDelta, rationale }
+//   briefTasker({ task })                          -> { summary, suggestions: [..] }
 //
 // Phase 2: chatAssistant now answers KNOWLEDGE/FAQ questions with RAG (Pinecone
 // retrieval + OpenAI). Post-task / find-task / greeting / off-topic behaviour is
@@ -266,4 +271,186 @@ exports.chatAssistant = onCall(chatOptions, async (request) => {
   }
 
   return { intent: detected, action, message: replyMessage };
+});
+
+// ── 6. Tasker-Finding: rank a shortlist of taskers, with reasons ────────────
+// The APP pre-filters + scores candidates and passes them in. The model ONLY
+// ranks and writes a one-line Burmese reason each; it may return AT MOST the
+// ids that appear in `candidates` (same "constrain to the provided set" safety
+// as suggestCategory). Any id not in the set is dropped, so a hallucinated
+// tasker can never reach the UI. Every stat shown to the user is app data — the
+// model never invents numbers. The Flutter app falls back to its deterministic
+// offline sort if this fails, so it never hangs.
+exports.matchTaskers = onCall(taskOptions, async (request) => {
+  const { task, candidates } = request.data || {};
+  if (!task || !Array.isArray(candidates) || candidates.length === 0) {
+    throw new HttpsError("invalid-argument", "task and candidates required.");
+  }
+
+  const result = await openai.askJson(
+    OPENAI_API_KEY.value(),
+    "You match taskers to a home-service TASK for a Yangon, Myanmar marketplace. " +
+      "You are given the task and a list of candidate taskers, each with an id and " +
+      "REAL stats (skill, rating, distanceMiles, currentTier, completedTasks, " +
+      "isAvailableNow, isVerified, township). Pick the BEST up to 3 candidates and, " +
+      "for each, write a SHORT one-line reason in BURMESE that cites their real " +
+      "strengths (skill match, high rating, nearby, availability, trust tier, " +
+      "experience). You MUST only use ids that appear in the candidates list, and " +
+      "you MUST NOT invent taskers or change any stat. Order best first. " +
+      'Respond as JSON: {"matches": [{"id": <id from list>, "reason": "<burmese>"}]}, ' +
+      "at most 3 items.",
+    { task, candidates }
+  );
+
+  // Constrain to the provided set: map stringified id -> original id value so we
+  // return the id in the same form the app sent (its int), and drop any id the
+  // model made up or repeated.
+  const byId = new Map(candidates.map((c) => [String(c && c.id), c && c.id]));
+  const seen = new Set();
+  const matches = [];
+  const rawMatches = Array.isArray(result.matches) ? result.matches : [];
+  for (const m of rawMatches) {
+    if (!m) continue;
+    const key = String(m.id);
+    if (!byId.has(key) || seen.has(key)) continue;
+    const reason = (m.reason || "").toString().trim();
+    if (!reason) continue;
+    seen.add(key);
+    matches.push({ id: byId.get(key), reason });
+    if (matches.length >= 3) break;
+  }
+
+  return { matches };
+});
+
+// ── 7. Onboarding voice mode: extract signup fields from a spoken sentence ───
+// The user introduces themselves by voice (Burmese/English); this pulls out the
+// onboarding fields so a non-typer can still register. It extracts ONLY what was
+// actually said (never invents), constrains `gender` to a fixed set and `skills`
+// to the app's known skill ids (same "constrain to the provided list" safety as
+// suggestCategory), and validates `age`/`phone`. The app still lands the user on
+// the real, editable form pre-filled — nothing is submitted here. The Flutter
+// app falls back to its offline keyword extractor if this fails, so it never
+// hangs. Password is intentionally NOT extracted (typed privately).
+exports.extractOnboarding = onCall(taskOptions, async (request) => {
+  const { role, transcript, knownSkills } = request.data || {};
+  const text = (transcript || "").toString().trim();
+  if (!text) {
+    throw new HttpsError("invalid-argument", "transcript required.");
+  }
+  const isTasker = role === "tasker";
+  const skillList = Array.isArray(knownSkills) ? knownSkills : [];
+  const allowedSkillIds = new Set(
+    skillList.map((s) => String(s && s.id)).filter((s) => s && s !== "null")
+  );
+
+  const result = await openai.askJson(
+    OPENAI_API_KEY.value(),
+    "You extract onboarding fields from a spoken self-introduction (Burmese or " +
+      "English) for a Yangon home-service app. Extract ONLY what the user actually " +
+      "said; never guess or invent. Fields: name (string; '' if not said), gender " +
+      "(EXACTLY one of 'male','female','other', or '' if unclear), age (integer " +
+      "years, or null if not said), phone (digits only; '' if not said)" +
+      (isTasker
+        ? ", skills (array of ids chosen ONLY from the provided knownSkills list; " +
+          "[] if none mentioned)."
+        : ".") +
+      ' Respond as JSON: {"name": "", "gender": "", "age": null, "phone": ""' +
+      (isTasker ? ', "skills": []' : "") +
+      "}.",
+    { transcript: text, role: isTasker ? "tasker" : "client", knownSkills: skillList }
+  );
+
+  const name = (result.name || "").toString().trim();
+  const genderRaw = (result.gender || "").toString().toLowerCase();
+  const gender = ["male", "female", "other"].includes(genderRaw) ? genderRaw : "";
+  let age = Math.round(Number(result.age));
+  if (!Number.isFinite(age) || age < 1 || age > 120) age = null;
+  const phone = (result.phone || "").toString().replace(/\D/g, "");
+
+  let skills = [];
+  if (isTasker && Array.isArray(result.skills)) {
+    const picked = result.skills
+      .map((s) => String(s))
+      .filter((s) => allowedSkillIds.has(s));
+    skills = [...new Set(picked)];
+  }
+
+  return { name, gender, age, phone, skills };
+});
+
+// ── 8. Task-Handling: gentle stale-post fixes for a task with no taker ───────
+// Wording only — the app decides WHEN to ask (time-since-post in Dart). Returns
+// 2–4 short Burmese suggestions to make a waiting post more attractive (raise
+// budget, widen tier, clarify, mark urgent). Falls back to a templated list.
+exports.suggestTaskFixes = onCall(taskOptions, async (request) => {
+  const { task, ageHours } = request.data || {};
+  if (!task) {
+    throw new HttpsError("invalid-argument", "task required.");
+  }
+  const result = await openai.askJson(
+    OPENAI_API_KEY.value(),
+    "A client's task on a Yangon home-service app has waited " +
+      Math.round(Number(ageHours) || 0) +
+      " hours with no worker. Suggest 2–4 SHORT, concrete, friendly BURMESE fixes " +
+      "to attract a worker faster (e.g. raise the budget, widen the accepted " +
+      "worker tier, add detail/photos, mark urgent). Base them on the task fields; " +
+      "never invent facts. " +
+      'Respond as JSON: {"tips": ["<burmese>", ...]}.',
+    { task, ageHours: Math.round(Number(ageHours) || 0) }
+  );
+  const tips = Array.isArray(result.tips)
+    ? result.tips.map((t) => String(t).trim()).filter(Boolean).slice(0, 4)
+    : [];
+  return { tips };
+});
+
+// ── 9. Task-Handling: completion summary + SUGGESTED tier move ───────────────
+// The model SUMMARIZES completion evidence and RECOMMENDS a tier delta; it never
+// applies it. The real tier change is the backend's transparent rules + client
+// rating (spec §4.4 Phase 3 / §8). suggestedTierDelta is constrained to -1..+1.
+exports.summarizeCompletion = onCall(taskOptions, async (request) => {
+  const { task, timing, review } = request.data || {};
+  if (!task) {
+    throw new HttpsError("invalid-argument", "task required.");
+  }
+  const result = await openai.askJson(
+    OPENAI_API_KEY.value(),
+    "Summarize a completed home-service task for a Yangon marketplace, then " +
+      "RECOMMEND (do not apply) a worker trust-tier move. Consider time taken vs " +
+      "estimate and the client's rating/review. Give a short BURMESE summary and a " +
+      "plain-language BURMESE rationale. suggestedTierDelta MUST be one of -1, 0, " +
+      "or 1 (a mere suggestion; transparent rules + the client rating decide the " +
+      'real tier). Respond as JSON: {"summary": "", "suggestedTierDelta": 0, "rationale": ""}.',
+    { task, timing: timing || {}, review: review || {} }
+  );
+  const summary = (result.summary || "").toString().trim();
+  const rationale = (result.rationale || "").toString().trim();
+  let delta = Math.round(Number(result.suggestedTierDelta));
+  if (!Number.isFinite(delta)) delta = 0;
+  delta = Math.max(-1, Math.min(1, delta));
+  return { summary, suggestedTierDelta: delta, rationale };
+});
+
+// ── 10. Task-Handling (tasker): per-task brief — what the client wants + prep ─
+// A short BURMESE summary of the task plus suggested prep/tools, read aloud in
+// the app. Wording only; falls back to a templated brief from the task fields.
+exports.briefTasker = onCall(taskOptions, async (request) => {
+  const { task } = request.data || {};
+  if (!task) {
+    throw new HttpsError("invalid-argument", "task required.");
+  }
+  const result = await openai.askJson(
+    OPENAI_API_KEY.value(),
+    "Brief a worker before they start a home-service task in Yangon. Give a short " +
+      "BURMESE summary of what the client wants, then 2–4 SHORT suggested prep/tools " +
+      "items in BURMESE. Base everything on the task fields; never invent specifics. " +
+      'Respond as JSON: {"summary": "", "suggestions": ["<burmese>", ...]}.',
+    { task }
+  );
+  const summary = (result.summary || "").toString().trim();
+  const suggestions = Array.isArray(result.suggestions)
+    ? result.suggestions.map((s) => String(s).trim()).filter(Boolean).slice(0, 4)
+    : [];
+  return { summary, suggestions };
 });

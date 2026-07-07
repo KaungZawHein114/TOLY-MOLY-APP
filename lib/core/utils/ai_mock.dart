@@ -6,7 +6,9 @@
 // hardcoded demo data so the demo always feels "smart" and never blocks.
 // ============================================================================
 
+import '../constants/task_posting_strings.dart' show TaskPostingStrings;
 import '../data/demo_data.dart';
+import '../../features/onboarding/onboarding_models.dart' show TaskerSkill;
 
 /// Suggests a service category + a couple of nearby workers for a free-text
 /// query. Pure keyword matching, returns instantly.
@@ -100,19 +102,9 @@ const String chatOffTopicReply =
     );
   }
 
-  // Rule-based intent (role only breaks ties).
-  final wantsPost = _hasAny(lower, _postWords);
-  final wantsFind = _hasAny(lower, _findWords);
-  String intent;
-  if (wantsPost && !wantsFind) {
-    intent = 'post_task';
-  } else if (wantsFind && !wantsPost) {
-    intent = 'find_task';
-  } else if (wantsPost && wantsFind) {
-    intent = role == 'tasker' ? 'find_task' : 'post_task';
-  } else {
-    intent = 'general';
-  }
+  // Rule-based intent — mirrors intent_service.js detectIntent exactly so the
+  // offline and online classifications agree.
+  final intent = _detectMockIntent(lower, role);
 
   if (intent == 'find_task') {
     final skill = _skillForQuery(userMessage);
@@ -134,6 +126,23 @@ const String chatOffTopicReply =
           "အောက်က \"Post a Task\" ကို နှိပ်ပါ။",
       action: 'post_task',
       intent: 'post_task',
+    );
+  }
+  if (intent == 'find_tasker') {
+    final skill = _skillForQuery(userMessage);
+    return (
+      message: "$skill ကျွမ်းကျင်သူများ ရှာပေးနိုင်ပါတယ်။ "
+          "အောက်က \"Browse Workers\" ကို နှိပ်ပြီး ရွေးချယ်နိုင်ပါတယ်။",
+      action: 'find_tasker',
+      intent: 'find_tasker',
+    );
+  }
+  if (intent == 'edit_profile') {
+    return (
+      message: "သင့်ပရိုဖိုင်ကို ပြင်နိုင်ပါတယ်။ "
+          "အောက်က \"Edit Profile\" ကို နှိပ်ပါ။",
+      action: 'edit_profile',
+      intent: 'edit_profile',
     );
   }
 
@@ -158,9 +167,10 @@ const List<String> _appWords = [
   // questions are treated as on-topic online (-> RAG) and offline (-> general).
   "payment", "premium", "refund", "cancel", "commission", "fee", "safety",
   "secure", "community", "rule", "rules", "report", "scam", "trust", "badge",
-  "verification", "account", "feature", "support", "how to", "help",
+  "verification", "account", "profile", "password", "details", "feature",
+  "support", "how to", "help",
   "အလုပ်", "အကူအညီ", "ကူညီ", "ဈေး", "ဈေးနှုန်း", "ငွေ", "ဝန်ဆောင်မှု",
-  "အဆင့်", "ရှာ", "တင်", "ပရိုဖိုင်", "ဘွတ်ကင်",
+  "အဆင့်", "ရှာ", "တင်", "ပရိုဖိုင်", "အချက်အလက်", "ဘွတ်ကင်",
   "ငွေပေးချေ", "လုံခြုံ", "စည်းမျဉ်း", "အကောင့်", "ယုံကြည်", "တိုင်ကြား", "ပရီမီယံ",
 ];
 
@@ -179,6 +189,50 @@ const List<String> _findWords = [
   "more jobs", "get jobs", "near me",
   "အလုပ်ရှာ", "အလုပ်လို", "အလုပ်ရှာဖွေ", "အလုပ်ရ",
 ];
+
+// CLIENT wants to browse/choose a worker → worker list (Slice 3, spec §4.5).
+// Mirrors intent_service.js FIND_TASKER_WORDS; kept free of "hire".
+const List<String> _findTaskerWords = [
+  "find a worker", "find worker", "find a tasker", "find tasker",
+  "browse workers", "show workers", "see workers", "workers list",
+  "list of workers", "find someone to", "recommend a worker", "best worker",
+  "find a plumber", "find a cleaner", "find an electrician", "find a carpenter",
+  "find a gardener", "find a handyman", "find a tutor", "find a mover",
+  "find a painter",
+  "အလုပ်သမား ရှာ", "အလုပ်သမားရှာ", "လုပ်သားရှာ", "ဝန်ဆောင်မှုပေးသူ ရှာ",
+];
+
+// Wants to edit their own profile/account → profile screen. Mirrors EDIT_WORDS.
+const List<String> _editWords = [
+  "edit profile", "edit my profile", "update profile", "update my profile",
+  "change my profile", "edit account", "update account", "change password",
+  "update my details", "edit my details",
+  "ပရိုဖိုင်ပြင်", "ပရိုဖိုင် ပြင်", "အကောင့်ပြင်", "အကောင့် ပြင်", "အချက်အလက်ပြင်",
+];
+
+/// Rule-based intent — a faithful port of intent_service.js `detectIntent`.
+/// Returns "post_task" | "find_task" | "find_tasker" | "edit_profile" |
+/// "general". [role] ("client" | "tasker") breaks ties.
+String _detectMockIntent(String lower, String role) {
+  if (_hasAny(lower, _editWords)) return 'edit_profile';
+
+  final wantsPost = _hasAny(lower, _postWords);
+  final wantsFind = _hasAny(lower, _findWords);
+
+  if (role == 'tasker') {
+    if (wantsFind) return 'find_task';
+    if (wantsPost) return 'post_task';
+    return 'general';
+  }
+
+  final wantsFindTasker = _hasAny(lower, _findTaskerWords);
+  if (wantsFindTasker && !wantsPost) return 'find_tasker';
+  if (wantsPost && !wantsFind) return 'post_task';
+  if (wantsFind && !wantsPost) return 'find_task';
+  if (wantsPost && wantsFind) return 'post_task';
+  if (wantsFindTasker) return 'find_tasker';
+  return 'general';
+}
 
 bool _isAppTopic(String lower) {
   if (_matchesServiceKeyword(lower)) return true;
@@ -209,6 +263,230 @@ String generateTaskDescription(String category, String userInput) {
     "Handyman": "အိမ်တွင်း ပြင်ဆင်စရာများအတွက် အကူအညီ လိုအပ်ပါသည်။",
   };
   return templates[category] ?? "အကူအညီတစ်ခု လိုအပ်ပါသည်။ အသေးစိတ် ဖော်ပြပေးပါ။";
+}
+
+// ----------------------------------------------------------------------------
+// Onboarding voice mode (Slice 2, spec §4.1/§4.6) — synchronous OFFLINE extract.
+// ----------------------------------------------------------------------------
+// Best-effort keyword/regex extraction from a spoken self-introduction, the
+// offline fallback for AiService.extractOnboarding. It NEVER invents: a field it
+// can't confidently read is left blank/null so the user fills it manually. Names
+// are hard to parse reliably offline, so `name` is intentionally left empty
+// (the user types it). Returns primitives; the service maps them to enums,
+// mirroring how matchTaskersMock's records become TaskerMatch.
+
+/// Skill keywords for offline extraction, keyed by [TaskerSkill.name].
+const Map<TaskerSkill, List<String>> _taskerSkillKeywords = {
+  TaskerSkill.cleaning: [
+    "clean", "wash", "tidy", "mop", "သန့်ရှင်း", "ဖွတ်", "ရှင်းလင်း",
+  ],
+  TaskerSkill.electrical: [
+    "electric", "wire", "light", "fan", "power", "လျှပ်စစ်", "မီး", "ဝိုင်ယာ", "ပန်ကာ",
+  ],
+  TaskerSkill.plumbing: [
+    "plumb", "pipe", "water", "leak", "tap", "ပိုက်", "ရေ", "ရေယို",
+  ],
+  TaskerSkill.delivery: [
+    "deliver", "parcel", "courier", "send", "ပို့", "ပါဆယ်", "ပို့ဆောင်",
+  ],
+  TaskerSkill.petCare: [
+    "pet", "dog", "cat", "အိမ်မွေး", "ခွေး", "ကြောင်", "တိရစ္ဆာန်",
+  ],
+  TaskerSkill.moving: [
+    "moving", "move", "shift", "ရွှေ့", "ပြောင်း", "သယ်", "ပစ္စည်းရွှေ့",
+  ],
+  TaskerSkill.painting: [
+    "paint", "ဆေးသုတ်", "ဆေး",
+  ],
+};
+
+/// Offline onboarding extraction. Returns primitives; `gender` is one of
+/// 'male'|'female'|'other' or null; `skillIds` are [TaskerSkill.name] values,
+/// only populated when [isTasker]. `name` is always '' (see note above).
+({String name, String? gender, int? age, String phone, List<String> skillIds})
+    extractOnboardingMock(String transcript, {required bool isTasker}) {
+  final lower = transcript.toLowerCase();
+  // Burmese speech-to-text may return Burmese numerals — normalise to ASCII so
+  // the phone/age regexes (which use \d) can read them.
+  final normalized = _asciiDigits(transcript);
+
+  // Phone: a 7–11 digit run (optionally starting 09). Take the longest match.
+  String phone = '';
+  for (final m in RegExp(r'\d[\d\s-]{6,}\d').allMatches(normalized)) {
+    final digits = m.group(0)!.replaceAll(RegExp(r'\D'), '');
+    if (digits.length >= 7 && digits.length > phone.length) phone = digits;
+  }
+
+  // Age: a plausible standalone number NOT part of the phone run.
+  int? age;
+  for (final m in RegExp(r'\b(\d{1,3})\b').allMatches(normalized)) {
+    final n = int.tryParse(m.group(1)!);
+    if (n != null && n >= 15 && n <= 90 && !phone.contains(m.group(1)!)) {
+      age = n;
+      break;
+    }
+  }
+
+  // Gender by keyword (Burmese/English).
+  String? gender;
+  if (_hasAny(lower, const ['အမျိုးသမီး', 'မိန်းမ', 'မိန်းကလေး', 'female', 'woman', 'lady'])) {
+    gender = 'female';
+  } else if (_hasAny(
+      lower, const ['အမျိုးသား', 'ယောက်ျား', 'ကျား', 'male', 'man', 'boy'])) {
+    gender = 'male';
+  }
+
+  // Skills (tasker only): every skill whose keywords appear.
+  final skillIds = <String>[];
+  if (isTasker) {
+    for (final entry in _taskerSkillKeywords.entries) {
+      if (_hasAny(lower, entry.value)) skillIds.add(entry.key.name);
+    }
+  }
+
+  return (name: '', gender: gender, age: age, phone: phone, skillIds: skillIds);
+}
+
+// ----------------------------------------------------------------------------
+// Task-Handling mode (Slice 4, spec §4.4/§4.8) — synchronous OFFLINE fallbacks.
+// ----------------------------------------------------------------------------
+// Wording only (no ranking of real entities). Each mirrors its Cloud Function's
+// response shape and stays fully templated from the task fields.
+
+/// Stale-post fixes (client, §4.4 Phase 1). 2–4 short templated Burmese tips.
+List<String> taskFixTipsMock(Map<String, dynamic> task, int ageHours) {
+  final urgent = task['urgent'] == true;
+  final desc = (task['description'] ?? '').toString();
+  final tips = <String>[
+    TaskPostingStrings.tipRaiseBudget,
+    TaskPostingStrings.tipWidenTier,
+    if (desc.trim().length < 40) TaskPostingStrings.tipAddDetail,
+    if (!urgent) TaskPostingStrings.tipMarkUrgent,
+  ];
+  return tips.take(4).toList();
+}
+
+/// Tasker per-task brief (§4.8): a short "what the client wants" + prep/tools.
+({String summary, List<String> suggestions}) taskerBriefMock(
+  Map<String, dynamic> task,
+) {
+  final category = (task['category'] ?? task['skill'] ?? '').toString();
+  final desc = (task['description'] ?? '').toString().trim();
+  final summary =
+      desc.isNotEmpty ? desc : generateTaskDescription(category, '');
+  return (
+    summary: summary,
+    suggestions: <String>[
+      TaskPostingStrings.briefPrepGeneric,
+      TaskPostingStrings.briefPrepArriveEarly,
+      TaskPostingStrings.briefPrepConfirm,
+    ],
+  );
+}
+
+/// Completion summary + SUGGESTED tier delta (§4.4 Phase 3). The delta is only a
+/// recommendation in [-1, 1]; the real tier is decided by rules + client rating.
+({String summary, int suggestedTierDelta, String rationale})
+    completionSummaryMock({
+  required Map<String, dynamic> task,
+  required Map<String, dynamic> timing,
+  required Map<String, dynamic> review,
+}) {
+  final rating = (review['rating'] is num)
+      ? (review['rating'] as num).toDouble()
+      : null;
+  final onTime = timing['onTime'] == true;
+
+  int delta;
+  String rationale;
+  if (rating != null && rating < 3) {
+    delta = -1;
+    rationale = TaskPostingStrings.completionRatingLow;
+  } else if (onTime && (rating == null || rating >= 4.5)) {
+    delta = 1;
+    rationale = TaskPostingStrings.completionOnTime;
+  } else {
+    delta = 0;
+    rationale = TaskPostingStrings.completionSummaryGeneric;
+  }
+  return (
+    summary: TaskPostingStrings.completionSummaryGeneric,
+    suggestedTierDelta: delta,
+    rationale: rationale,
+  );
+}
+
+// ----------------------------------------------------------------------------
+// Tasker-Finding mode (Slice 1, spec §4.3) — deterministic OFFLINE fallback.
+// ----------------------------------------------------------------------------
+// The synchronous fallback for AiService.matchTaskers. It scores every
+// candidate on REAL Worker fields (skill match, rating, distance, tier,
+// completed tasks, availability, verification), sorts, and returns the top ≤3
+// as (workerId, reason) records with a short, templated Burmese reason.
+//
+// Crucially it NEVER invents a tasker: every id returned is one of [candidates].
+// The service maps these records into TaskerMatch, mirroring how
+// chatAssistantReply's record is wrapped into ChatReply.
+
+/// Weighted match score for [w] against a task in [category]. Higher is better.
+/// Same field set the online prompt is told to weigh, so online and offline
+/// rankings feel consistent.
+double taskerMatchScore(Worker w, String category) {
+  final skillMatch = (category.isNotEmpty && w.skill == category) ? 100.0 : 0.0;
+  final ratingScore = w.rating / 5 * 100;
+  // Closer is better; 0 miles -> 100, ~6.2 miles (10km) -> 0.
+  final distanceScore = (100 - w.distanceMiles * 1.609 * 10).clamp(0, 100).toDouble();
+  final tierScore = w.currentTier / 7 * 100;
+  final completionScore = (w.completedTasks / 2).clamp(0, 100).toDouble();
+  final availableBonus = w.isAvailableNow ? 100.0 : 0.0;
+  final verifiedBonus = w.isVerified ? 100.0 : 0.0;
+  return skillMatch * 0.35 +
+      ratingScore * 0.20 +
+      distanceScore * 0.15 +
+      tierScore * 0.15 +
+      completionScore * 0.05 +
+      availableBonus * 0.06 +
+      verifiedBonus * 0.04;
+}
+
+/// A short, one-line Burmese "why I picked them", built only from real fields.
+String taskerMatchReason(Worker w, String category) {
+  final parts = <String>[];
+  if (category.isNotEmpty && w.skill == category) {
+    parts.add(TaskPostingStrings.matchReasonSkill);
+  }
+  parts.add('${w.rating}${TaskPostingStrings.matchReasonRatingSuffix}');
+  final km = (w.distanceMiles * 1.609).toStringAsFixed(1);
+  parts.add('$km${TaskPostingStrings.matchReasonNearbySuffix}');
+  if (w.isAvailableNow) {
+    parts.add(TaskPostingStrings.matchReasonAvailable);
+  } else if (w.currentTier >= 5) {
+    parts.add(TaskPostingStrings.matchReasonTopTier);
+  }
+  // Keep it to a readable one-liner — at most three clauses.
+  return '${parts.take(3).join('၊ ')}။';
+}
+
+/// Deterministic offline shortlist: the top ≤3 candidates for [task]. The
+/// `category` key of [task] drives skill-match scoring. Stable id tiebreak
+/// keeps the result reproducible for the demo (and tests).
+List<({int workerId, String reason})> matchTaskersMock(
+  Map<String, dynamic> task,
+  List<Worker> candidates,
+) {
+  if (candidates.isEmpty) return const [];
+  final category = (task['category'] ?? '').toString();
+  final scored = [
+    for (final w in candidates) (w: w, score: taskerMatchScore(w, category)),
+  ]..sort((a, b) {
+      final byScore = b.score.compareTo(a.score);
+      if (byScore != 0) return byScore;
+      return a.w.id.compareTo(b.w.id); // stable tiebreak -> deterministic
+    });
+  return [
+    for (final e in scored.take(3))
+      (workerId: e.w.id, reason: taskerMatchReason(e.w, category)),
+  ];
 }
 
 // ----------------------------------------------------------------------------
@@ -286,4 +564,16 @@ int? _firstNumber(String text) {
   final match = RegExp(r'\d+').firstMatch(text);
   if (match == null) return null;
   return int.tryParse(match.group(0)!);
+}
+
+/// Converts Burmese numerals (၀-၉) in [s] to ASCII digits (0-9). The inverse of
+/// [toBurmeseDigits]; used so the onboarding extractor can read spoken numbers
+/// regardless of which numeral set the speech engine returned.
+String _asciiDigits(String s) {
+  const burmese = ['၀', '၁', '၂', '၃', '၄', '၅', '၆', '၇', '၈', '၉'];
+  var out = s;
+  for (var i = 0; i < burmese.length; i++) {
+    out = out.replaceAll(burmese[i], '$i');
+  }
+  return out;
 }

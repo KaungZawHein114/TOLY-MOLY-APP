@@ -182,6 +182,80 @@ class TaskPostingStrings {
   static const String evalMissingBudget = "ဈေးနှုန်း ထည့်သွင်းပါ";
   static const String evalMissingSchedule = "ရက်စွဲနှင့် အချိန် ထည့်သွင်းပါ";
 
+  // ── Tasker-Finding mode (AI match shortlist — Slice 1, spec §4.3) ────────
+  // Pho Wa Yoke pre-filters + scores taskers in Dart; the model only ranks and
+  // explains. Every number shown is real app data, never model output.
+  static const String matchCtaTitle = "AI ဖြင့် အကောင်းဆုံး အလုပ်သမား ရှာမည်";
+  static const String matchCtaSubtitle =
+      "ဖိုးဝရုပ်က သင့်အတွက် အသင့်တော်ဆုံး ၃ ဦးကို ရွေးပေးပါမည်။";
+  static const String matchSheetTitle = "ဖိုးဝရုပ် ရွေးချယ်ပေးထားသူများ";
+  static const String matchThinking = "အကောင်းဆုံး အလုပ်သမားများ ရှာနေပါသည်…";
+  static const String matchThinkingHint = "ခဏစောင့်ပေးပါနော်။";
+  static const String matchReadyMessage =
+      "ဒါက အသင့်တော်ဆုံး အလုပ်သမားများပါ။ တစ်ဦးကို ရွေးနိုင်ပါပြီ။";
+  static const String matchPickButton = "ဒီသူကို ရွေးမည်";
+  static const String matchEmptyTitle = "ကိုက်ညီသူ မတွေ့သေးပါ";
+  static const String matchEmptyMessage =
+      "စစ်ထုတ်မှုများကို လျှော့ချပြီး ပြန်ကြိုးစားကြည့်ပါ။";
+  static const String matchSpeakServicePrompt = "ဘယ်လို အလုပ်သမား လိုချင်လဲ ပြောပါ";
+  static const String matchOfflineNote = "အော့ဖ်လိုင်း — အနီးအနား အလုပ်သမားများမှ ရွေးထားသည်";
+  // Templated Burmese reason clauses (offline fallback). Composed into a short,
+  // one-line "why I picked them" that the read-aloud button can speak.
+  static const String matchReasonSkill = "လိုအပ်တဲ့ ကျွမ်းကျင်မှုနဲ့ ကိုက်ညီ";
+  static const String matchReasonRatingSuffix = "★ ရမှတ်ကောင်း";
+  static const String matchReasonNearbySuffix = "km အနီးမှာ";
+  static const String matchReasonAvailable = "ယခု အားနေသည်";
+  static const String matchReasonExperiencedSuffix = "ကြိမ် အောင်မြင်ပြီး";
+  static const String matchReasonTopTier = "ယုံကြည်ရသော အဆင့်မြင့်";
+  static const String matchReasonVerified = "အတည်ပြုပြီးသား";
+
+  // ── Task-Handling mode (Slice 4, spec §4.4/§4.8) ─────────────────────────
+  // Gentle, non-blocking. AI SUGGESTS; rules/reviews and the user decide.
+  // Stale-post nudge (client, §4.4 Phase 1).
+  static const String stalePostTitle = "အလုပ်တင်ထားတာ ကြာနေပါပြီ";
+  static const String stalePostSubtitle =
+      "ဖိုးဝရုပ်က မြန်မြန်ဆို အလုပ်သမား ရအောင် အကြံပြုပေးပါမယ်။";
+  static const String stalePostTipsTitle = "အကြံပြုချက်များ";
+  static const String stalePostFlagButton = "ဝန်ဆောင်မှုအဖွဲ့ကို အကူအညီတောင်းမည်";
+  static const String stalePostFlaggedMessage =
+      "TOLY MOLY အဖွဲ့ကို အကြောင်းကြားပြီးပါပြီ — အနီးအနားရှိ အလုပ်သမားများကို ကူညီရှာပေးပါမည်။";
+  static const String stalePostDismiss = "ရပြီ";
+  // Templated tips (offline fallback).
+  static const String tipRaiseBudget = "ဈေးနှုန်းကို အနည်းငယ် တိုးပေးကြည့်ပါ။";
+  static const String tipWidenTier = "အလုပ်သမား အဆင့် ရွေးချယ်မှုကို ကျယ်ကျယ် ခွင့်ပြုပါ။";
+  static const String tipAddDetail = "အသေးစိတ်နှင့် ဓာတ်ပုံ ထပ်ထည့်ပါ။";
+  static const String tipMarkUrgent = "အရေးပေါ်အဖြစ် သတ်မှတ်ပါက ပိုမြင်သာပါမည်။";
+
+  // Tasker per-task brief (§4.8).
+  static const String briefTitle = "ဖိုးဝရုပ်၏ အကြို ရှင်းလင်းချက်";
+  static const String briefWhatClientWants = "ဖောက်သည် လိုချင်တာ";
+  static const String briefPrepTitle = "ပြင်ဆင်ရန် / ကိရိယာများ";
+  static const String briefThinking = "အလုပ်အကြောင်း ပြင်ဆင်နေပါသည်…";
+  // Offline fallback brief.
+  static const String briefPrepGeneric = "လိုအပ်သော ကိရိယာများ ယူဆောင်လာပါ။";
+  static const String briefPrepArriveEarly = "အချိန်မီ ရောက်အောင် ကြိုထွက်ပါ။";
+  static const String briefPrepConfirm = "အလုပ်မစတင်မီ ဖောက်သည်နှင့် အတည်ပြုပါ။";
+
+  // Gentle tasker reminder (§4.8).
+  static const String reminderTitle = "သတိပေးချက်";
+  static String reminderBody(String timeSlot) =>
+      "ဒီအလုပ်ကို သတ်မှတ်ချိန် ($timeSlot) အတွင်း ပြီးအောင် လုပ်ပေးပါနော်။";
+
+  // Completion summary + suggested tier (§4.4 Phase 3).
+  static const String completionTitle = "ပြီးစီးမှု အနှစ်ချုပ်";
+  static const String completionThinking = "အနှစ်ချုပ် ပြင်ဆင်နေပါသည်…";
+  static const String completionSuggestedTierTitle = "အဆင့် အကြံပြုချက်";
+  static const String tierSuggestUp = "အဆင့် တစ်ဆင့် တက်သင့်သည် ⬆";
+  static const String tierSuggestSame = "အဆင့် ဆက်ထိန်းသင့်သည်";
+  static const String tierSuggestDown = "အဆင့် ပြန်လည် သုံးသပ်သင့်သည် ⬇";
+  static const String tierSuggestNote =
+      "ဒါက AI ၏ အကြံပြုချက်သာ ဖြစ်ပါသည်။ တကယ့်အဆင့်ကို စည်းမျဉ်းများနှင့် ဖောက်သည်၏ အဆင့်သတ်မှတ်ချက်က ဆုံးဖြတ်ပါသည်။";
+  // Offline fallback.
+  static const String completionSummaryGeneric = "အလုပ်ကို အောင်မြင်စွာ ပြီးမြောက်ခဲ့ပါသည်။";
+  static const String completionOnTime = "သတ်မှတ်ချိန်အတွင်း ပြီးစီးသဖြင့် အဆင့်တိုးရန် အကြံပြုသည်။";
+  static const String completionRatingLow =
+      "ဖောက်သည် အဆင့်သတ်မှတ်ချက် နိမ့်သဖြင့် ပြန်လည်သုံးသပ်ရန် အကြံပြုသည်။";
+
   // ── Yangon townships (on-site location dropdown) ─────────────────────────
   static const List<String> yangonTownships = [
     "လှိုင်",

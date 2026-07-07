@@ -33,7 +33,7 @@ class CustomerHomeShell extends ConsumerWidget {
     return Scaffold(
       // Floating AI assistant — only on the Home tab.
       floatingActionButton: index == 0
-          ? ChatbotFab(onTap: () => context.push('${Routes.chatbot}?role=client'))
+          ? AgentFab(onTap: () => context.push('${Routes.chatbot}?role=client'))
           : null,
       body: IndexedStack(
         index: index,
