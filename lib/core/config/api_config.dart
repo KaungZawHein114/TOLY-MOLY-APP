@@ -15,16 +15,15 @@ String get apiBaseUrl {
   if (Platform.isIOS || Platform.isMacOS) return 'http://127.0.0.1:8000';
   if (Platform.isWindows || Platform.isLinux) return 'http://127.0.0.1:8000';
   if (Platform.isAndroid) {
-    // The Android emulator exposes the host machine on 10.0.2.2.
-    // Physical devices cannot use that alias — they need the real LAN IP.
-    // We distinguish the two by checking for the emulator's hostname, which
-    // the OS always sets to "generic*" / "sdk_*" / "localhost".
-    final host = Platform.localHostname.toLowerCase();
-    final isEmulator = host.contains('generic') ||
-        host.contains('sdk') ||
-        host == 'localhost' ||
-        host.isEmpty;
-    return isEmulator ? 'http://10.0.2.2:8000' : physicalDeviceUrl;
+    // Treat the configured value as the source of truth on Android.
+    // If it still points at the emulator alias, use that; otherwise use the
+    // LAN IP entered in local_config.dart for a physical phone.
+    if (physicalDeviceUrl.contains('10.0.2.2') ||
+        physicalDeviceUrl.contains('127.0.0.1') ||
+        physicalDeviceUrl.contains('localhost')) {
+      return 'http://10.0.2.2:8000';
+    }
+    return physicalDeviceUrl;
   }
   return physicalDeviceUrl;
 }

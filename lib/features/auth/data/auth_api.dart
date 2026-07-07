@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
 
 import '../../../core/config/api_config.dart';
 import 'auth_failure.dart';
@@ -73,6 +74,11 @@ class AuthApi {
       );
       return Map<String, dynamic>.from(response.data as Map);
     } on DioException catch (e) {
+      debugPrint(
+        'AuthApi GET /api/auth/me failed: baseUrl=${_dio.options.baseUrl}, '
+        'uri=${e.requestOptions.uri}, type=${e.type}, '
+        'status=${e.response?.statusCode}, data=${e.response?.data}',
+      );
       throw _toAuthFailure(e);
     }
   }
@@ -93,6 +99,11 @@ class AuthApi {
       if (response.data == null) return {};
       return Map<String, dynamic>.from(response.data as Map);
     } on DioException catch (e) {
+      debugPrint(
+        'AuthApi POST $path failed: baseUrl=${_dio.options.baseUrl}, '
+        'uri=${e.requestOptions.uri}, type=${e.type}, '
+        'status=${e.response?.statusCode}, data=${e.response?.data}',
+      );
       throw _toAuthFailure(e);
     }
   }
