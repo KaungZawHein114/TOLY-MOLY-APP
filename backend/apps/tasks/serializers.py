@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.tasks.models import Task
+from apps.tasks.models import Booking, Task
 
 
 class TaskSerializer(serializers.ModelSerializer):
@@ -47,6 +47,27 @@ class ExtractTaskSerializer(serializers.Serializer):
 class BudgetOptionsSerializer(serializers.Serializer):
     category = serializers.CharField()
     urgency = serializers.ChoiceField(choices=Task.URGENCY_CHOICES, default=Task.URGENCY_NORMAL)
+
+
+class BookingSerializer(serializers.ModelSerializer):
+    """Read-only view of a booking returned after every lifecycle action."""
+
+    class Meta:
+        model = Booking
+        fields = [
+            "id",
+            "task",
+            "worker",
+            "client",
+            "status",
+            "worker_checkin_at",
+            "client_checkin_confirmed_at",
+            "worker_checkout_at",
+            "client_checkout_confirmed_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
 
 
 class PublishTaskSerializer(serializers.ModelSerializer):

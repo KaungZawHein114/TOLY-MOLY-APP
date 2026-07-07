@@ -9,10 +9,16 @@ import '../../core/widgets/large_button.dart';
 import 'task_execution_state.dart';
 import 'widgets/task_handling_cards.dart';
 
-/// Digital Task Check-In: Leaving For Task -> Arrived & Started -> Task
-/// Completed -> (client confirmation, out of scope — no client-side screen
-/// exists for this flow yet). On-site only, per the spec; this app has no
-/// remote-booking concept, so every [Booking] qualifies.
+/// Digital Task Check-In / Check-Out screen (worker side).
+///
+/// Full lifecycle:
+///   pending → leavingForTask → waitingCheckinConfirm
+///     → inProgress (after client accepts) | arrivalDisputed (client rejects)
+///   inProgress → waitingCheckoutConfirm
+///     → completed (client confirms) | completionDisputed (client reports issue)
+///
+/// The client-side confirmation cards live in PendingScreen, which reads the
+/// same [taskExecutionProvider] — no network needed in Phase 1 demo.
 class TaskExecutionScreen extends ConsumerWidget {
   final Booking booking;
   const TaskExecutionScreen({super.key, required this.booking});
@@ -24,17 +30,19 @@ class TaskExecutionScreen extends ConsumerWidget {
     final updated = current.copyWith(
       status: next,
       leaveTime: next == ExecutionStatus.leavingForTask ? now : null,
-      arrivalTime: next == ExecutionStatus.started ? now : null,
-      completionTime: next == ExecutionStatus.completed ? now : null,
+      checkinTime: next == ExecutionStatus.waitingCheckinConfirm ? now : null,
+      checkoutTime: next == ExecutionStatus.waitingCheckoutConfirm ? now : null,
     );
     ref.read(taskExecutionProvider.notifier).state = {...all, booking.id: updated};
 
     final notice = switch (next) {
       ExecutionStatus.leavingForTask =>
         "${booking.workerName} သည် သင့်အလုပ်နေရာသို့ ထွက်ခွာနေပါပြီ",
-      ExecutionStatus.started => "${booking.workerName} သည် ရောက်ရှိပြီး အလုပ်စတင်နေပါပြီ",
-      ExecutionStatus.completed => "အလုပ်ပြီးစီးပါပြီ — ကျေးဇူးပြု၍ အတည်ပြုပေးပါ",
-      ExecutionStatus.pending => "",
+      ExecutionStatus.waitingCheckinConfirm =>
+        "Check-In ပြုလုပ်ပြီးပါပြီ — Client အတည်ပြုချက် စောင့်ပါ",
+      ExecutionStatus.waitingCheckoutConfirm =>
+        "Check-Out ပြုလုပ်ပြီးပါပြီ — Client အတည်ပြုချက် စောင့်ပါ",
+      _ => "",
     };
     if (notice.isNotEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,7 +55,8 @@ class TaskExecutionScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final all = ref.watch(taskExecutionProvider);
     final execution = executionFor(all, booking.id);
-    final isCompleted = execution.status == ExecutionStatus.completed;
+    final isTerminal = execution.status == ExecutionStatus.completed ||
+        execution.status == ExecutionStatus.completionDisputed;
     final task = bookingTaskMap(booking);
 
     return Scaffold(
@@ -62,22 +71,20 @@ class TaskExecutionScreen extends ConsumerWidget {
           _CurrentAction(
             execution: execution,
             onLeaving: () => _advance(context, ref, ExecutionStatus.leavingForTask),
-            onStarted: () => _advance(context, ref, ExecutionStatus.started),
-            onCompleted: () => _advance(context, ref, ExecutionStatus.completed),
+            onCheckin: () => _advance(context, ref, ExecutionStatus.waitingCheckinConfirm),
+            onCheckout: () => _advance(context, ref, ExecutionStatus.waitingCheckoutConfirm),
           ),
-          // Task-Handling mode (tasker, spec §4.8): brief + gentle reminder
-          // before/during the job; the completion summary + suggested tier after.
-          // Kept BELOW the primary action so the action stays reachable.
-          if (!isCompleted) ...[
+          if (!isTerminal &&
+              execution.status != ExecutionStatus.waitingCheckinConfirm &&
+              execution.status != ExecutionStatus.waitingCheckoutConfirm &&
+              execution.status != ExecutionStatus.arrivalDisputed) ...[
             const SizedBox(height: AppSpacing.xl),
             TaskerBriefCard(task: task),
             const SizedBox(height: AppSpacing.md),
             TaskerReminderBanner(timeSlot: booking.timeSlot),
           ],
-          if (isCompleted) ...[
+          if (execution.status == ExecutionStatus.completed) ...[
             const SizedBox(height: AppSpacing.xl),
-            // Demo timing: completed within its window (onTime). No client rating
-            // captured yet, so the tier engine (rules) would use its own signals.
             CompletionSummaryCard(task: task, timing: const {'onTime': true}),
           ],
         ],
@@ -108,7 +115,8 @@ class _TaskSummaryCard extends StatelessWidget {
           Text(booking.skill,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.onBrand, fontSize: 22)),
+              style: theme.textTheme.headlineSmall
+                  ?.copyWith(color: AppColors.onBrand, fontSize: 22)),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
@@ -118,7 +126,8 @@ class _TaskSummaryCard extends StatelessWidget {
                 child: Text(booking.timeSlot,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrand)),
+                    style:
+                        theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrand)),
               ),
               const SizedBox(width: AppSpacing.md),
               Icon(Icons.location_on, size: 16, color: AppColors.onBrandMuted),
@@ -127,7 +136,8 @@ class _TaskSummaryCard extends StatelessWidget {
                 child: Text(booking.township,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrand)),
+                    style:
+                        theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrand)),
               ),
             ],
           ),
@@ -137,27 +147,35 @@ class _TaskSummaryCard extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Timeline — shows every milestone with time if recorded
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _Timeline extends StatelessWidget {
   final TaskExecution execution;
   const _Timeline({required this.execution});
 
-  String? _time(DateTime? d) {
-    if (d == null) return null;
-    return "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
-  }
+  String? _fmt(DateTime? d) => d == null
+      ? null
+      : "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final rows = [
-      (AppStrings.executionLeaveLabel, _time(execution.leaveTime)),
-      (AppStrings.executionArrivalLabel, _time(execution.arrivalTime)),
-      (AppStrings.executionCompletionLabel, _time(execution.completionTime)),
+      (AppStrings.executionLeaveLabel, _fmt(execution.leaveTime)),
+      (AppStrings.executionCheckinLabel, _fmt(execution.checkinTime)),
+      (AppStrings.executionClientConfirmedCheckinLabel,
+          _fmt(execution.clientCheckinConfirmedAt)),
+      (AppStrings.executionCheckoutLabel, _fmt(execution.checkoutTime)),
+      (AppStrings.executionClientConfirmedCheckoutLabel,
+          _fmt(execution.clientCheckoutConfirmedAt)),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppStrings.executionTimelineTitle, style: theme.textTheme.titleMedium),
+        Text(AppStrings.executionTimelineTitle,
+            style: theme.textTheme.titleMedium),
         const SizedBox(height: AppSpacing.sm),
         for (final row in rows)
           Padding(
@@ -165,21 +183,29 @@ class _Timeline extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  row.$2 != null ? Icons.check_circle : Icons.radio_button_unchecked,
+                  row.$2 != null
+                      ? Icons.check_circle
+                      : Icons.radio_button_unchecked,
                   size: 18,
-                  color: row.$2 != null ? AppColors.success : Theme.of(context).hintColor,
+                  color: row.$2 != null
+                      ? AppColors.success
+                      : Theme.of(context).hintColor,
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
-                  child: Text(row.$1,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: row.$2 != null ? null : theme.hintColor,
-                      )),
+                  child: Text(
+                    row.$1,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: row.$2 != null ? null : theme.hintColor,
+                    ),
+                  ),
                 ),
                 if (row.$2 != null)
-                  Text(row.$2!, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                  Text(row.$2!,
+                      style:
+                          theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
               ],
             ),
           ),
@@ -188,60 +214,124 @@ class _Timeline extends StatelessWidget {
   }
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Current action — the primary CTA card that changes with each state
+// ─────────────────────────────────────────────────────────────────────────────
+
 class _CurrentAction extends StatelessWidget {
   final TaskExecution execution;
   final VoidCallback onLeaving;
-  final VoidCallback onStarted;
-  final VoidCallback onCompleted;
+  final VoidCallback onCheckin;
+  final VoidCallback onCheckout;
+
   const _CurrentAction({
     required this.execution,
     required this.onLeaving,
-    required this.onStarted,
-    required this.onCompleted,
+    required this.onCheckin,
+    required this.onCheckout,
   });
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    switch (execution.status) {
-      case ExecutionStatus.pending:
-        return LargeButton(
+    return switch (execution.status) {
+      // ── Step 0: haven't left yet ─────────────────────────────────────────
+      ExecutionStatus.pending => LargeButton(
           label: AppStrings.executionLeavingCta,
           gradient: AppColors.purpleGradient,
           onTap: onLeaving,
-        );
-      case ExecutionStatus.leavingForTask:
-        return LargeButton(
-          label: AppStrings.executionStartedCta,
+        ),
+
+      // ── Step 1: on the way ───────────────────────────────────────────────
+      ExecutionStatus.leavingForTask => LargeButton(
+          label: AppStrings.executionCheckinCta,
           gradient: AppColors.purpleGradient,
-          onTap: onStarted,
-        );
-      case ExecutionStatus.started:
-        return LargeButton(
-          label: AppStrings.executionCompletedCta,
+          onTap: onCheckin,
+        ),
+
+      // ── Step 2a: checked in, waiting for client ──────────────────────────
+      ExecutionStatus.waitingCheckinConfirm =>
+        _StatusBanner(
+          icon: Icons.hourglass_top,
+          color: AppColors.indigo700,
+          message: AppStrings.executionCheckinWaiting,
+        ),
+
+      // ── Step 2b: client rejected arrival ────────────────────────────────
+      ExecutionStatus.arrivalDisputed =>
+        _StatusBanner(
+          icon: Icons.warning_amber_rounded,
+          color: AppColors.warning,
+          message: AppStrings.executionArrivalDisputedMsg,
+        ),
+
+      // ── Step 3: client confirmed, work in progress ───────────────────────
+      ExecutionStatus.inProgress => LargeButton(
+          label: AppStrings.executionCheckoutCta,
           gradient: AppColors.purpleGradient,
-          onTap: onCompleted,
-        );
-      case ExecutionStatus.completed:
-        return Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.success.withValues(alpha: 0.12),
-            borderRadius: BorderRadius.circular(AppRadius.lg),
+          onTap: onCheckout,
+        ),
+
+      // ── Step 4a: checked out, waiting for client ─────────────────────────
+      ExecutionStatus.waitingCheckoutConfirm =>
+        _StatusBanner(
+          icon: Icons.hourglass_top,
+          color: AppColors.indigo700,
+          message: AppStrings.executionCheckoutWaiting,
+        ),
+
+      // ── Step 4b: client reported issue ───────────────────────────────────
+      ExecutionStatus.completionDisputed =>
+        _StatusBanner(
+          icon: Icons.report_problem_outlined,
+          color: AppColors.error,
+          message: AppStrings.executionCompletionDisputedMsg,
+        ),
+
+      // ── Terminal: job completed ───────────────────────────────────────────
+      ExecutionStatus.completed =>
+        _StatusBanner(
+          icon: Icons.celebration_outlined,
+          color: AppColors.success,
+          message: AppStrings.executionCompletedMsg,
+        ),
+    };
+  }
+}
+
+class _StatusBanner extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  final String message;
+  const _StatusBanner({
+    required this.icon,
+    required this.color,
+    required this.message,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: color.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Text(
+              message,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: color, fontWeight: FontWeight.w600),
+            ),
           ),
-          child: Row(
-            children: [
-              const Icon(Icons.hourglass_top, color: AppColors.success),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Text(
-                  AppStrings.executionWaitingClientConfirmation,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.success),
-                ),
-              ),
-            ],
-          ),
-        );
-    }
+        ],
+      ),
+    );
   }
 }

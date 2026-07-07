@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/agent/agent_session.dart';
+import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../activity/activity_chat.dart';
+import '../worker/task_execution_state.dart';
 import 'activity_screen.dart';
+import 'widgets/checkin_confirmation_card.dart';
 import 'widgets/stale_post_nudge.dart';
 
 // A representative "waiting" client post for the Task-Handling nudge (spec
@@ -21,8 +24,15 @@ const Map<String, dynamic> _demoWaitingPost = {
 };
 const int _demoWaitingAgeHours = AgentThresholds.stalePostHours + 2;
 
-/// Pending tab — shows only booking management (no chat list, no activity tabs).
-/// Content is rendered by [ActivityBookingsView] from activity_screen.dart.
+/// Pending tab — shows booking management.
+///
+/// Pinned confirmation cards appear at the TOP of this tab whenever the
+/// active booking's execution state requires the client to act:
+///   • [ExecutionStatus.waitingCheckinConfirm] → [CheckinConfirmationCard]
+///   • [ExecutionStatus.waitingCheckoutConfirm] → [CheckoutConfirmationCard]
+///
+/// Both cards write directly to [taskExecutionProvider], which the worker's
+/// [TaskExecutionScreen] also reads — no network needed in Phase 1.
 class PendingScreen extends ConsumerWidget {
   const PendingScreen({super.key});
 
@@ -30,9 +40,21 @@ class PendingScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
 
+    // Find the first "Active" demo booking that may need client action.
+    final activeBooking = bookings.where((b) => b.status == 'Active').firstOrNull;
+    final allExec = ref.watch(taskExecutionProvider);
+    final execution =
+        activeBooking != null ? executionFor(allExec, activeBooking.id) : null;
+
+    final needsCheckinConfirm =
+        execution?.status == ExecutionStatus.waitingCheckinConfirm;
+    final needsCheckoutConfirm =
+        execution?.status == ExecutionStatus.waitingCheckoutConfirm;
+
     return Scaffold(
       body: Column(
         children: [
+          // ── Header ────────────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.xl,
@@ -42,7 +64,8 @@ class PendingScreen extends ConsumerWidget {
             ),
             decoration: const BoxDecoration(
               color: AppColors.purple700,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
+              borderRadius:
+                  BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
             ),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -67,18 +90,89 @@ class PendingScreen extends ConsumerWidget {
               ],
             ),
           ),
-          if (_demoWaitingAgeHours >= AgentThresholds.stalePostHours)
-            Padding(
+
+          // ── Scrollable body ───────────────────────────────────────────────
+          Expanded(
+            child: ListView(
               padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
-              child: StalePostNudge(
-                task: _demoWaitingPost,
-                ageHours: _demoWaitingAgeHours,
-              ),
+                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxxl),
+              children: [
+                // ── Pinned check-in confirmation card ─────────────────────
+                if (needsCheckinConfirm && activeBooking != null) ...[
+                  CheckinConfirmationCard(
+                    workerName: activeBooking.workerName,
+                    onAccept: () => _clientConfirmCheckin(ref, activeBooking.id),
+                    onReject: () => _clientRejectCheckin(ref, activeBooking.id),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // ── Pinned check-out confirmation card ────────────────────
+                if (needsCheckoutConfirm && activeBooking != null) ...[
+                  CheckoutConfirmationCard(
+                    workerName: activeBooking.workerName,
+                    onConfirm: () =>
+                        _clientConfirmCheckout(ref, activeBooking.id),
+                    onReport: () =>
+                        _clientReportIssue(ref, activeBooking.id, context),
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // ── Stale-post nudge ──────────────────────────────────────
+                if (_demoWaitingAgeHours >= AgentThresholds.stalePostHours) ...[
+                  StalePostNudge(
+                    task: _demoWaitingPost,
+                    ageHours: _demoWaitingAgeHours,
+                  ),
+                  const SizedBox(height: AppSpacing.lg),
+                ],
+
+                // ── Booking list ──────────────────────────────────────────
+                const ActivityBookingsView(),
+              ],
             ),
-          const Expanded(child: ActivityBookingsView()),
+          ),
         ],
       ),
     );
+  }
+
+  // ── State mutation helpers (client side) ──────────────────────────────────
+
+  void _clientConfirmCheckin(WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    final updated = current.copyWith(
+      status: ExecutionStatus.inProgress,
+      clientCheckinConfirmedAt: DateTime.now(),
+    );
+    ref.read(taskExecutionProvider.notifier).state = {...all, taskId: updated};
+  }
+
+  void _clientRejectCheckin(WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    final updated = current.copyWith(status: ExecutionStatus.arrivalDisputed);
+    ref.read(taskExecutionProvider.notifier).state = {...all, taskId: updated};
+  }
+
+  void _clientConfirmCheckout(WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    final updated = current.copyWith(
+      status: ExecutionStatus.completed,
+      clientCheckoutConfirmedAt: DateTime.now(),
+    );
+    ref.read(taskExecutionProvider.notifier).state = {...all, taskId: updated};
+  }
+
+  void _clientReportIssue(WidgetRef ref, int taskId, BuildContext context) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    final updated =
+        current.copyWith(status: ExecutionStatus.completionDisputed);
+    ref.read(taskExecutionProvider.notifier).state = {...all, taskId: updated};
+    showActivitySnack(context, 'ပြဿနာ တိုင်ကြားမှုကို မှတ်တမ်းတင်ပြီးပါပြီ။ Support ဆက်သွယ်ပေးပါမည်။');
   }
 }

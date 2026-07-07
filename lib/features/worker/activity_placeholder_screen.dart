@@ -206,43 +206,79 @@ class _MessagesView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final discussionEnded = ref.watch(taskPhaseProvider) != TaskPhase.discussing;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxl),
+    final convos = [
+      _ConvoData(
+        name: _discussionClientName,
+        emoji: _clientEmoji,
+        jobCategory: 'လျှပ်စစ်ပြုပြင်ခြင်း',
+        statusLabel: discussionEnded ? 'ဆွေးနွေးပြီးဆုံး' : 'ဆွေးနွေးဆဲ',
+        statusColor: discussionEnded ? AppColors.success : AppColors.indigo500,
+        snippet: discussionEnded
+            ? 'ဆွေးနွေးမှု ပြီးဆုံးပါပြီ။ အလုပ်ရှင်က Escrow ဆောင်ရွက်နေပါသည်။'
+            : 'မင်္ဂလာပါ။ ကျွန်တော့်အလုပ်ကို စိတ်ဝင်စားပေးလို့ ကျေးဇူးတင်ပါတယ်။',
+        time: 'ယခု',
+        isUnread: !discussionEnded,
+        isOnline: true,
+        onTap: () => openDiscussionChat(
+          context,
+          role: ActivityRole.tasker,
+          counterpartName: _discussionClientName,
+          counterpartEmoji: _clientEmoji,
+        ),
+      ),
+      _ConvoData(
+        name: _progressClientName,
+        emoji: _clientEmoji,
+        jobCategory: 'ရေပိုက်ပြုပြင်ခြင်း',
+        statusLabel: 'အလုပ်ဆောင်ရွက်ဆဲ',
+        statusColor: AppColors.tealDark,
+        snippet: 'အလုပ် အတည်ပြုပြီးပါပြီ။ အဆင်သင့်ဖြစ်ရင် အသိပေးပါမယ်။',
+        time: 'မနက်က',
+        isUnread: false,
+        isOnline: false,
+        onTap: () => openProgressChat(
+          context,
+          role: ActivityRole.tasker,
+          counterpartName: _progressClientName,
+          counterpartEmoji: _clientEmoji,
+        ),
+      ),
+    ];
+
+    return Column(
       children: [
-        const _SafetyNoticeCard(),
-        const SizedBox(height: AppSpacing.lg),
-        // Chat 1 — Discussion phase (tasker negotiating with a client).
-        _ChatTile(
-          name: _discussionClientName,
-          emoji: _clientEmoji,
-          statusLabel: discussionEnded ? 'ဆွေးနွေးပြီးဆုံး' : 'ဆွေးနွေးဆဲ',
-          statusColor: discussionEnded ? AppColors.success : AppColors.indigo500,
-          snippet: discussionEnded
-              ? 'ဆွေးနွေးမှု ပြီးဆုံးပါပြီ။ အလုပ်ရှင်က Escrow ဆောင်ရွက်နေပါသည်။'
-              : 'မင်္ဂလာပါ။ ကျွန်တော့်အလုပ်ကို စိတ်ဝင်စားပေးလို့ ကျေးဇူးတင်ပါတယ်။',
-          time: 'ယခု',
-          isUnread: !discussionEnded,
-          onTap: () => openDiscussionChat(
-            context,
-            role: ActivityRole.tasker,
-            counterpartName: _discussionClientName,
-            counterpartEmoji: _clientEmoji,
+        // Compact safety banner (matches client chat screen style)
+        Container(
+          width: double.infinity,
+          color: AppColors.blue100,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.sm),
+          child: Row(
+            children: [
+              const Icon(Icons.shield_outlined,
+                  color: AppColors.indigo700, size: 16),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  'ငွေပေးချေမှုအားလုံးကို Escrow စနစ်မှသာ ပြုလုပ်ပါ။',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: AppColors.indigo700,
+                        fontWeight: FontWeight.w500,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
           ),
         ),
-        // Chat 2 — Task progress (already confirmed).
-        _ChatTile(
-          name: _progressClientName,
-          emoji: _clientEmoji,
-          statusLabel: 'အလုပ်ဆောင်ရွက်ဆဲ',
-          statusColor: AppColors.tealDark,
-          snippet: 'အလုပ် အတည်ပြုပြီးပါပြီ။ အဆင်သင့်ဖြစ်ရင် အသိပေးပါမယ်။',
-          time: 'မနက်က',
-          isUnread: false,
-          onTap: () => openProgressChat(
-            context,
-            role: ActivityRole.tasker,
-            counterpartName: _progressClientName,
-            counterpartEmoji: _clientEmoji,
+        Expanded(
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(
+                AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xxl),
+            itemCount: convos.length,
+            separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+            itemBuilder: (context, i) => _WorkerConvoCard(convo: convos[i]),
           ),
         ),
       ],
@@ -250,154 +286,211 @@ class _MessagesView extends ConsumerWidget {
   }
 }
 
-class _SafetyNoticeCard extends StatelessWidget {
-  const _SafetyNoticeCard();
+// ── Lightweight data holder ──────────────────────────────────────────────────
 
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.blue100,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.blue300.withValues(alpha: 0.3)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Icon(Icons.shield_outlined, color: AppColors.purple500),
-          const SizedBox(width: AppSpacing.md),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'လုံခြုံရေး သတိပေးချက်',
-                  style: theme.textTheme.titleMedium?.copyWith(color: AppColors.purple700),
-                ),
-                const SizedBox(height: AppSpacing.xxs),
-                Text(
-                  'ငွေပေးချေမှုအားလုံးကို Tolymoly Escrow စနစ်မှသာ ဆောင်ရွက်ပါ။ အက်ပ်ပြင်ပ ငွေပေးချေမှုများကို ရှောင်ကြဉ်ပါ။',
-                  style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _ChatTile extends StatelessWidget {
+class _ConvoData {
   final String name;
   final String emoji;
+  final String jobCategory;
   final String statusLabel;
   final Color statusColor;
   final String snippet;
   final String time;
   final bool isUnread;
+  final bool isOnline;
   final VoidCallback onTap;
 
-  const _ChatTile({
+  const _ConvoData({
     required this.name,
     required this.emoji,
+    required this.jobCategory,
     required this.statusLabel,
     required this.statusColor,
     required this.snippet,
     required this.time,
     required this.isUnread,
+    required this.isOnline,
     required this.onTap,
   });
+}
+
+// ── Modern conversation card (mirrors client ChatScreen _ConversationCard) ───
+
+class _WorkerConvoCard extends StatelessWidget {
+  final _ConvoData convo;
+  const _WorkerConvoCard({required this.convo});
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final c = convo;
+    final radius = BorderRadius.circular(AppRadius.lg);
 
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: AppSpacing.xl,
-                backgroundColor: AppColors.purple100,
-                child: Text(emoji, style: theme.textTheme.titleLarge),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    return Semantics(
+      button: true,
+      label: '${c.name} — ${c.snippet}',
+      child: Material(
+        color: c.isUnread ? AppColors.purple100 : AppColors.lightSurface,
+        borderRadius: radius,
+        elevation: c.isUnread ? 2 : 1,
+        shadowColor: AppColors.shadowSm,
+        child: InkWell(
+          onTap: c.onTap,
+          borderRadius: radius,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Avatar + online dot
+                Stack(
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: theme.textTheme.titleMedium,
-                            overflow: TextOverflow.ellipsis,
+                    CircleAvatar(
+                      radius: 28,
+                      backgroundColor: AppColors.purple100,
+                      child: Text(c.emoji,
+                          style: theme.textTheme.headlineSmall),
+                    ),
+                    if (c.isOnline)
+                      Positioned(
+                        right: 1,
+                        bottom: 1,
+                        child: Container(
+                          width: 13,
+                          height: 13,
+                          decoration: BoxDecoration(
+                            color: AppColors.success,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: c.isUnread
+                                  ? AppColors.purple100
+                                  : AppColors.lightSurface,
+                              width: 2,
+                            ),
                           ),
                         ),
-                        Text(
-                          time,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isUnread ? AppColors.purple500 : AppColors.textSecondary,
-                            fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      child: Text(
-                        statusLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: AppSpacing.xs),
-                    Text(
-                      snippet,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: isUnread ? AppColors.textPrimary : AppColors.textSecondary,
-                        fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
                   ],
                 ),
-              ),
-              if (isUnread) ...[
-                const SizedBox(width: AppSpacing.xs),
-                Container(
-                  width: AppSpacing.sm,
-                  height: AppSpacing.sm,
-                  decoration: const BoxDecoration(color: AppColors.purple500, shape: BoxShape.circle),
+                const SizedBox(width: AppSpacing.md),
+
+                // Text content
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Name + timestamp
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              c.name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: c.isUnread
+                                    ? FontWeight.w700
+                                    : FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.sm),
+                          Text(
+                            c.time,
+                            style: theme.textTheme.bodySmall?.copyWith(
+                              color: c.isUnread
+                                  ? AppColors.purple700
+                                  : AppColors.textSecondary,
+                              fontWeight: c.isUnread
+                                  ? FontWeight.w600
+                                  : FontWeight.normal,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xxs),
+
+                      // Status pill + job category
+                      Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: AppSpacing.sm,
+                                vertical: AppSpacing.xxs),
+                            decoration: BoxDecoration(
+                              color:
+                                  c.statusColor.withValues(alpha: 0.12),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadius.sm),
+                            ),
+                            child: Text(
+                              c.statusLabel,
+                              style: theme.textTheme.labelSmall?.copyWith(
+                                color: c.statusColor,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: AppSpacing.xs),
+                          Flexible(
+                            child: Text(
+                              '• ${c.jobCategory}',
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                  color: AppColors.textSecondary),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: AppSpacing.xs),
+
+                      // Snippet + unread dot
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              c.snippet,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium?.copyWith(
+                                color: c.isUnread
+                                    ? AppColors.textPrimary
+                                    : AppColors.textSecondary,
+                                fontWeight: c.isUnread
+                                    ? FontWeight.w600
+                                    : FontWeight.normal,
+                              ),
+                            ),
+                          ),
+                          if (c.isUnread) ...[
+                            const SizedBox(width: AppSpacing.sm),
+                            Container(
+                              width: 10,
+                              height: 10,
+                              decoration: const BoxDecoration(
+                                color: AppColors.purple700,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ],
-            ],
+            ),
           ),
         ),
       ),
     );
   }
 }
+
 
 class _BookingsView extends ConsumerWidget {
   const _BookingsView();

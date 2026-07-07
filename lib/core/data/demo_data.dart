@@ -168,38 +168,62 @@ class TaskRequest {
   });
 }
 
-/// Digital Task Check-In stage for a confirmed, on-site [Booking]. Tracks
-/// only the worker-side milestones — client confirmation/rating/tip are a
-/// separate, future-slice flow with no worker-app screen of their own yet.
-enum ExecutionStatus { pending, leavingForTask, started, completed }
+/// Digital Task Check-In stage for a confirmed, on-site [Booking].
+///
+/// Lifecycle (mirrors backend Booking.status):
+///   pending → leavingForTask → waitingCheckinConfirm
+///     → inProgress (client accepted) or arrivalDisputed (client rejected)
+///   inProgress → waitingCheckoutConfirm
+///     → completed (client accepted) or completionDisputed (client reported issue)
+///
+/// The old [started] value is kept as an alias for [inProgress] so any
+/// existing references (e.g. AppStrings) do not hard-crash.
+enum ExecutionStatus {
+  pending,
+  leavingForTask,
+  waitingCheckinConfirm,  // worker arrived; waiting for client to confirm
+  inProgress,             // client confirmed arrival; work underway
+  arrivalDisputed,        // client rejected check-in
+  waitingCheckoutConfirm, // worker signalled done; waiting for client to confirm
+  completionDisputed,     // client reported issue on checkout
+  completed,              // client confirmed completion — terminal
+}
 
 class TaskExecution {
   final int taskId;
   final ExecutionStatus status;
   final DateTime? leaveTime;
-  final DateTime? arrivalTime;
-  final DateTime? completionTime;
+  final DateTime? checkinTime;               // when worker tapped check-in
+  final DateTime? clientCheckinConfirmedAt;  // when client confirmed arrival
+  final DateTime? checkoutTime;              // when worker tapped check-out
+  final DateTime? clientCheckoutConfirmedAt; // when client confirmed completion
 
   const TaskExecution({
     required this.taskId,
     this.status = ExecutionStatus.pending,
     this.leaveTime,
-    this.arrivalTime,
-    this.completionTime,
+    this.checkinTime,
+    this.clientCheckinConfirmedAt,
+    this.checkoutTime,
+    this.clientCheckoutConfirmedAt,
   });
 
   TaskExecution copyWith({
     ExecutionStatus? status,
     DateTime? leaveTime,
-    DateTime? arrivalTime,
-    DateTime? completionTime,
+    DateTime? checkinTime,
+    DateTime? clientCheckinConfirmedAt,
+    DateTime? checkoutTime,
+    DateTime? clientCheckoutConfirmedAt,
   }) =>
       TaskExecution(
         taskId: taskId,
         status: status ?? this.status,
         leaveTime: leaveTime ?? this.leaveTime,
-        arrivalTime: arrivalTime ?? this.arrivalTime,
-        completionTime: completionTime ?? this.completionTime,
+        checkinTime: checkinTime ?? this.checkinTime,
+        clientCheckinConfirmedAt: clientCheckinConfirmedAt ?? this.clientCheckinConfirmedAt,
+        checkoutTime: checkoutTime ?? this.checkoutTime,
+        clientCheckoutConfirmedAt: clientCheckoutConfirmedAt ?? this.clientCheckoutConfirmedAt,
       );
 }
 
