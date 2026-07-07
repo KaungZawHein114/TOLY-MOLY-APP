@@ -155,8 +155,42 @@ class AppStrings {
       "အလုပ်ပြီးစီးပါပြီ — ဖောက်သည် အတည်ပြုရန် စောင့်ဆိုင်းနေသည်";
   static const String executionTimelineTitle = "လုပ်ငန်းအဆင့်များ";
   static const String executionLeaveLabel = "ထွက်ခွာပြီ";
-  static const String executionArrivalLabel = "ရောက်ရှိပြီး စတင်ပြီ";
+  static const String executionArrivalLabel = "ရောက်ရှိပြီး";
   static const String executionCompletionLabel = "ပြီးစီးပါပြီ";
+
+  // ── Check-in / Check-out confirmation flow ─────────────────────────────
+  // Worker side
+  static const String executionCheckinCta = "📍 ရောက်ပါပြီ — Check In";
+  static const String executionCheckinWaiting =
+      "Client confirmation စောင့်နေပါသည်";
+  static const String executionArrivalDisputedMsg =
+      "Client မှ မအတည်ပြုသေးပါ — ဆက်သွယ်ပါ";
+  static const String executionCheckoutCta = "✅ အလုပ်ပြီးပါပြီ — Check Out";
+  static const String executionCheckoutWaiting =
+      "အလုပ်ပြီးဆုံးမှု အတည်ပြုချက် စောင့်နေပါသည်";
+  static const String executionCompletionDisputedMsg =
+      "ပြဿနာ တိုင်ကြားမှု ရှိပါသည် — Support ဆက်သွယ်ပါ";
+  static const String executionCompletedMsg =
+      "🎉 အလုပ် ပြည့်စုံစွာ ပြီးဆုံးပါပြီ";
+
+  // Timeline labels (check-in / check-out flow)
+  static const String executionCheckinLabel = "Check-In ပြုလုပ်ပြီ";
+  static const String executionClientConfirmedCheckinLabel = "Client မှ ရောက်ရှိကြောင်း အတည်ပြုပြီ";
+  static const String executionCheckoutLabel = "Check-Out ပြုလုပ်ပြီ";
+  static const String executionClientConfirmedCheckoutLabel = "Client မှ ပြီးဆုံးကြောင်း အတည်ပြုပြီ";
+
+  // Client side — pinned confirmation cards
+  static const String checkinCardTitle = "လုပ်သား ရောက်ရှိကြောင်း အတည်ပြုပါ";
+  static const String checkinCardBody =
+      "သည် အလုပ်နေရာသို့ ရောက်ရှိပါပြီ။ အတည်ပြုရန် နှိပ်ပါ။";
+  static const String checkinAcceptCta = "အတည်ပြုမည်";
+  static const String checkinRejectCta = "မရောက်သေးပါ";
+
+  static const String checkoutCardTitle = "အလုပ်ပြီးဆုံးကြောင်း အတည်ပြုပါ";
+  static const String checkoutCardBody =
+      "က အလုပ်ပြီးဆုံးကြောင်း တင်ပြထားပါသည်။ အတည်ပြုပါ။";
+  static const String checkoutConfirmCta = "ပြီးဆုံးကြောင်း အတည်ပြုမည်";
+  static const String checkoutReportCta = "ပြဿနာရှိသည်";
 
   // ── AI Assistant chatbot (app-scoped, intent-aware) ─────────────────────
   static const String chatbotTitle = "TOLY MOLY အကူအညီ";
