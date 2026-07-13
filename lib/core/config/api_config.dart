@@ -2,7 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 
-import 'local_config.dart.example';
+import 'local_config.dart';
 
 /// Resolves the correct backend base URL for the current runtime environment.
 ///
