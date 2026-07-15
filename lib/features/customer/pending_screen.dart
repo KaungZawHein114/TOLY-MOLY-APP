@@ -52,86 +52,105 @@ class PendingScreen extends ConsumerWidget {
         execution?.status == ExecutionStatus.waitingCheckoutConfirm;
 
     return Scaffold(
-      body: Column(
-        children: [
+      // CustomScrollView + SliverFillRemaining(hasScrollBody: true) instead of
+      // a plain Column: at large text scale, the header plus any pinned cards
+      // can exceed the viewport height on their own — a Column would overflow
+      // outright, but this lets the whole screen scroll instead while still
+      // giving ActivityBookingsView's own internal Expanded a real bound
+      // (at least the remaining viewport) to lay out against.
+      body: CustomScrollView(
+        slivers: [
           // ── Header ────────────────────────────────────────────────────────
-          Container(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.xl,
-              56,
-              AppSpacing.xl,
-              AppSpacing.xl,
-            ),
-            decoration: const BoxDecoration(
-              color: AppColors.purple700,
-              borderRadius:
-                  BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'ဘွတ်ကင်များ',
-                  style: theme.textTheme.headlineSmall?.copyWith(
-                    color: AppColors.onBrand,
-                    fontWeight: FontWeight.bold,
+          SliverToBoxAdapter(
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.xl,
+                56,
+                AppSpacing.xl,
+                AppSpacing.xl,
+              ),
+              decoration: const BoxDecoration(
+                color: AppColors.purple700,
+                borderRadius:
+                    BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'ဘွတ်ကင်များ',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.headlineSmall?.copyWith(
+                        color: AppColors.onBrand,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
                   ),
-                ),
-                Semantics(
-                  label: 'အသိပေးချက်များ',
-                  button: true,
-                  child: IconButton(
-                    icon: const Icon(Icons.notifications_none_outlined,
-                        color: AppColors.onBrand),
-                    onPressed: () => showActivitySnack(
-                        context, 'အသိပေးချက်အသစ်များ မရှိသေးပါ။'),
+                  Semantics(
+                    label: 'အသိပေးချက်များ',
+                    button: true,
+                    child: IconButton(
+                      icon: const Icon(Icons.notifications_none_outlined,
+                          color: AppColors.onBrand),
+                      onPressed: () => showActivitySnack(
+                          context, 'အသိပေးချက်အသစ်များ မရှိသေးပါ။'),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
 
-          // ── Scrollable body ───────────────────────────────────────────────
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.xxxl),
-              children: [
-                // ── Pinned check-in confirmation card ─────────────────────
-                if (needsCheckinConfirm && activeBooking != null) ...[
-                  CheckinConfirmationCard(
-                    workerName: activeBooking.workerName,
-                    onAccept: () => _clientConfirmCheckin(ref, activeBooking.id),
-                    onReject: () => _clientRejectCheckin(ref, activeBooking.id),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                // ── Pinned check-out confirmation card ────────────────────
-                if (needsCheckoutConfirm && activeBooking != null) ...[
-                  CheckoutConfirmationCard(
-                    workerName: activeBooking.workerName,
-                    onConfirm: () =>
-                        _clientConfirmCheckout(ref, activeBooking.id),
-                    onReport: () =>
-                        _clientReportIssue(ref, activeBooking.id, context),
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                // ── Stale-post nudge ──────────────────────────────────────
-                if (_demoWaitingAgeHours >= AgentThresholds.stalePostHours) ...[
-                  StalePostNudge(
-                    task: _demoWaitingPost,
-                    ageHours: _demoWaitingAgeHours,
-                  ),
-                  const SizedBox(height: AppSpacing.lg),
-                ],
-
-                // ── Booking list ──────────────────────────────────────────
-                const ActivityBookingsView(),
-              ],
+          // ── Pinned cards — fixed above the list, genuinely "pinned" ────────
+          // (previously these lived inside the same ListView as the booking
+          // list below, which meant they scrolled away with it despite the
+          // name; it also handed ActivityBookingsView's internal Expanded an
+          // unbounded height, since a bare ListView child has no height
+          // limit — that's what caused the layout overflow.)
+          if (needsCheckinConfirm && activeBooking != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                child: CheckinConfirmationCard(
+                  workerName: activeBooking.workerName,
+                  onAccept: () => _clientConfirmCheckin(ref, activeBooking.id),
+                  onReject: () => _clientRejectCheckin(ref, activeBooking.id),
+                ),
+              ),
             ),
+          if (needsCheckoutConfirm && activeBooking != null)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                child: CheckoutConfirmationCard(
+                  workerName: activeBooking.workerName,
+                  onConfirm: () => _clientConfirmCheckout(ref, activeBooking.id),
+                  onReport: () =>
+                      _clientReportIssue(ref, activeBooking.id, context),
+                ),
+              ),
+            ),
+          if (_demoWaitingAgeHours >= AgentThresholds.stalePostHours)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, 0),
+                child: StalePostNudge(
+                  task: _demoWaitingPost,
+                  ageHours: _demoWaitingAgeHours,
+                ),
+              ),
+            ),
+
+          // ── Booking list — same widget ActivityScreen embeds; here it gets
+          // at least the remaining viewport height, growing further (with the
+          // whole screen scrolling) if its own content needs more. ──
+          const SliverFillRemaining(
+            hasScrollBody: true,
+            child: ActivityBookingsView(),
           ),
         ],
       ),

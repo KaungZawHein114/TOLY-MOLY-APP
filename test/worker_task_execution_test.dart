@@ -27,7 +27,8 @@ void main() {
   });
 
   testWidgets(
-      'Start Process walks through leaving -> started -> completed, ending in the waiting-for-confirmation state',
+      'Start Process walks through leaving -> checked-in (waiting) -> client '
+      'confirms -> checked-out (waiting) -> client confirms -> completed',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.dashboard);
@@ -41,16 +42,48 @@ void main() {
 
     await tester.tap(find.text(AppStrings.executionLeavingCta));
     await settle(tester);
-    expect(find.text(AppStrings.executionStartedCta), findsOneWidget);
+    expect(find.text(AppStrings.executionCheckinCta), findsOneWidget);
 
-    await tester.tap(find.text(AppStrings.executionStartedCta));
+    // Checking in doesn't complete the job by itself — it gates on the
+    // client's confirmation (see TaskExecutionScreen's doc comment).
+    await tester.tap(find.text(AppStrings.executionCheckinCta));
     await settle(tester);
-    expect(find.text(AppStrings.executionCompletedCta), findsOneWidget);
+    expect(find.text(AppStrings.executionCheckinWaiting), findsOneWidget);
 
-    await tester.tap(find.text(AppStrings.executionCompletedCta));
+    // Client confirms arrival from the Pending tab — same shared
+    // taskExecutionProvider, no network needed in this Phase 1 demo.
+    appRouter.go(Routes.customerHome);
     await settle(tester);
-    expect(find.text(AppStrings.executionWaitingClientConfirmation), findsOneWidget);
-    expect(find.text(AppStrings.executionCompletedCta), findsNothing);
+    await tester.tap(find.text(AppStrings.pendingTabLabel));
+    await settle(tester);
+    await tester.ensureVisible(find.text(AppStrings.checkinAcceptCta));
+    await settle(tester);
+    await tester.tap(find.text(AppStrings.checkinAcceptCta));
+    await settle(tester);
+
+    // Back on the worker's execution screen: now in progress, checkout CTA shown.
+    appRouter.go('${Routes.taskExecution}/2');
+    await settle(tester);
+    expect(find.text(AppStrings.executionCheckoutCta), findsOneWidget);
+
+    await tester.tap(find.text(AppStrings.executionCheckoutCta));
+    await settle(tester);
+    expect(find.text(AppStrings.executionCheckoutWaiting), findsOneWidget);
+
+    // Client confirms completion from the Pending tab.
+    appRouter.go(Routes.customerHome);
+    await settle(tester);
+    await tester.tap(find.text(AppStrings.pendingTabLabel));
+    await settle(tester);
+    await tester.ensureVisible(find.text(AppStrings.checkoutConfirmCta));
+    await settle(tester);
+    await tester.tap(find.text(AppStrings.checkoutConfirmCta));
+    await settle(tester);
+
+    // Back on the worker's screen: job completed.
+    appRouter.go('${Routes.taskExecution}/2');
+    await settle(tester);
+    expect(find.text(AppStrings.executionCompletedMsg), findsOneWidget);
   });
 
   testWidgets(
@@ -77,11 +110,27 @@ void main() {
     await settle(tester);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text(AppStrings.executionStartedCta));
+    await tester.tap(find.text(AppStrings.executionCheckinCta));
     await settle(tester);
     expect(tester.takeException(), isNull);
 
-    await tester.tap(find.text(AppStrings.executionCompletedCta));
+    // Client confirms arrival — still at 360dp/1.6x scale — then checkout.
+    // The confirmation card can sit below the fold at this scale, so scroll
+    // it into view before tapping (same reason it needed a scrollable body
+    // to begin with).
+    appRouter.go(Routes.customerHome);
+    await settle(tester);
+    await tester.tap(find.text(AppStrings.pendingTabLabel));
+    await settle(tester);
+    await tester.ensureVisible(find.text(AppStrings.checkinAcceptCta));
+    await settle(tester);
+    await tester.tap(find.text(AppStrings.checkinAcceptCta));
+    await settle(tester);
+    expect(tester.takeException(), isNull);
+
+    appRouter.go('${Routes.taskExecution}/2');
+    await settle(tester);
+    await tester.tap(find.text(AppStrings.executionCheckoutCta));
     await settle(tester);
     expect(tester.takeException(), isNull);
   });

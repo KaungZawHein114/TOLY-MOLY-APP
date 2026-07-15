@@ -6,9 +6,10 @@ import '../../../core/constants/onboarding_strings.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/large_button.dart';
+import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/app_error_message.dart';
+import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
-import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../auth/audio/auth_audio_map.dart';
@@ -92,10 +93,7 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
               );
             }).toList(),
           ),
-          if (_skillsError != null) ...[
-            const SizedBox(height: AppSpacing.sm),
-            Text(_skillsError!, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.error)),
-          ],
+          AppErrorMessage(message: _skillsError),
           if (draft.skills.isNotEmpty) ...[
             const SizedBox(height: AppSpacing.xl),
             Text(OnboardingStrings.experienceQuestion, style: theme.textTheme.titleMedium),
@@ -113,43 +111,26 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
               ),
           ],
           const SizedBox(height: AppSpacing.xl),
-          FieldLabelWithVoice(
+          AppTextField(
             label: OnboardingStrings.customSkillLabel,
-            readAloudText: OnboardingStrings.customSkillLabel,
             audioKey: AuthAudioKeys.customSkill, // no recording yet → listen button hides
             mockTranscript: "ပန်းခြံပြုပြင်ခြင်း",
             onSpeechResult: (v) {
               _customSkillController.text = v;
               notifier.state = notifier.state.copyWith(customSkill: v);
             },
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          Row(
-            children: [
-              Expanded(
-                child: TextField(
-                  controller: _customSkillController,
-                  style: theme.textTheme.bodyLarge,
-                  onChanged: (v) => notifier.state = notifier.state.copyWith(customSkill: v),
-                  decoration: InputDecoration(
-                    hintText: OnboardingStrings.customSkillLabel,
-                    contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(AppRadius.md),
-                      borderSide: BorderSide.none,
-                    ),
-                  ),
-                ),
-              ),
-            ],
+            controller: _customSkillController,
+            leadingIcon: Icons.handyman_outlined,
+            hintText: OnboardingStrings.customSkillLabel,
+            onChanged: (v) =>
+                notifier.state = notifier.state.copyWith(customSkill: v),
           ),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
-      bottomBar: LargeButton(
+      bottomBar: AppPrimaryButton(
         label: OnboardingStrings.continueButton,
         icon: Icons.arrow_forward,
-        gradient: AppColors.purpleGradient,
         onTap: () {
           if (draft.skills.isEmpty && draft.customSkill.trim().isEmpty) {
             setState(() => _skillsError = OnboardingStrings.skillsRequiredError);

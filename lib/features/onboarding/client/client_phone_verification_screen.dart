@@ -4,8 +4,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/onboarding_strings.dart';
 import '../../../core/routing/app_router.dart';
-import '../../../core/theme/app_colors.dart';
-import '../../../core/widgets/large_button.dart';
+import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/phone_otp_form.dart';
@@ -36,6 +35,8 @@ class ClientPhoneVerificationScreen extends ConsumerWidget {
         initialDevCode: draft.lastDevOtpCode,
         phoneAudioKey: AuthAudioKeys.phone,
         otpAudioKey: AuthAudioKeys.otp,
+        // "ပြင်မည်" pops back to the Account step, where the phone lives.
+        onEditPhone: () => context.pop(),
         onPhoneChanged: (v) {
           final notifier = ref.read(clientDraftProvider.notifier);
           notifier.state = notifier.state.copyWith(phone: v);
@@ -61,15 +62,13 @@ class ClientPhoneVerificationScreen extends ConsumerWidget {
           notifier.state = notifier.state.copyWith(otpVerified: true);
         },
       ),
-      bottomBar: LargeButton(
+      // Disabled (not hidden) until the phone is verified — the next step is
+      // always visible, and its state explains what is still required.
+      bottomBar: AppPrimaryButton(
         label: OnboardingStrings.continueButton,
         icon: Icons.arrow_forward,
-        gradient: AppColors.purpleGradient,
-        onTap: draft.otpVerified
-            ? () => context.push(Routes.clientRules)
-            : () => ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(OnboardingStrings.otpInvalidError)),
-                ),
+        enabled: draft.otpVerified,
+        onTap: () => context.push(Routes.clientRules),
       ),
     );
   }

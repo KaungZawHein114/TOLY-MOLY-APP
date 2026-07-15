@@ -49,7 +49,7 @@ void main() {
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
   });
 
-  testWidgets('Post a task quick action navigates to the voice task flow',
+  testWidgets('Post a task quick action navigates to the AI Task Assistant',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
@@ -60,8 +60,8 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Post a task now opens the voice-first extraction flow (its AppBar title).
-    expect(find.text('အသံဖြင့် အလုပ်တင်ရန်'), findsOneWidget);
+    // Post a task now opens the AI-driven task posting flow (its AppBar title).
+    expect(find.text('AI Task Assistant'), findsOneWidget);
   });
 
   testWidgets('Find a worker quick action navigates to WorkerListScreen', (tester) async {
@@ -97,7 +97,7 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    expect(find.text(OnboardingStrings.personalInfoTitle), findsWidgets);
+    expect(find.text(OnboardingStrings.aboutYouTitle), findsWidgets);
     expect(find.text(OnboardingStrings.nameLabel), findsOneWidget);
   });
 

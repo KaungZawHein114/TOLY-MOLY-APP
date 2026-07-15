@@ -3,54 +3,47 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/onboarding_strings.dart';
 import '../../../core/routing/app_router.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/large_button.dart';
+import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
-import '../../../core/widgets/onboarding/staggered_entrance.dart';
+import '../../../core/widgets/onboarding/success_state.dart';
 import '../onboarding_models.dart';
 
+/// Account-created celebration for clients: an animated success badge and a
+/// status checklist (what's done ✓ / what's still pending ⏳) instead of a
+/// paragraph — the user SEES where they stand at a glance.
 class ClientWelcomeScreen extends StatelessWidget {
   const ClientWelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return OnboardingScaffold(
       progress: const OnboardingProgress(step: 4, totalSteps: 4),
       mascotState: PhoWaYokeState.success,
-      mascotMessage: OnboardingStrings.completionUnverifiedMessage,
-      title: OnboardingStrings.completionTitle,
+      mascotMessage: OnboardingStrings.successMascotMessage,
       // No recorded clip for the completion screen (auth screens don't use TTS).
       layout: OnboardingLayoutMode.moment,
-      body: StaggeredEntrance(
+      body: const Column(
         children: [
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            OnboardingStrings.completionContinuePrompt,
-            style: theme.textTheme.bodyLarge,
-            textAlign: TextAlign.center,
+          SuccessState(
+            title: OnboardingStrings.completionTitle,
+            items: [
+              SuccessItem(OnboardingStrings.otpVerifiedMessage, done: true),
+              SuccessItem(OnboardingStrings.successAccountCreated, done: true),
+              SuccessItem(OnboardingStrings.successPendingVerification,
+                  done: false),
+            ],
           ),
-          Text(
-            OnboardingStrings.completionOrPrompt,
-            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-            textAlign: TextAlign.center,
-          ),
-          Text(
-            OnboardingStrings.completionUseNowPrompt,
-            style: theme.textTheme.bodyLarge,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: AppSpacing.xl),
+          SizedBox(height: AppSpacing.xl),
         ],
       ),
+      // Primary action last (bottom = thumb rest); secondary above it, same
+      // size but outlined so hierarchy is weight, not a smaller tap target.
       bottomBar: Column(
         children: [
-          LargeButton(
+          AppSecondaryButton(
             label: OnboardingStrings.completionContinueButton,
-            filled: false,
-            outlineColor: AppColors.purple700,
             onTap: () => ScaffoldMessenger.of(context).showSnackBar(
               const SnackBar(
                 content: Text("ဤ Demo တွင် Profile ဆက်ဖြည့်ခြင်းကို ပံ့ပိုးမထားပါသေးပါ"),
@@ -58,11 +51,9 @@ class ClientWelcomeScreen extends StatelessWidget {
             ),
           ),
           const SizedBox(height: AppSpacing.md),
-          LargeButton(
+          AppPrimaryButton(
             label: OnboardingStrings.completionUseNowButton,
             icon: Icons.check_circle_outline,
-            gradient: AppColors.purpleGradient,
-            celebratory: true,
             onTap: () => context.go(Routes.customerHome),
           ),
         ],
