@@ -4,8 +4,13 @@ import 'package:flutter/services.dart';
 import '../../constants/onboarding_strings.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
-import '../large_button.dart';
-import 'field_label_with_voice.dart';
+import '../app_buttons.dart';
+import 'otp_input.dart';
+
+/// Matches the backend's OTP length (DEV_FIXED_OTP_CODE = "12345" — see
+/// backend/apps/authentication/services.py). One box per digit, so this must
+/// stay in sync or the auto-submit on the last box can never fire.
+const int _otpLength = 5;
 
 /// Used by [PhoneOtpForm] to switch in the verified-success container with a
 /// small scale+fade entrance instead of an instant swap — a rare, one-time
@@ -31,37 +36,45 @@ class _SuccessPop extends StatelessWidget {
   }
 }
 
-/// Shared phone-number + OTP verification widget, used by both the client
-/// and tasker phone-verification steps. Talks to the real backend via the
-/// two callbacks — this widget itself knows nothing about Dio/Riverpod/the
-/// auth repository, only "send returns an error message or a dev-mode code"
-/// and "verify returns an error message or null".
+/// Redesigned OTP verification panel, shared by the client and tasker
+/// verification steps.
+///
+/// The OTP was already sent when the user submitted their phone number on
+/// the Account step, so this screen asks exactly ONE thing: the code. The
+/// phone number is shown as plain text with an "ပြင်မည်" link (no editable
+/// field — no "do I need to send it again?" confusion), the code goes into
+/// large boxed digits that auto-verify on the last digit, and resending is a
+/// single text action.
+///
+/// Talks to the real backend via the callbacks — this widget knows nothing
+/// about Dio/Riverpod/the auth repository.
 class PhoneOtpForm extends StatefulWidget {
   final String initialPhone;
   final bool initiallyVerified;
 
-  /// True when the OTP was already sent before this screen even appeared
-  /// (basic_info_screen sends it immediately on phone+password submit, so
-  /// a duplicate-phone error shows right there instead of two screens
-  /// later). Skips straight to the code-entry box instead of waiting for
-  /// a "Send OTP" tap.
+  /// True when the OTP was already sent before this screen appeared (the
+  /// Account step sends it on submit). In the redesigned flow this is the
+  /// normal case; false only on odd re-entries, where the resend action
+  /// covers it.
   final bool alreadySent;
 
-  /// Dev-mode code from that earlier send, shown immediately if present.
+  /// Dev-mode code from that earlier send, shown as a helper (no real SMS
+  /// gateway yet — see backend spec §2).
   final String? initialDevCode;
 
   final ValueChanged<String> onPhoneChanged;
   final VoidCallback onVerified;
 
-  /// AUTH-ONLY: pre-recorded clip keys (from `AuthAudioKeys`) for the phone and
-  /// OTP field labels. When set, those field listen buttons play recordings
-  /// instead of TTS. Leaving them null keeps the live TTS buttons.
+  /// Pops back to the Account step so the phone can be corrected.
+  final VoidCallback? onEditPhone;
+
+  /// AUTH-ONLY: pre-recorded clip keys (from `AuthAudioKeys`) for the phone
+  /// and OTP labels. (TTS is never used on auth screens.)
   final String? phoneAudioKey;
   final String? otpAudioKey;
 
-  /// Returns the dev-mode OTP code on success (shown directly in the UI
-  /// since there's no real SMS gateway yet — see backend spec §2), or
-  /// throws with a user-facing message on failure.
+  /// Returns the dev-mode OTP code on success, or throws with a user-facing
+  /// message on failure.
   final Future<String?> Function(String phone) onSendOtp;
 
   /// Returns null on success, or a user-facing error message on failure.
@@ -77,6 +90,7 @@ class PhoneOtpForm extends StatefulWidget {
     required this.onVerified,
     required this.onSendOtp,
     required this.onVerifyOtp,
+    this.onEditPhone,
     this.phoneAudioKey,
     this.otpAudioKey,
   });
@@ -86,8 +100,6 @@ class PhoneOtpForm extends StatefulWidget {
 }
 
 class _PhoneOtpFormState extends State<PhoneOtpForm> {
-  late final TextEditingController _phoneController =
-      TextEditingController(text: widget.initialPhone);
   final TextEditingController _otpController = TextEditingController();
 
   bool _otpSent = false;
@@ -107,19 +119,20 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
 
   @override
   void dispose() {
-    _phoneController.dispose();
     _otpController.dispose();
     super.dispose();
   }
 
+  /// Used both for the first explicit "OTP ပို့မည်" tap and for resends.
   Future<void> _sendOtp() async {
-    if (_phoneController.text.trim().isEmpty || _sending) return;
+    if (_sending) return;
     setState(() {
       _sending = true;
       _otpError = null;
+      _otpController.clear();
     });
     try {
-      final devCode = await widget.onSendOtp(_phoneController.text.trim());
+      final devCode = await widget.onSendOtp(widget.initialPhone.trim());
       if (!mounted) return;
       HapticFeedback.lightImpact();
       setState(() {
@@ -142,13 +155,13 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
     }
   }
 
-  Future<void> _verifyOtp() async {
-    if (_verifying) return;
+  Future<void> _verifyOtp(String code) async {
+    if (_verifying || _verified) return;
     setState(() {
       _verifying = true;
       _otpError = null;
     });
-    final error = await widget.onVerifyOtp(_otpController.text.trim());
+    final error = await widget.onVerifyOtp(code.trim());
     if (!mounted) return;
     if (error == null) {
       HapticFeedback.heavyImpact();
@@ -156,7 +169,10 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
       widget.onVerified();
     } else {
       HapticFeedback.vibrate();
-      setState(() => _otpError = error);
+      setState(() {
+        _otpError = error;
+        _otpController.clear();
+      });
     }
     setState(() => _verifying = false);
   }
@@ -167,42 +183,46 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        FieldLabelWithVoice(
-          label: OnboardingStrings.phoneLabel,
-          readAloudText: OnboardingStrings.phoneLabel,
-          audioKey: widget.phoneAudioKey,
-          mockTranscript: _verified ? null : "09123456789",
-          onSpeechResult: _verified
-              ? null
-              : (v) {
-                  setState(() => _phoneController.text = v);
-                  widget.onPhoneChanged(v);
-                },
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        TextField(
-          controller: _phoneController,
-          enabled: !_verified,
-          keyboardType: TextInputType.phone,
-          onChanged: widget.onPhoneChanged,
-          style: theme.textTheme.bodyLarge,
-          decoration: InputDecoration(
-            prefixIcon: const Padding(
-              padding: EdgeInsets.symmetric(horizontal: AppSpacing.md),
-              child: Align(
-                widthFactor: 1,
-                child: Text("MM +95", style: TextStyle(fontWeight: FontWeight.w700)),
+        // ── Phone shown as FACT, not as a field to fill again ──
+        Container(
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          decoration: BoxDecoration(
+            color: AppColors.lightSurface,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(color: AppColors.onboardingDivider),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.phone_android,
+                  color: AppColors.purple700, size: AppSizes.iconMd),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(
+                  widget.initialPhone,
+                  style: theme.textTheme.titleMedium
+                      ?.copyWith(letterSpacing: 1.2),
+                ),
               ),
-            ),
-            hintText: "09•••••••••",
-            contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide: BorderSide.none,
-            ),
+              if (widget.onEditPhone != null && !_verified)
+                TextButton(
+                  onPressed: widget.onEditPhone,
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(48, 44),
+                    foregroundColor: AppColors.purple700,
+                  ),
+                  child: Text(
+                    OnboardingStrings.otpEditPhone,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: AppColors.purple700,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ),
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
         if (_verified)
           _SuccessPop(
             child: Container(
@@ -210,6 +230,8 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
               decoration: BoxDecoration(
                 color: AppColors.success.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(AppRadius.md),
+                border: Border.all(
+                    color: AppColors.success.withValues(alpha: 0.35)),
               ),
               child: Row(
                 children: [
@@ -217,61 +239,80 @@ class _PhoneOtpFormState extends State<PhoneOtpForm> {
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(OnboardingStrings.otpVerifiedMessage,
-                        style: theme.textTheme.bodyMedium
-                            ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                            color: AppColors.success,
+                            fontWeight: FontWeight.w700)),
                   ),
                 ],
               ),
             ),
           )
-        else ...[
-          LargeButton(
-            label: _sending ? OnboardingStrings.submittingLabel : OnboardingStrings.sendOtpButton,
-            icon: _sending ? null : Icons.sms_outlined,
-            filled: false,
-            outlineColor: AppColors.purple700,
+        else if (!_otpSent)
+          // No code in flight yet — one clear, explicit action ("OTP ပို့မည်")
+          // instead of expecting the user to guess that a resend link would
+          // also do the first send.
+          AppPrimaryButton(
+            label: OnboardingStrings.sendOtpButton,
+            icon: Icons.sms_outlined,
+            loading: _sending,
             onTap: _sendOtp,
+          )
+        else ...[
+          Text(
+            "${OnboardingStrings.otpSentToPrefix} ${widget.initialPhone}",
+            style: theme.textTheme.bodyLarge?.copyWith(height: 1.5),
           ),
-          if (_otpSent) ...[
-            const SizedBox(height: AppSpacing.lg),
-            FieldLabelWithVoice(
-              label: OnboardingStrings.otpLabel,
-              readAloudText: OnboardingStrings.otpLabel,
-              audioKey: widget.otpAudioKey,
-              mockTranscript: _devOtpCode ?? "123456",
-              onSpeechResult: (v) => setState(() => _otpController.text = v),
-            ),
-            if (_devOtpCode != null) ...[
-              const SizedBox(height: AppSpacing.xxs),
-              Text(
-                "Dev OTP: $_devOtpCode",
-                style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
-              ),
-            ],
-            const SizedBox(height: AppSpacing.sm),
-            TextField(
-              controller: _otpController,
-              keyboardType: TextInputType.number,
-              maxLength: 6,
-              style: theme.textTheme.bodyLarge,
-              decoration: InputDecoration(
-                counterText: "",
-                hintText: "123456",
-                errorText: _otpError,
-                contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                  borderSide: BorderSide.none,
-                ),
-              ),
-            ),
-            const SizedBox(height: AppSpacing.lg),
-            LargeButton(
-              label: _verifying ? OnboardingStrings.submittingLabel : OnboardingStrings.verifyOtpButton,
-              gradient: AppColors.purpleGradient,
-              onTap: _verifyOtp,
+          if (_devOtpCode != null) ...[
+            const SizedBox(height: AppSpacing.xs),
+            Text(
+              "Dev OTP: $_devOtpCode",
+              style:
+                  theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
             ),
           ],
+          const SizedBox(height: AppSpacing.lg),
+          // Boxed digits, auto-verifies when the last digit lands — no
+          // separate verify button to find.
+          OtpInput(
+            controller: _otpController,
+            length: _otpLength,
+            enabled: !_verifying,
+            errorText: _otpError,
+            onChanged: (_) {
+              if (_otpError != null) setState(() => _otpError = null);
+            },
+            onCompleted: _verifyOtp,
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Row(
+            children: [
+              if (_verifying) ...[
+                const SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                      strokeWidth: 2, color: AppColors.purple700),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Text(OnboardingStrings.submittingLabel,
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.textSecondary)),
+              ] else
+                TextButton.icon(
+                  onPressed: _sending ? null : _sendOtp,
+                  icon: const Icon(Icons.refresh, size: AppSizes.iconMd),
+                  label: Text(_sending
+                      ? OnboardingStrings.submittingLabel
+                      : OnboardingStrings.otpResendButton),
+                  style: TextButton.styleFrom(
+                    minimumSize: const Size(48, 48),
+                    foregroundColor: AppColors.purple700,
+                    textStyle: theme.textTheme.bodyLarge
+                        ?.copyWith(fontWeight: FontWeight.w700),
+                  ),
+                ),
+            ],
+          ),
         ],
       ],
     );

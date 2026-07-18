@@ -4,11 +4,10 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/onboarding_strings.dart';
 import '../../../core/routing/app_router.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/widgets/large_button.dart';
+import '../../../core/widgets/app_buttons.dart';
+import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
-import '../../../core/widgets/onboarding/field_label_with_voice.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
@@ -16,6 +15,7 @@ import '../../auth/audio/auth_audio_button.dart';
 import '../../auth/audio/auth_audio_map.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
+import '../widgets/voice_fill_banner.dart';
 
 class TaskerPersonalInfoScreen extends ConsumerStatefulWidget {
   const TaskerPersonalInfoScreen({super.key});
@@ -55,6 +55,15 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     );
   }
 
+  // Live check, called from the age TextField's onChanged so an out-of-range
+  // age shows up as soon as it's typed, not only after "Continue" is pressed.
+  // Returns null while the field is still empty.
+  String? _ageFormatError(String value) {
+    if (value.isEmpty) return null;
+    final age = int.tryParse(value);
+    return (age == null || age < 18 || age > 80) ? OnboardingStrings.ageRangeError : null;
+  }
+
   void _continue() {
     final name = _nameController.text.trim();
     final age = int.tryParse(_ageController.text.trim());
@@ -75,7 +84,8 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     }
 
     _updateDraft();
-    context.push(Routes.taskerPhone);
+    // Redesigned order: About You → Account (phone+password) → OTP.
+    context.push(Routes.onboardingBasicInfo);
   }
 
   @override
@@ -87,33 +97,38 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
       progress: const OnboardingProgress(step: 1, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.taskerPersonalMascotMessage,
-      title: OnboardingStrings.personalInfoTitle,
+      title: OnboardingStrings.aboutYouTitle,
       // No recorded clip for the whole-screen prompt; each field below has its
       // own recorded listen button instead (no TTS on auth screens).
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          FieldLabelWithVoice(
+          // Speak once → Pho Wa Yoke fills the whole form (name/gender/age,
+          // phone for the next step, and skills for that later step).
+          VoiceFillBanner(
+            role: UserRole.tasker,
+            onApplied: () {
+              final d = ref.read(taskerDraftProvider);
+              setState(() {
+                if (d.name.isNotEmpty) _nameController.text = d.name;
+                if (d.age != null) _ageController.text = d.age.toString();
+              });
+            },
+          ),
+          const SizedBox(height: AppSpacing.xl),
+          AppTextField(
             label: OnboardingStrings.nameLabel,
-            readAloudText: OnboardingStrings.nameLabel,
             audioKey: AuthAudioKeys.name,
             mockTranscript: "Aung Aung",
             onSpeechResult: (v) => setState(() => _nameController.text = v),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
             controller: _nameController,
-            style: theme.textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: OnboardingStrings.namePlaceholder,
-              errorText: _nameError,
-              contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
-              ),
-            ),
+            leadingIcon: Icons.person_outline,
+            hintText: OnboardingStrings.namePlaceholder,
+            errorText: _nameError,
+            onChanged: (v) => setState(() {
+              if (v.trim().isNotEmpty) _nameError = null;
+            }),
           ),
           const SizedBox(height: AppSpacing.xl),
           Row(
@@ -127,54 +142,47 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
             ],
           ),
           const SizedBox(height: AppSpacing.md),
+          // Two large pictorial cards only (no "other" option) — an
+          // immediately recognizable visual choice, never a dropdown.
           ShakeOnTrigger(
             trigger: _genderShakeTrigger,
             child: Row(
-              children: Gender.values.map((g) {
-                return Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
-                    child: OnboardingSelectionCard(
-                      emoji: g.emoji,
-                      label: g.label,
-                      selected: draft.gender == g,
-                      onTap: () => _updateDraft(gender: g),
+              children: [
+                for (final g in const [Gender.male, Gender.female])
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xs),
+                      child: OnboardingSelectionCard(
+                        emoji: g.emoji,
+                        label: g.label,
+                        selected: draft.gender == g,
+                        onTap: () => _updateDraft(gender: g),
+                      ),
                     ),
                   ),
-                );
-              }).toList(),
+              ],
             ),
           ),
           const SizedBox(height: AppSpacing.xl),
-          FieldLabelWithVoice(
+          AppTextField(
             label: OnboardingStrings.ageLabel,
-            readAloudText: OnboardingStrings.ageLabel,
             audioKey: AuthAudioKeys.age,
             mockTranscript: "25",
             onSpeechResult: (v) => setState(() => _ageController.text = v),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          TextField(
             controller: _ageController,
             keyboardType: TextInputType.number,
-            style: theme.textTheme.bodyLarge,
-            decoration: InputDecoration(
-              hintText: OnboardingStrings.agePlaceholder,
-              errorText: _ageError,
-              contentPadding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(AppRadius.md),
-                borderSide: BorderSide.none,
-              ),
-            ),
+            leadingIcon: Icons.cake_outlined,
+            hintText: OnboardingStrings.agePlaceholder,
+            errorText: _ageError,
+            onChanged: (v) =>
+                setState(() => _ageError = _ageFormatError(v.trim())),
           ),
           const SizedBox(height: AppSpacing.xl),
         ],
       ),
-      bottomBar: LargeButton(
+      bottomBar: AppPrimaryButton(
         label: OnboardingStrings.continueButton,
         icon: Icons.arrow_forward,
-        gradient: AppColors.purpleGradient,
         onTap: _continue,
       ),
     );

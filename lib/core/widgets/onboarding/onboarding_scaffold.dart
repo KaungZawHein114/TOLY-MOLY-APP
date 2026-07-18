@@ -4,6 +4,7 @@ import '../../../features/auth/audio/auth_audio_button.dart';
 import '../../../features/onboarding/onboarding_models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
+import '../app_logo_header.dart';
 import '../mascot/mascot_message_card.dart';
 import '../mascot/mascot_state.dart';
 import 'onboarding_progress_header.dart';
@@ -81,47 +82,11 @@ class OnboardingScaffold extends StatelessWidget {
                     )
                   else
                     const SizedBox(width: 48),
-                  Expanded(
-                    // Expanded (not Spacer+Flexible, which used to split the
-                    // remaining width evenly into thirds and left almost no
-                    // room for the title) so this center block gets all the
-                    // space between the two fixed-width end items.
-                    child: Center(
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          // A light backdrop badge keeps the logo visible
-                          // regardless of header background — the logo's own
-                          // dark-navy tones are too close to AppColors.purple900
-                          // to read on their own once its white background is
-                          // removed.
-                          Container(
-                            width: 32,
-                            height: 32,
-                            padding: const EdgeInsets.all(4),
-                            decoration: const BoxDecoration(
-                              color: AppColors.onBrand,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Image.asset("assets/logo_circle.png"),
-                          ),
-                          const SizedBox(width: AppSpacing.sm),
-                          Flexible(
-                            child: Text(
-                              "တိုလီမိုလီ",
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.titleLarge?.copyWith(
-                                color: AppColors.onBrand,
-                                letterSpacing: 1,
-                                fontFamily: "Myanmar Thuriya",
-                                fontSize: 18,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
+                  // Expanded (not Spacer+Flexible, which used to split the
+                  // remaining width evenly into thirds and left almost no
+                  // room for the title) so this center block gets all the
+                  // space between the two fixed-width end items.
+                  const Expanded(child: Center(child: AppLogoHeader())),
                   const SizedBox(width: 48),
                 ],
               ),

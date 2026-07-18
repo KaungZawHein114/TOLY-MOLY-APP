@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../../features/onboarding/onboarding_models.dart';
-import '../../theme/app_colors.dart';
-import '../../theme/app_spacing.dart';
+import '../app_progress_indicator.dart';
 
-/// Step label + linear progress bar shown at the top of every onboarding step.
+/// Thin alias over the design system's [AppProgressIndicator] — kept so
+/// existing onboarding call sites stay unchanged while rendering the shared
+/// component. New screens should use [AppProgressIndicator] directly.
 class OnboardingProgressHeader extends StatelessWidget {
   final OnboardingProgress progress;
 
@@ -12,30 +13,6 @@ class OnboardingProgressHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Semantics(
-      label: "${progress.stepLabel}, ${(progress.percent * 100).round()}%",
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            progress.stepLabel,
-            style: Theme.of(context)
-                .textTheme
-                .titleMedium
-                ?.copyWith(color: AppColors.purple700),
-          ),
-          const SizedBox(height: AppSpacing.sm),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(AppRadius.pill),
-            child: LinearProgressIndicator(
-              value: progress.percent,
-              minHeight: 8,
-              backgroundColor: AppColors.purple100,
-              color: AppColors.purple700,
-            ),
-          ),
-        ],
-      ),
-    );
+    return AppProgressIndicator(progress: progress);
   }
 }

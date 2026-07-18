@@ -51,6 +51,13 @@ class OnboardingStrings {
   static const String nameRequiredError = "အမည် ထည့်ပေးပါနော်";
   static const String phoneRequiredError = "ဖုန်းနံပါတ် ထည့်ပေးပါနော်";
   static const String passwordRequiredError = "စကားဝှက် ထည့်ပေးပါနော်";
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  static const String phoneInvalidError =
+      "မှန်ကန်သော ဖုန်းနံပါတ် ထည့်ပေးပါ (ဥပမာ 09123456789)";
+  static const String passwordTooShortError =
+      "စကားဝှက်သည် အနည်းဆုံး စာလုံး ၈ လုံး ရှိရပါမည်";
+  static const String passwordNumericOnlyError =
+      "စကားဝှက်တွင် ဂဏန်းများသာ မဖြစ်စေရပါ";
   static const String roleRequiredError = "ရည်ရွယ်ချက်ကို ရွေးချယ်ပေးပါနော်";
   static const String signupInstructions =
       "သင့်အကောင့်အသစ် ဖွင့်ရန် ရည်ရွယ်ချက်ကို ရွေးချယ်ပေးပါ။";
@@ -78,6 +85,34 @@ class OnboardingStrings {
   static const String taskerPersonalMascotMessage =
       "သင့်အမည်ကို ပြောလိုက်ပါနော်";
   static const String speakButton = "ပြောမည်";
+
+  // ── Redesigned journey (2026-07 onboarding redesign) ──────────────────
+  // TODO(native-speaker-review): confirm tone/wording with a Burmese speaker.
+  static const String haveAccountPrompt = "အကောင့်ရှိပြီးသားလား။";
+  static const String aboutYouTitle = "သင့်အကြောင်း ပြောပြပါ";
+  static const String accountStepTitle = "အကောင့် လုံခြုံရေး";
+  static const String accountStepMascotMessage =
+      "ဖုန်းနံပါတ်နှင့် စကားဝှက်လေး သတ်မှတ်လိုက်ရင် ပြီးပါပြီနော်။";
+  static const String passwordHelper = "စာလုံး ၈ လုံး အနည်းဆုံး ထည့်ပါ";
+  static const String listeningLabel = "နားထောင်နေသည်...";
+  static const String speakIntoMicLabel = "မိုက်ကို နှိပ်ပြီး ပြောပါ";
+  static const String otpSentToPrefix = "SMS ကုဒ်ကို ပို့ထားပါသည် —";
+  static const String otpEditPhone = "ပြင်မည်";
+  static const String otpResendButton = "ကုဒ် ပြန်ပို့မည်";
+  static const String rulesSummaryIntro = "အဓိက စည်းကမ်းများ:";
+  static const String rulesReadFull = "အပြည့်အစုံ ဖတ်မည်";
+  static const String rulesHideFull = "ချုံ့မည်";
+  static const String rulesAgreeCta = "သဘောတူပါသည် — ဆက်လက်မည်";
+  static const String rulesSummaryHonesty = "မှန်ကန်သော အချက်အလက်များကိုသာ ဖြည့်ပါ";
+  static const String rulesSummaryPunctual = "သတ်မှတ်အချိန်ကို လေးစားပါ";
+  static const String rulesSummaryRespect = "အခြားသူများကို လေးစားစွာ ဆက်ဆံပါ";
+  static const String rulesSummarySafety = "လုံခြုံမှုကို ဦးစားပေးပါ";
+  static const String rulesSummarySuspension = "မမှန်ကန်ပါက အကောင့် ရပ်ဆိုင်းနိုင်သည်";
+  static const String successMascotMessage =
+      "အားလုံး အဆင်ပြေပါပြီ! တိုလီမိုလီမှ ကြိုဆိုပါတယ်နော်။";
+  static const String successAccountCreated = "အကောင့် ဖွင့်ပြီးပါပြီ";
+  static const String successPendingVerification =
+      "အကောင့်အတည်ပြုမှု စောင့်ဆိုင်းနေဆဲ";
 
   // ── Phone verification (shared widget) ───────────────────────────────
   static const String phoneVerificationTitle = "ဖုန်းနံပါတ် အတည်ပြုခြင်း";

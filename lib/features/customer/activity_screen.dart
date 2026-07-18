@@ -442,10 +442,16 @@ class ActivityBookingsView extends ConsumerWidget {
         : phase == TaskPhase.discussing || phase == TaskPhase.confirmed;
 
     if (!liveHere) {
-      return _EmptyState(
-        message: filterIdx == 0
-            ? 'လက်ရှိ လက်ခံထားသော အလုပ် မရှိသေးပါ။\nဆွေးနွေးမှု ပြီးပြီး Escrow ပေးချေပြီးမှ ဤနေရာတွင် ပေါ်လာပါမည်။'
-            : 'ဆွေးနွေးနေဆဲ အလုပ် မရှိသေးပါ။',
+      // Scrollable, not just Centered: when this sits below a pinned
+      // confirmation card (PendingScreen) at a small viewport + large text
+      // scale, the remaining height can be smaller than this content's
+      // natural size — it needs to scroll instead of overflow.
+      return SingleChildScrollView(
+        child: _EmptyState(
+          message: filterIdx == 0
+              ? 'လက်ရှိ လက်ခံထားသော အလုပ် မရှိသေးပါ။\nဆွေးနွေးမှု ပြီးပြီး Escrow ပေးချေပြီးမှ ဤနေရာတွင် ပေါ်လာပါမည်။'
+              : 'ဆွေးနွေးနေဆဲ အလုပ် မရှိသေးပါ။',
+        ),
       );
     }
 

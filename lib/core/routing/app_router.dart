@@ -15,6 +15,7 @@ import '../../features/customer/worker_profile_screen.dart';
 import '../../features/customer/client_profile_screen.dart';
 import '../../features/customer/booking_screen.dart';
 import '../../features/onboarding/welcome_screen.dart';
+import '../../features/onboarding/sign_in_screen.dart';
 import '../../features/onboarding/create_account_screen.dart';
 import '../../features/onboarding/basic_info_screen.dart';
 import '../../features/onboarding/client/client_personal_info_screen.dart';
@@ -45,6 +46,7 @@ class Routes {
 
   // ── onboarding ──────────────────────────────────────────────────────────
   static const String onboardingWelcome = '/onboarding/welcome';
+  static const String onboardingSignIn = '/onboarding/sign-in';
   static const String onboardingCreateAccount = '/onboarding/create-account';
   static const String onboardingBasicInfo = '/onboarding/basic-info';
   static const String clientPersonal = '/onboarding/client/personal';
@@ -125,6 +127,13 @@ final List<RouteBase> _onboardingRoutes = [
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
       child: const WelcomeScreen(),
+    ),
+  ),
+  GoRoute(
+    path: Routes.onboardingSignIn,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      key: state.pageKey,
+      child: const SignInScreen(),
     ),
   ),
   GoRoute(
