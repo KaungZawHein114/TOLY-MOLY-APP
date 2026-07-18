@@ -142,6 +142,14 @@ class OnboardingStrings {
       "\"ကျွန်တော် အောင်အောင်ပါ။ အသက် ၂၅ နှစ်၊ ကျားပါ။ ဖုန်းက ၀၉၇၈၉၁၂၃၄၅၆ ပါ။ "
       "သန့်ရှင်းရေးနဲ့ ပိုက်ပြင်တာ လုပ်တတ်ပါတယ်။\"";
   static const String voiceListeningHint = "မိုက်ကို နှိပ်ပြီး ပြောပါ";
+  // Live transcript field + mic status (testing phase uses English STT).
+  static const String voiceTranscriptLabel = "သင်ပြောသည်များ (ပြင်ဆင်နိုင်သည်)";
+  static const String voiceTranscriptHint =
+      "မိုက်ကို နှိပ်ပြီး ပြောပါ — သို့မဟုတ် ဒီမှာ ရိုက်ထည့်ပါ";
+  static const String voiceListeningNow = "နားထောင်နေသည်…";
+  static const String voiceContinueButton = "ဆက်သွားမည်";
+  static const String voiceSttErrorPrefix = "အသံ အခြေအနေ - ";
+  static const String voiceNeedTextFirst = "အရင် ပြောပါ သို့မဟုတ် ရိုက်ထည့်ပါ";
   static const String voiceExtracting = "အချက်အလက်တွေ ဖတ်နေပါတယ်…";
   static const String voiceReviewPrompt =
       "ကြားရတာတွေ ဒီမှာပါ။ မှန်ရင် အတည်ပြုပါ၊ မှားရင် ပြန်ပြောနိုင်ပါတယ်။";

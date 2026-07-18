@@ -23,12 +23,22 @@ class VoiceInputButton extends StatefulWidget {
   final List<String> localeCandidates;
   final bool large;
 
+  /// Optional: fires whenever the mic starts/stops listening, so a caller can
+  /// show a live "listening…" indicator. No-op for existing call sites.
+  final ValueChanged<bool>? onListeningChanged;
+
+  /// Optional: fires with a short human-readable status/error (e.g. a permanent
+  /// recognition failure), so a caller can surface why nothing was captured.
+  final ValueChanged<String>? onStatusMessage;
+
   const VoiceInputButton({
     super.key,
     required this.onPartialResult,
     required this.onFinalResult,
     this.localeCandidates = const ['en_US', 'en-US', 'en_GB', 'en-GB', 'en'],
     this.large = true,
+    this.onListeningChanged,
+    this.onStatusMessage,
   });
 
   @override
@@ -57,6 +67,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
         await _speech.stop();
       } catch (_) {}
       if (mounted) setState(() => _isListening = false);
+      widget.onListeningChanged?.call(false);
       return;
     }
 
@@ -74,7 +85,9 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
       }
       if (!mounted) return;
       if (!_available) {
-        _showSnack('မိုက်ကို ဖွင့်၍မရပါ။ မိုက်ခွင့်ပြုချက်ပေးထားပြီး ထပ်နှိပ်ကြည့်ပါ။');
+        const msg = 'မိုက်ကို ဖွင့်၍မရပါ။ မိုက်ခွင့်ပြုချက်ပေးထားပြီး ထပ်နှိပ်ကြည့်ပါ။';
+        _showSnack(msg);
+        widget.onStatusMessage?.call(msg);
         return;
       }
 
@@ -93,6 +106,7 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
           _isListening = true;
         });
       }
+      widget.onListeningChanged?.call(true);
 
       await _speech.listen(
         onResult: (result) {
@@ -113,6 +127,8 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
     } catch (e) {
       if (mounted) setState(() => _isListening = false);
       _showSnack('အသံဖမ်းယူ၍ မရပါ — $e');
+      widget.onListeningChanged?.call(false);
+      widget.onStatusMessage?.call('$e');
     } finally {
       // If we bailed before listening started, make sure the spinner clears.
       if (mounted && !started) setState(() => _busy = false);
@@ -124,16 +140,19 @@ class _VoiceInputButtonState extends State<VoiceInputButton> {
   // without the user having to tap again.
   void _onStatus(String status) {
     if (mounted) setState(() => _isListening = _speech.isListening);
+    widget.onListeningChanged?.call(_speech.isListening);
   }
 
   void _onError(SpeechRecognitionError error) {
     if (!mounted) return;
     setState(() => _isListening = false);
+    widget.onListeningChanged?.call(false);
     // Only surface real (permanent) failures — e.g. the chosen language pack
     // isn't installed. Transient "no match"/timeout errors are normal and
     // shouldn't nag the user.
     if (error.permanent) {
       _showSnack('အသံအသိအမှတ်ပြုမှု အခက်အခဲ — ${error.errorMsg}');
+      widget.onStatusMessage?.call(error.errorMsg);
     }
   }
 

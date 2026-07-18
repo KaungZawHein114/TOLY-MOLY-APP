@@ -14,10 +14,15 @@ import '../../voice_task_posting/widgets/voice_input_button.dart';
 import '../onboarding_models.dart';
 
 /// Onboarding voice mode surface (spec §4.1/§4.6). Pho Wa Yoke greets, shows a
-/// sample script, listens (Burmese STT), extracts the signup fields, and shows
-/// them PRE-FILLED for confirmation — with a read-back and a redo. It NEVER
-/// submits: on confirm it just returns the [OnboardingExtraction] to the caller,
-/// which pre-fills the real, editable form. Manual entry stays one tap away.
+/// sample script, and listens: the recognized words stream into an EDITABLE
+/// transcript field so the user can see (and fix) what was heard, then taps
+/// Continue to extract the signup fields, shown PRE-FILLED for confirmation with
+/// a read-back and a redo. It NEVER submits: on confirm it just returns the
+/// [OnboardingExtraction] to the caller, which pre-fills the real, editable
+/// form. Manual entry stays one tap away.
+///
+/// STT locale is ENGLISH during the current testing phase (see
+/// [_VoiceOnboardingSheetState._localeCandidates]); switch to Burmese later.
 ///
 /// Opens via [showVoiceOnboarding]; pops with the confirmed extraction or null.
 class VoiceOnboardingSheet extends ConsumerStatefulWidget {
@@ -30,19 +35,49 @@ class VoiceOnboardingSheet extends ConsumerStatefulWidget {
 }
 
 class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
-  String _transcript = '';
+  // The live transcript is shown in an EDITABLE field so the user can SEE their
+  // words appear as they speak (and fix them / type instead). Testing phase uses
+  // English (see [_localeCandidates]); switch to Burmese once tested.
+  final TextEditingController _transcriptController = TextEditingController();
   bool _loading = false;
+  bool _listening = false;
+  String? _sttStatus; // last mic status/error, surfaced for debugging visibility
   OnboardingExtraction? _extraction;
+
+  // English-first for the current testing phase, per request. The first locale
+  // the phone actually has installed wins; null falls back to the device default.
+  static const List<String> _localeCandidates = [
+    'en_US',
+    'en-US',
+    'en_GB',
+    'en-GB',
+    'en',
+  ];
 
   bool get _isTasker => widget.role == UserRole.tasker;
 
+  @override
+  void dispose() {
+    _transcriptController.dispose();
+    super.dispose();
+  }
+
+  // Live recognized words -> the field (caret kept at the end). Voice is primary,
+  // so an incoming result overwrites the field; manual edits flow via onChanged.
+  void _setTranscript(String v) {
+    _transcriptController.value = TextEditingValue(
+      text: v,
+      selection: TextSelection.collapsed(offset: v.length),
+    );
+  }
+
   Future<void> _extract(String text) async {
     final t = text.trim();
-    if (t.isEmpty) return;
-    setState(() {
-      _transcript = t;
-      _loading = true;
-    });
+    if (t.isEmpty) {
+      setState(() => _sttStatus = OnboardingStrings.voiceNeedTextFirst);
+      return;
+    }
+    setState(() => _loading = true);
     final result =
         await AiService.extractOnboarding(transcript: t, role: widget.role);
     if (!mounted) return;
@@ -52,10 +87,13 @@ class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
     });
   }
 
-  void _retry() => setState(() {
-        _extraction = null;
-        _transcript = '';
-      });
+  void _retry() {
+    _transcriptController.clear();
+    setState(() {
+      _extraction = null;
+      _sttStatus = null;
+    });
+  }
 
   String _readBackSummary(OnboardingExtraction e) {
     final parts = <String>[
@@ -153,19 +191,77 @@ class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
             ],
           ),
         ),
-        const SizedBox(height: AppSpacing.xl),
-        if (_transcript.isNotEmpty) ...[
-          Text('“$_transcript”',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium
-                  ?.copyWith(color: AppColors.textSecondary)),
-          const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
+        // Live transcript — the words appear here as the user speaks, and stay
+        // editable so they can fix a mis-hear or type instead.
+        Row(
+          children: [
+            Expanded(
+              child: Text(OnboardingStrings.voiceTranscriptLabel,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textSecondary)),
+            ),
+            if (_listening)
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 8,
+                    height: 8,
+                    decoration: const BoxDecoration(
+                        color: AppColors.error, shape: BoxShape.circle),
+                  ),
+                  const SizedBox(width: AppSpacing.xs),
+                  Text(OnboardingStrings.voiceListeningNow,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.error)),
+                ],
+              ),
+          ],
+        ),
+        const SizedBox(height: AppSpacing.xs),
+        TextField(
+          controller: _transcriptController,
+          minLines: 2,
+          maxLines: 4,
+          textInputAction: TextInputAction.done,
+          onChanged: (_) => setState(() {}), // refresh Continue button state
+          decoration: InputDecoration(
+            hintText: OnboardingStrings.voiceTranscriptHint,
+            filled: true,
+            fillColor: theme.cardColor,
+            contentPadding: const EdgeInsets.all(AppSpacing.md),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: const BorderSide(color: AppColors.onboardingDivider),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: const BorderSide(color: AppColors.onboardingDivider),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              borderSide: const BorderSide(color: AppColors.purple700, width: 2),
+            ),
+          ),
+        ),
+        if (_sttStatus != null) ...[
+          const SizedBox(height: AppSpacing.xs),
+          Text('${OnboardingStrings.voiceSttErrorPrefix}$_sttStatus',
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.warning)),
         ],
+        const SizedBox(height: AppSpacing.lg),
         Center(
           child: VoiceInputButton(
-            localeCandidates: const ['my_MM', 'my-MM', 'my'],
-            onPartialResult: (v) => setState(() => _transcript = v),
-            onFinalResult: _extract,
+            localeCandidates: _localeCandidates,
+            onPartialResult: _setTranscript,
+            onFinalResult: _setTranscript,
+            onListeningChanged: (v) => setState(() {
+              _listening = v;
+              if (v) _sttStatus = null; // clear stale error when we start again
+            }),
+            onStatusMessage: (m) => setState(() => _sttStatus = m),
           ),
         ),
         const SizedBox(height: AppSpacing.sm),
@@ -173,7 +269,14 @@ class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
             textAlign: TextAlign.center,
             style: theme.textTheme.bodySmall
                 ?.copyWith(color: AppColors.textSecondary)),
-        const SizedBox(height: AppSpacing.md),
+        const SizedBox(height: AppSpacing.lg),
+        LargeButton(
+          label: OnboardingStrings.voiceContinueButton,
+          icon: Icons.arrow_forward,
+          gradient: AppColors.purpleGradient,
+          onTap: () => _extract(_transcriptController.text),
+        ),
+        const SizedBox(height: AppSpacing.sm),
         Center(
           child: TextButton(
             onPressed: () => Navigator.of(context).pop(),
