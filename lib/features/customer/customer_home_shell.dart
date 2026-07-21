@@ -8,6 +8,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
 import 'chat_screen.dart';
 import 'client_profile_screen.dart';
+import 'client_rewards_screen.dart';
 import 'home_screen.dart';
 import 'pending_screen.dart';
 
@@ -22,7 +23,8 @@ final customerTabIndexProvider = StateProvider<int>((ref) => 0);
 ///   0 → Home     (CustomerHomeScreen)
 ///   1 → Chat     (ChatScreen — conversations only)
 ///   2 → Pending  (PendingScreen — bookings only)
-///   3 → Account  (ClientProfileScreen)
+///   3 → Rewards  (ClientRewardsScreen — VIP & coupons, client only)
+///   4 → Account  (ClientProfileScreen)
 class CustomerHomeShell extends ConsumerWidget {
   const CustomerHomeShell({super.key});
 
@@ -38,10 +40,11 @@ class CustomerHomeShell extends ConsumerWidget {
       body: IndexedStack(
         index: index,
         children: const [
-          CustomerHomeScreen(),  // 0 — Home
-          ChatScreen(),          // 1 — Chat (conversations only)
-          PendingScreen(),       // 2 — Pending (bookings only)
-          ClientProfileScreen(), // 3 — Account
+          CustomerHomeScreen(),   // 0 — Home
+          ChatScreen(),           // 1 — Chat (conversations only)
+          PendingScreen(),        // 2 — Pending (bookings only)
+          ClientRewardsScreen(),  // 3 — Rewards (VIP & coupons)
+          ClientProfileScreen(),  // 4 — Account
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -65,6 +68,11 @@ class CustomerHomeShell extends ConsumerWidget {
             icon: Icon(Icons.pending_actions_outlined),
             selectedIcon: Icon(Icons.pending_actions_rounded),
             label: AppStrings.pendingTabLabel,
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.card_giftcard_outlined),
+            selectedIcon: Icon(Icons.card_giftcard_rounded),
+            label: AppStrings.rewardsTabLabel,
           ),
           NavigationDestination(
             icon: Icon(Icons.person_outline_rounded),
