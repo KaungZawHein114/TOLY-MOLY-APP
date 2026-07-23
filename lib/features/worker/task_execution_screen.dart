@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -33,7 +35,11 @@ class TaskExecutionScreen extends ConsumerWidget {
       checkinTime: next == ExecutionStatus.waitingCheckinConfirm ? now : null,
       checkoutTime: next == ExecutionStatus.waitingCheckoutConfirm ? now : null,
     );
-    ref.read(taskExecutionProvider.notifier).state = {...all, booking.id: updated};
+    ref.read(taskExecutionProvider.notifier).state = {
+      ...all,
+      booking.id: updated
+    };
+    _autoAdvanceDemoConfirmation(context, ref, next);
 
     final notice = switch (next) {
       ExecutionStatus.leavingForTask =>
@@ -49,6 +55,42 @@ class TaskExecutionScreen extends ConsumerWidget {
         SnackBar(content: Text(notice), duration: const Duration(seconds: 2)),
       );
     }
+  }
+
+  void _autoAdvanceDemoConfirmation(
+    BuildContext context,
+    WidgetRef ref,
+    ExecutionStatus waitingStatus,
+  ) {
+    final nextStatus = switch (waitingStatus) {
+      ExecutionStatus.waitingCheckinConfirm => ExecutionStatus.inProgress,
+      ExecutionStatus.waitingCheckoutConfirm => ExecutionStatus.completed,
+      _ => null,
+    };
+    if (nextStatus == null) return;
+
+    Timer(const Duration(seconds: 2), () {
+      if (!context.mounted) return;
+      final all = ref.read(taskExecutionProvider);
+      final current = executionFor(all, booking.id);
+      if (current.status != waitingStatus) return;
+
+      final now = DateTime.now();
+      ref.read(taskExecutionProvider.notifier).state = {
+        ...all,
+        booking.id: current.copyWith(
+          status: nextStatus,
+          clientCheckinConfirmedAt:
+              waitingStatus == ExecutionStatus.waitingCheckinConfirm
+                  ? now
+                  : null,
+          clientCheckoutConfirmedAt:
+              waitingStatus == ExecutionStatus.waitingCheckoutConfirm
+                  ? now
+                  : null,
+        ),
+      };
+    });
   }
 
   @override
@@ -70,9 +112,12 @@ class TaskExecutionScreen extends ConsumerWidget {
           const SizedBox(height: AppSpacing.xl),
           _CurrentAction(
             execution: execution,
-            onLeaving: () => _advance(context, ref, ExecutionStatus.leavingForTask),
-            onCheckin: () => _advance(context, ref, ExecutionStatus.waitingCheckinConfirm),
-            onCheckout: () => _advance(context, ref, ExecutionStatus.waitingCheckoutConfirm),
+            onLeaving: () =>
+                _advance(context, ref, ExecutionStatus.leavingForTask),
+            onCheckin: () =>
+                _advance(context, ref, ExecutionStatus.waitingCheckinConfirm),
+            onCheckout: () =>
+                _advance(context, ref, ExecutionStatus.waitingCheckoutConfirm),
           ),
           if (!isTerminal &&
               execution.status != ExecutionStatus.waitingCheckinConfirm &&
@@ -110,7 +155,8 @@ class _TaskSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(AppStrings.executionTodaysTask,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onBrandMuted)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.onBrandMuted)),
           const SizedBox(height: AppSpacing.xs),
           Text(booking.skill,
               maxLines: 1,
@@ -126,8 +172,8 @@ class _TaskSummaryCard extends StatelessWidget {
                 child: Text(booking.timeSlot,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style:
-                        theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrand)),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.onBrand)),
               ),
               const SizedBox(width: AppSpacing.md),
               Icon(Icons.location_on, size: 16, color: AppColors.onBrandMuted),
@@ -136,8 +182,8 @@ class _TaskSummaryCard extends StatelessWidget {
                 child: Text(booking.township,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style:
-                        theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrand)),
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.onBrand)),
               ),
             ],
           ),
@@ -165,11 +211,15 @@ class _Timeline extends StatelessWidget {
     final rows = [
       (AppStrings.executionLeaveLabel, _fmt(execution.leaveTime)),
       (AppStrings.executionCheckinLabel, _fmt(execution.checkinTime)),
-      (AppStrings.executionClientConfirmedCheckinLabel,
-          _fmt(execution.clientCheckinConfirmedAt)),
+      (
+        AppStrings.executionClientConfirmedCheckinLabel,
+        _fmt(execution.clientCheckinConfirmedAt)
+      ),
       (AppStrings.executionCheckoutLabel, _fmt(execution.checkoutTime)),
-      (AppStrings.executionClientConfirmedCheckoutLabel,
-          _fmt(execution.clientCheckoutConfirmedAt)),
+      (
+        AppStrings.executionClientConfirmedCheckoutLabel,
+        _fmt(execution.clientCheckoutConfirmedAt)
+      ),
     ];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -204,8 +254,8 @@ class _Timeline extends StatelessWidget {
                 ),
                 if (row.$2 != null)
                   Text(row.$2!,
-                      style:
-                          theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.hintColor)),
               ],
             ),
           ),
@@ -249,16 +299,14 @@ class _CurrentAction extends StatelessWidget {
         ),
 
       // ── Step 2a: checked in, waiting for client ──────────────────────────
-      ExecutionStatus.waitingCheckinConfirm =>
-        _StatusBanner(
+      ExecutionStatus.waitingCheckinConfirm => _StatusBanner(
           icon: Icons.hourglass_top,
           color: AppColors.indigo700,
           message: AppStrings.executionCheckinWaiting,
         ),
 
       // ── Step 2b: client rejected arrival ────────────────────────────────
-      ExecutionStatus.arrivalDisputed =>
-        _StatusBanner(
+      ExecutionStatus.arrivalDisputed => _StatusBanner(
           icon: Icons.warning_amber_rounded,
           color: AppColors.warning,
           message: AppStrings.executionArrivalDisputedMsg,
@@ -272,24 +320,21 @@ class _CurrentAction extends StatelessWidget {
         ),
 
       // ── Step 4a: checked out, waiting for client ─────────────────────────
-      ExecutionStatus.waitingCheckoutConfirm =>
-        _StatusBanner(
+      ExecutionStatus.waitingCheckoutConfirm => _StatusBanner(
           icon: Icons.hourglass_top,
           color: AppColors.indigo700,
           message: AppStrings.executionCheckoutWaiting,
         ),
 
       // ── Step 4b: client reported issue ───────────────────────────────────
-      ExecutionStatus.completionDisputed =>
-        _StatusBanner(
+      ExecutionStatus.completionDisputed => _StatusBanner(
           icon: Icons.report_problem_outlined,
           color: AppColors.error,
           message: AppStrings.executionCompletionDisputedMsg,
         ),
 
       // ── Terminal: job completed ───────────────────────────────────────────
-      ExecutionStatus.completed =>
-        _StatusBanner(
+      ExecutionStatus.completed => _StatusBanner(
           icon: Icons.celebration_outlined,
           color: AppColors.success,
           message: AppStrings.executionCompletedMsg,

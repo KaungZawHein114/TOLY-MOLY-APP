@@ -64,7 +64,8 @@ void main() {
     expect(find.text('AI Task Assistant'), findsOneWidget);
   });
 
-  testWidgets('Find a worker quick action navigates to WorkerListScreen', (tester) async {
+  testWidgets('Find a worker quick action navigates to WorkerListScreen',
+      (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
     await tester.pump();
@@ -101,7 +102,33 @@ void main() {
     expect(find.text(OnboardingStrings.nameLabel), findsOneWidget);
   });
 
-  testWidgets('Category card tap navigates to WorkerListScreen filtered by skill', (tester) async {
+  testWidgets('Client dashboard check icon opens demo check-in confirmation',
+      (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
+    appRouter.go(Routes.customerHome);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.byTooltip('Check-in / Check-out'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    await tester.tap(find.text('Worker check-in စမ်းမည်'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text(AppStrings.checkinCardTitle), findsOneWidget);
+
+    await tester.tap(find.text(AppStrings.checkinAcceptCta));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('ရောက်ရှိကြောင်း အတည်ပြုပြီးပါပြီ။'), findsOneWidget);
+  });
+
+  testWidgets(
+      'Category card tap navigates to WorkerListScreen filtered by skill',
+      (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
     await tester.pump();
@@ -132,7 +159,8 @@ void main() {
     expect(find.text("Cleaner"), findsWidgets);
   });
 
-  testWidgets('Home header and category grid do not overflow at 360dp width and 1.6x text scale',
+  testWidgets(
+      'Home header and category grid do not overflow at 360dp width and 1.6x text scale',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));

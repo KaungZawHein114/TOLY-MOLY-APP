@@ -10,7 +10,9 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/demo_card.dart';
 import '../profile/data/profile_repository.dart';
 import '../profile/data/profile_repository_impl.dart';
+import '../worker/task_execution_state.dart';
 import 'widgets/category_section.dart';
+import 'widgets/checkin_confirmation_card.dart';
 
 // ============================================================================
 // ACCOUNT NAME — backend-connected (`GET /api/profile/`), screen-local per
@@ -42,7 +44,8 @@ class _HomeNameNotifier extends StateNotifier<_HomeNameState> {
   }
 }
 
-final _homeNameProvider = StateNotifierProvider.autoDispose<_HomeNameNotifier, _HomeNameState>(
+final _homeNameProvider =
+    StateNotifierProvider.autoDispose<_HomeNameNotifier, _HomeNameState>(
   (ref) => _HomeNameNotifier(ProfileRepositoryImpl()),
 );
 
@@ -61,8 +64,7 @@ class CustomerHomeScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final cats = categories.isNotEmpty ? categories : fallbackCategories;
     // Top-rated, available-first workers for the recommendations strip.
-    final recommended = [...workers]
-      ..sort((a, b) {
+    final recommended = [...workers]..sort((a, b) {
         if (a.isAvailableNow != b.isAvailableNow) {
           return a.isAvailableNow ? -1 : 1;
         }
@@ -144,13 +146,15 @@ class CustomerHomeScreen extends StatelessWidget {
                 height: 220,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
-                  padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
                   itemCount: top.length,
                   separatorBuilder: (_, __) =>
                       const SizedBox(width: AppSpacing.md),
                   itemBuilder: (context, i) => _WorkerPreviewCard(
                     worker: top[i],
-                    onTap: () => context.push('${Routes.workerProfile}/${top[i].id}'),
+                    onTap: () =>
+                        context.push('${Routes.workerProfile}/${top[i].id}'),
                   ),
                 ),
               ),
@@ -184,7 +188,17 @@ class _HeroHeader extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    final accountName = ref.watch(_homeNameProvider).name ?? AppStrings.homeDemoClientName;
+    final accountName =
+        ref.watch(_homeNameProvider).name ?? AppStrings.homeDemoClientName;
+    final activeBooking =
+        bookings.where((b) => b.status == 'Active').firstOrNull;
+    final execution = activeBooking == null
+        ? null
+        : executionFor(ref.watch(taskExecutionProvider), activeBooking.id);
+    final needsClientAction =
+        execution?.status == ExecutionStatus.waitingCheckinConfirm ||
+            execution?.status == ExecutionStatus.waitingCheckoutConfirm;
+
     return Container(
       padding: const EdgeInsets.fromLTRB(
           AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
@@ -228,6 +242,14 @@ class _HeroHeader extends ConsumerWidget {
                   ],
                 ),
               ),
+              _TaskConfirmationIconButton(
+                hasPendingAction: needsClientAction,
+                onTap: () => _showTaskConfirmationSheet(
+                  context,
+                  activeBooking: activeBooking,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.xs),
               Semantics(
                 label: AppStrings.homeNotificationsEmpty,
                 button: true,
@@ -235,8 +257,7 @@ class _HeroHeader extends ConsumerWidget {
                   icon: const Icon(Icons.notifications_outlined,
                       color: AppColors.onBrand),
                   onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                        content: Text(AppStrings.homeNotificationsEmpty)),
+                    SnackBar(content: Text(AppStrings.homeNotificationsEmpty)),
                   ),
                 ),
               ),
@@ -277,6 +298,352 @@ class _HeroHeader extends ConsumerWidget {
       ),
     );
   }
+
+  void _showTaskConfirmationSheet(
+    BuildContext context, {
+    required Booking? activeBooking,
+  }) {
+    final dashboardContext = context;
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.lightSurface,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (sheetContext) {
+        final bottomInset = MediaQuery.of(sheetContext).viewInsets.bottom;
+        return SafeArea(
+          top: false,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(
+              AppSpacing.lg,
+              0,
+              AppSpacing.lg,
+              AppSpacing.lg + bottomInset,
+            ),
+            child: activeBooking == null
+                ? const _NoActiveTaskSheet()
+                : _TaskConfirmationSheetBody(
+                    booking: activeBooking,
+                    dashboardContext: dashboardContext,
+                  ),
+          ),
+        );
+      },
+    );
+  }
+}
+
+class _TaskConfirmationIconButton extends StatelessWidget {
+  final bool hasPendingAction;
+  final VoidCallback onTap;
+
+  const _TaskConfirmationIconButton({
+    required this.hasPendingAction,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final iconButton = IconButton(
+      tooltip: 'Check-in / Check-out',
+      icon: const Icon(Icons.fact_check_outlined, color: AppColors.onBrand),
+      onPressed: onTap,
+    );
+
+    return Semantics(
+      label: hasPendingAction
+          ? 'Check-in / Check-out အတည်ပြုရန်ရှိသည်'
+          : 'Check-in / Check-out demo',
+      button: true,
+      child: hasPendingAction
+          ? Stack(
+              clipBehavior: Clip.none,
+              children: [
+                iconButton,
+                Positioned(
+                  top: AppSpacing.sm,
+                  right: AppSpacing.sm,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: AppColors.warning,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: AppColors.purple700, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            )
+          : iconButton,
+    );
+  }
+}
+
+class _TaskConfirmationSheetBody extends ConsumerWidget {
+  final Booking booking;
+  final BuildContext dashboardContext;
+
+  const _TaskConfirmationSheetBody({
+    required this.booking,
+    required this.dashboardContext,
+  });
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final execution =
+        executionFor(ref.watch(taskExecutionProvider), booking.id);
+
+    return SingleChildScrollView(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _TaskSheetHeader(booking: booking),
+          const SizedBox(height: AppSpacing.lg),
+          switch (execution.status) {
+            ExecutionStatus.waitingCheckinConfirm => CheckinConfirmationCard(
+                workerName: booking.workerName,
+                onAccept: () => _confirmCheckin(context, ref, booking.id),
+                onReject: () => _rejectCheckin(context, ref, booking.id),
+              ),
+            ExecutionStatus.waitingCheckoutConfirm => CheckoutConfirmationCard(
+                workerName: booking.workerName,
+                onConfirm: () => _confirmCheckout(context, ref, booking.id),
+                onReport: () => _reportCheckoutIssue(context, ref, booking.id),
+              ),
+            _ => _DemoTaskConfirmationControls(booking: booking),
+          },
+        ],
+      ),
+    );
+  }
+
+  void _confirmCheckin(BuildContext context, WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    ref.read(taskExecutionProvider.notifier).state = {
+      ...all,
+      taskId: current.copyWith(
+        status: ExecutionStatus.inProgress,
+        clientCheckinConfirmedAt: DateTime.now(),
+      ),
+    };
+    Navigator.of(context).pop();
+    _showDemoSnack(dashboardContext, 'ရောက်ရှိကြောင်း အတည်ပြုပြီးပါပြီ။');
+  }
+
+  void _rejectCheckin(BuildContext context, WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    ref.read(taskExecutionProvider.notifier).state = {
+      ...all,
+      taskId: current.copyWith(status: ExecutionStatus.arrivalDisputed),
+    };
+    Navigator.of(context).pop();
+    _showDemoSnack(dashboardContext, 'မရောက်သေးကြောင်း မှတ်သားထားပါပြီ။');
+  }
+
+  void _confirmCheckout(BuildContext context, WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    ref.read(taskExecutionProvider.notifier).state = {
+      ...all,
+      taskId: current.copyWith(
+        status: ExecutionStatus.completed,
+        clientCheckoutConfirmedAt: DateTime.now(),
+      ),
+    };
+    Navigator.of(context).pop();
+    _showDemoSnack(dashboardContext, 'အလုပ်ပြီးဆုံးကြောင်း အတည်ပြုပြီးပါပြီ။');
+  }
+
+  void _reportCheckoutIssue(BuildContext context, WidgetRef ref, int taskId) {
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, taskId);
+    ref.read(taskExecutionProvider.notifier).state = {
+      ...all,
+      taskId: current.copyWith(status: ExecutionStatus.completionDisputed),
+    };
+    Navigator.of(context).pop();
+    _showDemoSnack(dashboardContext, 'ပြဿနာရှိကြောင်း မှတ်သားထားပါပြီ။');
+  }
+}
+
+class _TaskSheetHeader extends StatelessWidget {
+  final Booking booking;
+
+  const _TaskSheetHeader({required this.booking});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Row(
+      children: [
+        Container(
+          width: 48,
+          height: 48,
+          decoration: BoxDecoration(
+            color: AppColors.purple100,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+          ),
+          child: const Icon(
+            Icons.engineering_outlined,
+            color: AppColors.purple700,
+          ),
+        ),
+        const SizedBox(width: AppSpacing.md),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                booking.workerName,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: AppSpacing.xxs),
+              Text(
+                '${booking.skill} • ${booking.date} • ${booking.timeSlot}',
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: AppColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _DemoTaskConfirmationControls extends ConsumerWidget {
+  final Booking booking;
+
+  const _DemoTaskConfirmationControls({required this.booking});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        color: AppColors.blue100,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: AppColors.blue300),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Demo အတွက် စမ်းသပ်ရန်',
+            style: theme.textTheme.titleMedium?.copyWith(
+              color: AppColors.indigo700,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Backend မရှိသေးလို့ worker ဘက်က check-in / check-out လုပ်သလို ဒီနေရာကနေ စမ်းနိုင်ပါတယ်။',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          FilledButton.icon(
+            onPressed: () => _simulate(
+              ref,
+              status: ExecutionStatus.waitingCheckinConfirm,
+              checkin: true,
+            ),
+            icon: const Icon(Icons.location_on_rounded),
+            label: const Text('Worker check-in စမ်းမည်'),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          OutlinedButton.icon(
+            onPressed: () => _simulate(
+              ref,
+              status: ExecutionStatus.waitingCheckoutConfirm,
+              checkout: true,
+            ),
+            icon: const Icon(Icons.task_alt_rounded),
+            label: const Text('Worker check-out စမ်းမည်'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _simulate(
+    WidgetRef ref, {
+    required ExecutionStatus status,
+    bool checkin = false,
+    bool checkout = false,
+  }) {
+    final now = DateTime.now();
+    final all = ref.read(taskExecutionProvider);
+    final current = executionFor(all, booking.id);
+    ref.read(taskExecutionProvider.notifier).state = {
+      ...all,
+      booking.id: current.copyWith(
+        status: status,
+        checkinTime: checkin ? now : null,
+        checkoutTime: checkout ? now : null,
+      ),
+    };
+  }
+}
+
+class _NoActiveTaskSheet extends StatelessWidget {
+  const _NoActiveTaskSheet();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.lg),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Icon(
+            Icons.assignment_outlined,
+            size: 48,
+            color: AppColors.purple300,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(
+            'လက်ရှိ active booking မရှိသေးပါ',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.titleMedium?.copyWith(
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(
+            'Demo booking ရှိလာတဲ့အခါ check-in / check-out အတည်ပြုချက်ကို ဒီနေရာကနေ ကြည့်နိုင်ပါမယ်။',
+            textAlign: TextAlign.center,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: AppColors.textSecondary,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+void _showDemoSnack(BuildContext context, String message) {
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
 }
 
 // ── Action Cards ─────────────────────────────────────────────────────────────
@@ -310,8 +677,7 @@ class _ActionCardState extends State<_ActionCard> {
 
     final bgColor =
         widget.filled ? AppColors.purple700 : AppColors.lightSurface;
-    final fgColor =
-        widget.filled ? AppColors.onBrand : AppColors.purple700;
+    final fgColor = widget.filled ? AppColors.onBrand : AppColors.purple700;
     final iconBg = widget.filled
         ? AppColors.onBrand.withValues(alpha: 0.18)
         : AppColors.purple100;
@@ -544,8 +910,8 @@ class _WorkerPreviewCardState extends State<_WorkerPreviewCard> {
                         const SizedBox(width: 2),
                         Text(
                           w.rating.toStringAsFixed(1),
-                          style: theme.textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600),
+                          style: theme.textTheme.bodySmall
+                              ?.copyWith(fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(width: AppSpacing.xs),
                         Flexible(
@@ -553,8 +919,8 @@ class _WorkerPreviewCardState extends State<_WorkerPreviewCard> {
                             '(${w.reviews})',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ),
                       ],
@@ -571,8 +937,8 @@ class _WorkerPreviewCardState extends State<_WorkerPreviewCard> {
                             '$distanceKm km',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(
-                                color: AppColors.textSecondary),
+                            style: theme.textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
                           ),
                         ),
                         if (w.isVerified) ...[
@@ -652,8 +1018,8 @@ class _AiHelperCard extends StatelessWidget {
                     ),
                     Text(
                       AppStrings.homeAiHelperSubtitle,
-                      style: theme.textTheme.bodySmall?.copyWith(
-                          color: AppColors.indigo500),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.indigo500),
                     ),
                   ],
                 ),
