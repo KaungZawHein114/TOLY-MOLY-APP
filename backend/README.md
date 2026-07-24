@@ -223,4 +223,5 @@ To wipe all users/profiles/OTPs and start clean:
 python manage.py shell -c "from apps.users.models import User; from apps.authentication.models import PhoneOTP; User.objects.all().delete(); PhoneOTP.objects.all().delete()"
 ```
 
-###lin khant kyaw
+###lin khant kyaw 
+###git hub account fix
