@@ -9,6 +9,7 @@ import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import 'task_execution_state.dart';
+import 'wallet/wallet_service.dart';
 import 'widgets/task_handling_cards.dart';
 
 /// Digital Task Check-In / Check-Out screen (worker side).
@@ -90,6 +91,12 @@ class TaskExecutionScreen extends ConsumerWidget {
                   : null,
         ),
       };
+
+      // Client confirmed checkout → release escrow into the worker's wallet.
+      // This drives the haptic + "Money Received" toast/notification.
+      if (nextStatus == ExecutionStatus.completed) {
+        ref.read(walletProvider.notifier).simulateDigitalCheckout(booking.totalMmk.toDouble());
+      }
     });
   }
 

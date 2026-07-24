@@ -10,6 +10,7 @@ import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
 import '../profile/data/profile_repository.dart';
 import '../profile/data/profile_repository_impl.dart';
+import 'notifications/notification_service.dart';
 import 'widgets/job_card.dart';
 import 'widgets/job_filter_bar.dart';
 import 'widgets/job_search_bar.dart';
@@ -565,17 +566,183 @@ class _WorkerHomeHeader extends ConsumerWidget {
             onPressed: onSwitchRole,
           ),
         ),
-        Semantics(
-          label: AppStrings.homeNotificationsEmpty,
-          button: true,
-          child: IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.purple700),
-            onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text(AppStrings.homeNotificationsEmpty)),
+        const _NotificationBell(),
+      ],
+    );
+  }
+}
+
+/// Bell icon with an unread badge that reflects [notificationProvider]. Tapping
+/// opens the notification history and marks everything read (clearing the
+/// badge).
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final unread = ref.watch(notificationProvider.select((s) => s.unreadCount));
+    return Semantics(
+      label: unread > 0
+          ? "$unread ${AppStrings.homeNotificationsEmpty}"
+          : AppStrings.homeNotificationsEmpty,
+      button: true,
+      child: IconButton(
+        tooltip: AppStrings.homeNotificationsEmpty,
+        onPressed: () => _showNotificationsSheet(context, ref),
+        icon: Stack(
+          clipBehavior: Clip.none,
+          children: [
+            const Icon(Icons.notifications_outlined, color: AppColors.purple700),
+            if (unread > 0)
+              Positioned(
+                right: -3,
+                top: -3,
+                child: Container(
+                  padding: const EdgeInsets.all(2),
+                  constraints: const BoxConstraints(minWidth: 16, minHeight: 16),
+                  decoration: BoxDecoration(
+                    color: AppColors.error,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.lightSurface, width: 1.5),
+                  ),
+                  alignment: Alignment.center,
+                  child: Text(
+                    unread > 9 ? '9+' : '$unread',
+                    style: const TextStyle(
+                      color: AppColors.onBrand,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w800,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+void _showNotificationsSheet(BuildContext context, WidgetRef ref) {
+  final items = ref.read(notificationProvider).items;
+  // Opening the sheet counts as "seen" → clear the badge.
+  ref.read(notificationProvider.notifier).markAllRead();
+
+  showModalBottomSheet<void>(
+    context: context,
+    isScrollControlled: true,
+    backgroundColor: Theme.of(context).cardColor,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+    ),
+    builder: (ctx) {
+      final theme = Theme.of(ctx);
+      return DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        expand: false,
+        builder: (ctx, controller) => Column(
+          children: [
+            const SizedBox(height: AppSpacing.sm),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.dividerColor,
+                borderRadius: BorderRadius.circular(AppRadius.pill),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Row(
+                children: [
+                  const Icon(Icons.notifications_active_outlined, color: AppColors.purple700),
+                  const SizedBox(width: AppSpacing.sm),
+                  Text(AppStrings.homeNotificationsEmpty, style: theme.textTheme.titleLarge),
+                ],
+              ),
+            ),
+            Expanded(
+              child: items.isEmpty
+                  ? Center(
+                      child: Text(
+                        AppStrings.homeNotificationsEmpty,
+                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+                      ),
+                    )
+                  : ListView.separated(
+                      controller: controller,
+                      padding: const EdgeInsets.fromLTRB(
+                          AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
+                      itemCount: items.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.sm),
+                      itemBuilder: (ctx, i) => _NotificationTile(item: items[i]),
+                    ),
+            ),
+          ],
+        ),
+      );
+    },
+  );
+}
+
+class _NotificationTile extends StatelessWidget {
+  final AppNotification item;
+  const _NotificationTile({required this.item});
+
+  String _time(DateTime d) =>
+      "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: theme.cardColor,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(color: theme.dividerColor),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.14),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            alignment: Alignment.center,
+            child: const Icon(Icons.account_balance_wallet_outlined,
+                color: AppColors.success, size: AppSizes.iconSm),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        item.title,
+                        style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800),
+                      ),
+                    ),
+                    Text(_time(item.timestamp),
+                        style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                  ],
+                ),
+                const SizedBox(height: AppSpacing.xxs),
+                Text(item.body, style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

@@ -10,6 +10,8 @@ import '../../core/widgets/chatbot_fab.dart';
 import '../rewards/rewards_screen.dart';
 import 'activity_placeholder_screen.dart';
 import 'dashboard_screen.dart';
+import 'notifications/money_received_toast.dart';
+import 'notifications/notification_service.dart';
 import 'tasker_profile_screen.dart';
 
 /// Which bottom-nav tab is active — local state, mirrors CustomerHomeShell.
@@ -33,6 +35,17 @@ class WorkerHomeShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(workerTabIndexProvider);
+
+    // Show the "Money Received" top toast whenever a checkout clears — works
+    // from any worker screen since the shell stays mounted beneath pushed
+    // routes (wallet, task execution, …). Fires once per event thanks to the
+    // monotonic ToastSignal.seq.
+    ref.listen(notificationProvider.select((s) => s.toast), (prev, next) {
+      if (next != null && next != prev) {
+        showMoneyReceivedToast(context, next.amount);
+      }
+    });
+
     return Scaffold(
       // Floating AI assistant — only on the Home tab.
       floatingActionButton: index == 0
