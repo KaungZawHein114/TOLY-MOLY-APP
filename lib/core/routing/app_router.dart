@@ -30,6 +30,7 @@ import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
 import '../../features/worker/worker_home_shell.dart';
 import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
+import '../../features/worker/wallet/wallet_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../../features/ai_task_posting/screens/ai_task_posting_screen.dart';
 import '../../features/auth/audio/auth_audio_nav_observer.dart';
@@ -80,6 +81,7 @@ class Routes {
   static const String dashboard = '/worker/dashboard';
   static const String taskerProfileScreen = '/worker/profile'; // own profile
   static const String taskExecution = '/worker/task-execution'; // + /:id
+  static const String workerWallet = '/worker/wallet'; // earnings + withdraw
 
   // ── chatbot ─────────────────────────────────────────────────────────────
   static const String chatbot = '/chatbot';
@@ -308,6 +310,10 @@ final List<RouteBase> _workerRoutes = [
     path: '${Routes.taskExecution}/:id',
     builder: (context, state) =>
         TaskExecutionScreen(booking: _findBooking(state.pathParameters['id'])),
+  ),
+  GoRoute(
+    path: Routes.workerWallet,
+    builder: (context, state) => const WalletScreen(),
   ),
 ];
 
