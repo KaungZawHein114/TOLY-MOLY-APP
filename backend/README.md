@@ -224,4 +224,4 @@ python manage.py shell -c "from apps.users.models import User; from apps.authent
 ```
 
 ###lin khant kyaw 
-###git hub account fix
+###git hub account fix 

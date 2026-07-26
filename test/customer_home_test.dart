@@ -31,17 +31,19 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 1);
 
-    // Pending tab → slot 2 (PendingScreen — bookings only).
-    await tester.tap(find.text(AppStrings.pendingTabLabel));
+    // Activity tab → slot 2 (ongoing / pending / history works).
+    await tester.tap(find.text(AppStrings.activityTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 2);
+    expect(find.text('စာတိုများ'), findsOneWidget);
+    expect(find.text('Check In / Out'), findsOneWidget);
 
-    // Account tab → slot 3.
+    // Account tab → slot 4.
     await tester.tap(find.text(AppStrings.profileTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
-    expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 3);
+    expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 4);
 
     await tester.tap(find.text(AppStrings.homeTabLabel));
     await tester.pump();

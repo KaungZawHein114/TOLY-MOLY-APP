@@ -23,7 +23,13 @@ import 'widgets/task_handling_cards.dart';
 /// same [taskExecutionProvider] — no network needed in Phase 1 demo.
 class TaskExecutionScreen extends ConsumerWidget {
   final Booking booking;
-  const TaskExecutionScreen({super.key, required this.booking});
+  final bool embedded;
+
+  const TaskExecutionScreen({
+    super.key,
+    required this.booking,
+    this.embedded = false,
+  });
 
   void _advance(BuildContext context, WidgetRef ref, ExecutionStatus next) {
     final all = ref.read(taskExecutionProvider);
@@ -101,39 +107,45 @@ class TaskExecutionScreen extends ConsumerWidget {
         execution.status == ExecutionStatus.completionDisputed;
     final task = bookingTaskMap(booking);
 
+    final content = ListView(
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      children: [
+        _TaskSummaryCard(booking: booking),
+        const SizedBox(height: AppSpacing.xl),
+        _Timeline(execution: execution),
+        const SizedBox(height: AppSpacing.xl),
+        _CurrentAction(
+          execution: execution,
+          onLeaving: () =>
+              _advance(context, ref, ExecutionStatus.leavingForTask),
+          onCheckin: () =>
+              _advance(context, ref, ExecutionStatus.waitingCheckinConfirm),
+          onCheckout: () =>
+              _advance(context, ref, ExecutionStatus.waitingCheckoutConfirm),
+        ),
+        if (!isTerminal &&
+            execution.status != ExecutionStatus.waitingCheckinConfirm &&
+            execution.status != ExecutionStatus.waitingCheckoutConfirm &&
+            execution.status != ExecutionStatus.arrivalDisputed) ...[
+          const SizedBox(height: AppSpacing.xl),
+          TaskerBriefCard(task: task),
+          const SizedBox(height: AppSpacing.md),
+          TaskerReminderBanner(timeSlot: booking.timeSlot),
+        ],
+        if (execution.status == ExecutionStatus.completed) ...[
+          const SizedBox(height: AppSpacing.xl),
+          CompletionSummaryCard(task: task, timing: const {'onTime': true}),
+        ],
+      ],
+    );
+
+    if (embedded) {
+      return content;
+    }
+
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.executionPageTitle)),
-      body: ListView(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        children: [
-          _TaskSummaryCard(booking: booking),
-          const SizedBox(height: AppSpacing.xl),
-          _Timeline(execution: execution),
-          const SizedBox(height: AppSpacing.xl),
-          _CurrentAction(
-            execution: execution,
-            onLeaving: () =>
-                _advance(context, ref, ExecutionStatus.leavingForTask),
-            onCheckin: () =>
-                _advance(context, ref, ExecutionStatus.waitingCheckinConfirm),
-            onCheckout: () =>
-                _advance(context, ref, ExecutionStatus.waitingCheckoutConfirm),
-          ),
-          if (!isTerminal &&
-              execution.status != ExecutionStatus.waitingCheckinConfirm &&
-              execution.status != ExecutionStatus.waitingCheckoutConfirm &&
-              execution.status != ExecutionStatus.arrivalDisputed) ...[
-            const SizedBox(height: AppSpacing.xl),
-            TaskerBriefCard(task: task),
-            const SizedBox(height: AppSpacing.md),
-            TaskerReminderBanner(timeSlot: booking.timeSlot),
-          ],
-          if (execution.status == ExecutionStatus.completed) ...[
-            const SizedBox(height: AppSpacing.xl),
-            CompletionSummaryCard(task: task, timing: const {'onTime': true}),
-          ],
-        ],
-      ),
+      body: content,
     );
   }
 }

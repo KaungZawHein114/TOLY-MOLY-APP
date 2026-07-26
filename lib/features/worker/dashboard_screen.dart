@@ -45,25 +45,11 @@ class _WorkerNameNotifier extends StateNotifier<_WorkerNameState> {
   }
 }
 
-final _workerNameProvider = StateNotifierProvider.autoDispose<_WorkerNameNotifier, _WorkerNameState>(
+final _workerNameProvider =
+    StateNotifierProvider.autoDispose<_WorkerNameNotifier, _WorkerNameState>(
   (ref) => _WorkerNameNotifier(ProfileRepositoryImpl()),
 );
 
-class AttendanceStatus {
-  final bool isCheckedIn;
-  final DateTime? checkInTime;
-  final DateTime? checkOutTime;
-
-  const AttendanceStatus({this.isCheckedIn = false, this.checkInTime, this.checkOutTime});
-
-  AttendanceStatus checkIn() =>
-      AttendanceStatus(isCheckedIn: true, checkInTime: DateTime.now(), checkOutTime: null);
-
-  AttendanceStatus checkOut() =>
-      AttendanceStatus(isCheckedIn: false, checkInTime: checkInTime, checkOutTime: DateTime.now());
-}
-
-final attendanceProvider = StateProvider<AttendanceStatus>((ref) => const AttendanceStatus());
 final jobSearchProvider = StateProvider<String>((ref) => "");
 
 /// Shared focus node for the job-search field, so the chatbot's "Find a Task"
@@ -74,7 +60,8 @@ final townshipFilterProvider = StateProvider<String?>((ref) => null);
 final urgentOnlyJobsProvider = StateProvider<bool>((ref) => false);
 final jobSortProvider = StateProvider<_JobSort>((ref) => _JobSort.recommended);
 final jobsStateProvider = StateProvider<List<Job>>((ref) => jobs);
-final workerInterestsProvider = StateProvider<List<WorkerInterest>>((ref) => []);
+final workerInterestsProvider =
+    StateProvider<List<WorkerInterest>>((ref) => []);
 
 // Additive Job Board filters (Category/Distance/Budget) — local UI-only
 // state, same pattern as the filters above; they narrow within whatever the
@@ -82,7 +69,8 @@ final workerInterestsProvider = StateProvider<List<WorkerInterest>>((ref) => [])
 // never bypass it.
 final jobCategoryFilterProvider = StateProvider<String?>((ref) => null);
 final jobDistanceFilterKmProvider = StateProvider<double?>((ref) => null);
-final jobBudgetFilterProvider = StateProvider<_BudgetFilter>((ref) => _BudgetFilter.any);
+final jobBudgetFilterProvider =
+    StateProvider<_BudgetFilter>((ref) => _BudgetFilter.any);
 
 enum _JobSort { recommended, nearest, highestBudget, newest, urgentFirst }
 
@@ -137,7 +125,8 @@ class WorkerDashboardScreen extends ConsumerStatefulWidget {
   const WorkerDashboardScreen({super.key});
 
   @override
-  ConsumerState<WorkerDashboardScreen> createState() => _WorkerDashboardScreenState();
+  ConsumerState<WorkerDashboardScreen> createState() =>
+      _WorkerDashboardScreenState();
 }
 
 class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
@@ -153,7 +142,8 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
   void _scrollToFilters() {
     final ctx = _filterBarKey.currentContext;
     if (ctx != null) {
-      Scrollable.ensureVisible(ctx, duration: AppMotion.medium, curve: AppMotion.enter);
+      Scrollable.ensureVisible(ctx,
+          duration: AppMotion.medium, curve: AppMotion.enter);
     }
   }
 
@@ -168,18 +158,24 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
         final theme = Theme.of(ctx);
         return Padding(
           padding: EdgeInsets.fromLTRB(
-              AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.lg + MediaQuery.of(ctx).viewPadding.bottom),
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg,
+              AppSpacing.lg + MediaQuery.of(ctx).viewPadding.bottom),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Icon(categoryIconFor(job.category), color: AppColors.purple700),
+                  Icon(categoryIconFor(job.category),
+                      color: AppColors.purple700),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
                     child: Text(job.category,
-                        maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleLarge),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: theme.textTheme.titleLarge),
                   ),
                   StatusBadge(urgent: job.isUrgent),
                 ],
@@ -191,17 +187,22 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
                 children: [
                   Icon(Icons.location_on, size: 16, color: theme.hintColor),
                   const SizedBox(width: AppSpacing.xxs),
-                  Text("${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                  Text(
+                      "${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.hintColor)),
                 ],
               ),
               const SizedBox(height: AppSpacing.xs),
               Row(
                 children: [
-                  Icon(Icons.verified_user_outlined, size: 16, color: theme.hintColor),
+                  Icon(Icons.verified_user_outlined,
+                      size: 16, color: theme.hintColor),
                   const SizedBox(width: AppSpacing.xxs),
-                  Text("${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                  Text(
+                      "${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.hintColor)),
                 ],
               ),
               const SizedBox(height: AppSpacing.lg),
@@ -227,7 +228,6 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final attendance = ref.watch(attendanceProvider);
     final query = ref.watch(jobSearchProvider);
     final townshipFilter = ref.watch(townshipFilterProvider);
     final urgentOnly = ref.watch(urgentOnlyJobsProvider);
@@ -251,7 +251,8 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
 
     // Category options are derived from whatever is already eligible above —
     // this never widens the worker-skill/tier gate, it only ever narrows it.
-    final categoryOptions = <String>{for (final j in eligible) j.category}.toList()..sort();
+    final categoryOptions =
+        <String>{for (final j in eligible) j.category}.toList()..sort();
 
     if (query.trim().isNotEmpty) {
       final q = query.trim();
@@ -272,7 +273,9 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
       final milesCap = distanceKmFilter / 1.609;
       eligible = eligible.where((j) => j.distanceMiles <= milesCap).toList();
     }
-    eligible = eligible.where((j) => budgetFilter.matches(j.aiSuggestedBudgetMmk)).toList();
+    eligible = eligible
+        .where((j) => budgetFilter.matches(j.aiSuggestedBudgetMmk))
+        .toList();
 
     switch (sort) {
       case _JobSort.recommended:
@@ -285,7 +288,8 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
         eligible.sort((a, b) => a.distanceMiles.compareTo(b.distanceMiles));
         break;
       case _JobSort.highestBudget:
-        eligible.sort((a, b) => b.aiSuggestedBudgetMmk.compareTo(a.aiSuggestedBudgetMmk));
+        eligible.sort(
+            (a, b) => b.aiSuggestedBudgetMmk.compareTo(a.aiSuggestedBudgetMmk));
         break;
       case _JobSort.newest:
         eligible.sort((a, b) => b.createdAt.compareTo(a.createdAt));
@@ -299,39 +303,39 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
     }
 
     final monthlyIncome = _monthlyIncome(DateTime.now());
-    final completedJobsCount = bookings.where((b) => b.status == "Completed").length;
-
-    // The Digital Task Check-In card only appears when there's a confirmed
-    // on-site task — "Active" is this app's closest existing analog to
-    // task.status == confirmed (there's no separate task-status field yet).
-    final activeBookings = bookings.where((b) => b.status == "Active").toList();
-    final todaysTask = activeBookings.isEmpty ? null : activeBookings.first;
+    final completedJobsCount =
+        bookings.where((b) => b.status == "Completed").length;
 
     final activeChips = <Widget>[
       if (categoryFilter != null)
         ActiveFilterChip(
           label: categoryFilter,
-          onRemove: () => ref.read(jobCategoryFilterProvider.notifier).state = null,
+          onRemove: () =>
+              ref.read(jobCategoryFilterProvider.notifier).state = null,
         ),
       if (distanceKmFilter != null)
         ActiveFilterChip(
           label: "${distanceKmFilter.toStringAsFixed(0)} km",
-          onRemove: () => ref.read(jobDistanceFilterKmProvider.notifier).state = null,
+          onRemove: () =>
+              ref.read(jobDistanceFilterKmProvider.notifier).state = null,
         ),
       if (budgetFilter != _BudgetFilter.any)
         ActiveFilterChip(
           label: budgetFilter.label,
-          onRemove: () => ref.read(jobBudgetFilterProvider.notifier).state = _BudgetFilter.any,
+          onRemove: () => ref.read(jobBudgetFilterProvider.notifier).state =
+              _BudgetFilter.any,
         ),
       if (townshipFilter != null)
         ActiveFilterChip(
           label: townshipFilter,
-          onRemove: () => ref.read(townshipFilterProvider.notifier).state = null,
+          onRemove: () =>
+              ref.read(townshipFilterProvider.notifier).state = null,
         ),
       if (urgentOnly)
         ActiveFilterChip(
           label: AppStrings.jobBoardUrgentOnlyChip,
-          onRemove: () => ref.read(urgentOnlyJobsProvider.notifier).state = false,
+          onRemove: () =>
+              ref.read(urgentOnlyJobsProvider.notifier).state = false,
         ),
     ];
 
@@ -351,16 +355,6 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
             _WorkerHomeHeader(
               onSwitchRole: () => context.go(Routes.onboardingWelcome),
             ),
-            const SizedBox(height: AppSpacing.lg),
-            _AttendanceCard(
-              attendance: attendance,
-              onCheckIn: () => ref.read(attendanceProvider.notifier).state = attendance.checkIn(),
-              onCheckOut: () => ref.read(attendanceProvider.notifier).state = attendance.checkOut(),
-            ),
-            if (todaysTask != null) ...[
-              const SizedBox(height: AppSpacing.lg),
-              _DigitalCheckInCard(booking: todaysTask),
-            ],
             const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
@@ -388,118 +382,144 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
             const SizedBox(height: AppSpacing.xxl),
             Text(AppStrings.jobBoardTitle, style: theme.textTheme.titleLarge),
             const SizedBox(height: AppSpacing.sm),
-            if (!attendance.isCheckedIn)
-              _CheckInHint(message: AppStrings.dashboardCheckInToSeeJobs)
-            else ...[
-              JobSearchBar(
-                controller: _searchController,
-                focusNode: jobSearchFocusNode,
-                onChanged: (v) => ref.read(jobSearchProvider.notifier).state = v,
-                onFilterTap: _scrollToFilters,
-              ),
-              const SizedBox(height: AppSpacing.md),
-              Container(
-                key: _filterBarKey,
-                child: JobFilterBar(
-                  dropdowns: [
-                    FilterDropdown<String?>(
-                      semanticLabel: AppStrings.jobBoardCategoryLabel,
-                      displayText: categoryFilter ?? AppStrings.jobBoardCategoryAll,
-                      isActive: categoryFilter != null,
-                      options: [
-                        FilterOption(value: null, label: AppStrings.jobBoardCategoryAll),
-                        for (final c in categoryOptions) FilterOption(value: c, label: c),
-                      ],
-                      onSelected: (v) => ref.read(jobCategoryFilterProvider.notifier).state = v,
-                    ),
-                    FilterDropdown<double?>(
-                      semanticLabel: AppStrings.jobBoardDistanceLabel,
-                      displayText: distanceKmFilter == null
-                          ? AppStrings.jobBoardDistanceNearby
-                          : "${distanceKmFilter.toStringAsFixed(0)} km",
-                      isActive: distanceKmFilter != null,
-                      options: [
-                        FilterOption(value: null, label: AppStrings.jobBoardDistanceNearby),
-                        for (final km in _distanceKmOptions)
-                          FilterOption(value: km, label: "${km.toStringAsFixed(0)} km"),
-                      ],
-                      onSelected: (v) => ref.read(jobDistanceFilterKmProvider.notifier).state = v,
-                    ),
-                    FilterDropdown<_JobSort>(
-                      semanticLabel: AppStrings.jobBoardSortLabel,
-                      displayText: _jobSortLabel(sort),
-                      isActive: sort != _JobSort.recommended,
-                      options: [
-                        for (final s in _JobSort.values) FilterOption(value: s, label: _jobSortLabel(s)),
-                      ],
-                      onSelected: (v) => ref.read(jobSortProvider.notifier).state = v,
-                    ),
-                    FilterDropdown<_BudgetFilter>(
-                      semanticLabel: AppStrings.jobBoardBudgetLabel,
-                      displayText: budgetFilter.label,
-                      isActive: budgetFilter != _BudgetFilter.any,
-                      options: [
-                        for (final b in _BudgetFilter.values) FilterOption(value: b, label: b.label),
-                      ],
-                      onSelected: (v) => ref.read(jobBudgetFilterProvider.notifier).state = v,
-                    ),
-                    FilterDropdown<String?>(
-                      semanticLabel: AppStrings.jobBoardTownshipLabel,
-                      displayText: townshipFilter ?? AppStrings.jobBoardTownshipLabel,
-                      isActive: townshipFilter != null,
-                      options: [
-                        FilterOption(value: null, label: "${AppStrings.jobBoardCategoryAll} ${AppStrings.jobBoardTownshipLabel}"),
-                        for (final t in _townships) FilterOption(value: t, label: t),
-                      ],
-                      onSelected: (v) => ref.read(townshipFilterProvider.notifier).state = v,
-                    ),
-                    FilterToggleChip(
-                      label: AppStrings.jobBoardUrgentOnlyChip,
-                      selected: urgentOnly,
-                      onTap: () => ref.read(urgentOnlyJobsProvider.notifier).state = !urgentOnly,
-                    ),
-                  ],
-                  activeFilterChips: activeChips,
-                  onClearAll: activeChips.isEmpty ? null : clearAllFilters,
-                ),
-              ),
-              const SizedBox(height: AppSpacing.md),
-              if (eligible.isEmpty)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                  child: Center(
-                    child: Text(AppStrings.dashboardNoJobsFound,
-                        style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
+            JobSearchBar(
+              controller: _searchController,
+              focusNode: jobSearchFocusNode,
+              onChanged: (v) => ref.read(jobSearchProvider.notifier).state = v,
+              onFilterTap: _scrollToFilters,
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Container(
+              key: _filterBarKey,
+              child: JobFilterBar(
+                dropdowns: [
+                  FilterDropdown<String?>(
+                    semanticLabel: AppStrings.jobBoardCategoryLabel,
+                    displayText:
+                        categoryFilter ?? AppStrings.jobBoardCategoryAll,
+                    isActive: categoryFilter != null,
+                    options: [
+                      FilterOption(
+                          value: null, label: AppStrings.jobBoardCategoryAll),
+                      for (final c in categoryOptions)
+                        FilterOption(value: c, label: c),
+                    ],
+                    onSelected: (v) =>
+                        ref.read(jobCategoryFilterProvider.notifier).state = v,
                   ),
-                )
-              else
-                ...List.generate(eligible.length, (i) {
-                  final j = eligible[i];
-                  return TweenAnimationBuilder<double>(
-                    tween: Tween(begin: 0, end: 1),
-                    duration: AppMotion.medium,
-                    curve: AppMotion.enter,
-                    builder: (context, t, child) => Opacity(
-                      opacity: t,
-                      child: Transform.translate(offset: Offset(0, (1 - t) * 12), child: child),
-                    ),
-                    child: JobCard(
-                      job: j,
-                      onAccept: () {
-                        ref.read(jobsStateProvider.notifier).state = [
-                          for (final job in ref.read(jobsStateProvider))
-                            if (job.id == j.id) job.copyWith(status: AppStrings.dashboardInterestReceived) else job,
-                        ];
-                        ref.read(workerInterestsProvider.notifier).state = [
-                          ...ref.read(workerInterestsProvider),
-                          WorkerInterest(workerId: worker.id, jobId: j.id, createdAt: DateTime.now()),
-                        ];
-                      },
-                      onViewDetails: () => _showJobDetails(j),
-                    ),
-                  );
-                }),
-            ],
+                  FilterDropdown<double?>(
+                    semanticLabel: AppStrings.jobBoardDistanceLabel,
+                    displayText: distanceKmFilter == null
+                        ? AppStrings.jobBoardDistanceNearby
+                        : "${distanceKmFilter.toStringAsFixed(0)} km",
+                    isActive: distanceKmFilter != null,
+                    options: [
+                      FilterOption(
+                          value: null,
+                          label: AppStrings.jobBoardDistanceNearby),
+                      for (final km in _distanceKmOptions)
+                        FilterOption(
+                            value: km, label: "${km.toStringAsFixed(0)} km"),
+                    ],
+                    onSelected: (v) => ref
+                        .read(jobDistanceFilterKmProvider.notifier)
+                        .state = v,
+                  ),
+                  FilterDropdown<_JobSort>(
+                    semanticLabel: AppStrings.jobBoardSortLabel,
+                    displayText: _jobSortLabel(sort),
+                    isActive: sort != _JobSort.recommended,
+                    options: [
+                      for (final s in _JobSort.values)
+                        FilterOption(value: s, label: _jobSortLabel(s)),
+                    ],
+                    onSelected: (v) =>
+                        ref.read(jobSortProvider.notifier).state = v,
+                  ),
+                  FilterDropdown<_BudgetFilter>(
+                    semanticLabel: AppStrings.jobBoardBudgetLabel,
+                    displayText: budgetFilter.label,
+                    isActive: budgetFilter != _BudgetFilter.any,
+                    options: [
+                      for (final b in _BudgetFilter.values)
+                        FilterOption(value: b, label: b.label),
+                    ],
+                    onSelected: (v) =>
+                        ref.read(jobBudgetFilterProvider.notifier).state = v,
+                  ),
+                  FilterDropdown<String?>(
+                    semanticLabel: AppStrings.jobBoardTownshipLabel,
+                    displayText:
+                        townshipFilter ?? AppStrings.jobBoardTownshipLabel,
+                    isActive: townshipFilter != null,
+                    options: [
+                      FilterOption(
+                          value: null,
+                          label:
+                              "${AppStrings.jobBoardCategoryAll} ${AppStrings.jobBoardTownshipLabel}"),
+                      for (final t in _townships)
+                        FilterOption(value: t, label: t),
+                    ],
+                    onSelected: (v) =>
+                        ref.read(townshipFilterProvider.notifier).state = v,
+                  ),
+                  FilterToggleChip(
+                    label: AppStrings.jobBoardUrgentOnlyChip,
+                    selected: urgentOnly,
+                    onTap: () => ref
+                        .read(urgentOnlyJobsProvider.notifier)
+                        .state = !urgentOnly,
+                  ),
+                ],
+                activeFilterChips: activeChips,
+                onClearAll: activeChips.isEmpty ? null : clearAllFilters,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.md),
+            if (eligible.isEmpty)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                child: Center(
+                  child: Text(AppStrings.dashboardNoJobsFound,
+                      style: theme.textTheme.bodyMedium
+                          ?.copyWith(color: theme.hintColor)),
+                ),
+              )
+            else
+              ...List.generate(eligible.length, (i) {
+                final j = eligible[i];
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: 1),
+                  duration: AppMotion.medium,
+                  curve: AppMotion.enter,
+                  builder: (context, t, child) => Opacity(
+                    opacity: t,
+                    child: Transform.translate(
+                        offset: Offset(0, (1 - t) * 12), child: child),
+                  ),
+                  child: JobCard(
+                    job: j,
+                    onAccept: () {
+                      ref.read(jobsStateProvider.notifier).state = [
+                        for (final job in ref.read(jobsStateProvider))
+                          if (job.id == j.id)
+                            job.copyWith(
+                                status: AppStrings.dashboardInterestReceived)
+                          else
+                            job,
+                      ];
+                      ref.read(workerInterestsProvider.notifier).state = [
+                        ...ref.read(workerInterestsProvider),
+                        WorkerInterest(
+                            workerId: worker.id,
+                            jobId: j.id,
+                            createdAt: DateTime.now()),
+                      ];
+                    },
+                    onViewDetails: () => _showJobDetails(j),
+                  ),
+                );
+              }),
           ],
         ),
       ),
@@ -507,13 +527,11 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
   }
 
   int _monthlyIncome(DateTime now) {
-    return bookings
-        .where((b) {
-          if (b.status != "Completed") return false;
-          final d = DateTime.tryParse(b.date);
-          return d != null && d.year == now.year && d.month == now.month;
-        })
-        .fold(0, (sum, b) => sum + b.totalMmk);
+    return bookings.where((b) {
+      if (b.status != "Completed") return false;
+      final d = DateTime.tryParse(b.date);
+      return d != null && d.year == now.year && d.month == now.month;
+    }).fold(0, (sum, b) => sum + b.totalMmk);
   }
 }
 
@@ -544,14 +562,16 @@ class _WorkerHomeHeader extends ConsumerWidget {
                   AppStrings.workerHomeGreeting,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary, fontWeight: FontWeight.w600),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: AppColors.textSecondary,
+                      fontWeight: FontWeight.w600),
                 ),
               Text(
                 name ?? AppStrings.workerHomeGreeting,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge?.copyWith(fontWeight: FontWeight.w800),
+                style: theme.textTheme.titleLarge
+                    ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
           ),
@@ -569,7 +589,8 @@ class _WorkerHomeHeader extends ConsumerWidget {
           label: AppStrings.homeNotificationsEmpty,
           button: true,
           child: IconButton(
-            icon: const Icon(Icons.notifications_outlined, color: AppColors.purple700),
+            icon: const Icon(Icons.notifications_outlined,
+                color: AppColors.purple700),
             onPressed: () => ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(content: Text(AppStrings.homeNotificationsEmpty)),
             ),
@@ -581,220 +602,6 @@ class _WorkerHomeHeader extends ConsumerWidget {
 }
 
 const List<String> _townships = ["လှိုင်", "ကမာရွတ်", "မရမ်းကုန်း", "အင်းစိန်"];
-
-class _AttendanceCard extends StatelessWidget {
-  final AttendanceStatus attendance;
-  final VoidCallback onCheckIn;
-  final VoidCallback onCheckOut;
-  const _AttendanceCard({
-    required this.attendance,
-    required this.onCheckIn,
-    required this.onCheckOut,
-  });
-
-  String _time(DateTime d) => "${d.hour.toString().padLeft(2, '0')}:${d.minute.toString().padLeft(2, '0')}";
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final checkedIn = attendance.isCheckedIn;
-    String? subtitle;
-    if (checkedIn && attendance.checkInTime != null) {
-      subtitle = "${AppStrings.dashboardCheckedInSince} ${_time(attendance.checkInTime!)}";
-    } else if (!checkedIn && attendance.checkInTime != null && attendance.checkOutTime != null) {
-      final hours = attendance.checkOutTime!.difference(attendance.checkInTime!).inMinutes / 60;
-      subtitle = "${AppStrings.dashboardHoursToday}: ${hours.toStringAsFixed(1)}h";
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg + 2, vertical: AppSpacing.md + 2),
-      decoration: BoxDecoration(
-        gradient: checkedIn ? AppColors.purpleGradient : null,
-        color: checkedIn ? null : theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: checkedIn ? null : Border.all(color: theme.dividerColor),
-        boxShadow: checkedIn
-            ? [
-                BoxShadow(
-                  color: AppColors.purple700.withValues(alpha: 0.35),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
-                ),
-              ]
-            : null,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Row(
-            children: [
-              Icon(
-                checkedIn ? Icons.flash_on : Icons.flash_off,
-                color: checkedIn ? AppColors.onBrand : theme.hintColor,
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      AppStrings.availableForBookings,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: checkedIn ? AppColors.onBrand : theme.textTheme.bodyLarge?.color,
-                      ),
-                    ),
-                    if (subtitle != null)
-                      Text(subtitle,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall
-                              ?.copyWith(color: checkedIn ? AppColors.onBrandMuted : theme.hintColor)),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.md),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: checkedIn ? AppColors.onBrand : AppColors.purple700,
-              foregroundColor: checkedIn ? AppColors.purple700 : AppColors.onBrand,
-            ),
-            onPressed: checkedIn ? onCheckOut : onCheckIn,
-            child: Text(checkedIn ? AppStrings.dashboardCheckOut : AppStrings.dashboardCheckIn),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-/// Digital Task Check-In preview — distinct from [_AttendanceCard] (general
-/// "available for new bookings" status). This is about a single confirmed,
-/// on-site task's execution stages (leaving/arrived/completed); "Start
-/// Process" pushes to the dedicated [TaskExecutionScreen].
-class _DigitalCheckInCard extends StatelessWidget {
-  final Booking booking;
-  const _DigitalCheckInCard({required this.booking});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final radius = BorderRadius.circular(AppRadius.lg);
-
-    return Container(
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: radius,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowMd,
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    gradient: AppColors.purpleGradient,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  alignment: Alignment.center,
-                  child: const Icon(Icons.qr_code_scanner, color: AppColors.onBrand, size: AppSizes.iconMd),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(
-                    AppStrings.executionSectionTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
-                  ),
-                ),
-                Flexible(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                    decoration: BoxDecoration(
-                      color: AppColors.success.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(AppRadius.pill),
-                    ),
-                    child: Text(
-                      AppStrings.executionLiveBadge,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              padding: const EdgeInsets.all(AppSpacing.md),
-              decoration: BoxDecoration(
-                color: AppColors.purple100.withValues(alpha: 0.4),
-                borderRadius: BorderRadius.circular(AppRadius.md),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "${AppStrings.executionTodaysTask} • ${booking.skill}",
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  const SizedBox(height: AppSpacing.xs),
-                  Row(
-                    children: [
-                      Icon(Icons.access_time, size: 14, color: theme.hintColor),
-                      const SizedBox(width: AppSpacing.xxs),
-                      Flexible(
-                        child: Text(booking.timeSlot,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-                      ),
-                      const SizedBox(width: AppSpacing.md),
-                      Icon(Icons.location_on, size: 14, color: theme.hintColor),
-                      const SizedBox(width: AppSpacing.xxs),
-                      Flexible(
-                        child: Text(booking.township,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: AppSpacing.md),
-            LargeButton(
-              label: AppStrings.executionStartProcess,
-              icon: Icons.play_circle_fill,
-              gradient: AppColors.purpleGradient,
-              onTap: () => context.push('${Routes.taskExecution}/${booking.id}'),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}
 
 class _StatCard extends StatelessWidget {
   final String emoji;
@@ -839,45 +646,23 @@ class _StatCard extends StatelessWidget {
                 child: Text(value,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: theme.textTheme.headlineSmall?.copyWith(color: AppColors.onBrand, fontSize: 24)),
+                    style: theme.textTheme.headlineSmall
+                        ?.copyWith(color: AppColors.onBrand, fontSize: 24)),
               ),
               const SizedBox(width: AppSpacing.xs),
-              Text(unit, style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onBrandMuted)),
+              Text(unit,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.onBrandMuted)),
             ],
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onBrandMuted)),
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.onBrandMuted)),
         ],
       ),
     );
   }
 }
-
-class _CheckInHint extends StatelessWidget {
-  final String message;
-  const _CheckInHint({required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: theme.dividerColor),
-      ),
-      child: Column(
-        children: [
-          const Text("📋", style: TextStyle(fontSize: 36)),
-          const SizedBox(height: AppSpacing.sm),
-          Text(message, textAlign: TextAlign.center, style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor)),
-        ],
-      ),
-    );
-  }
-}
-

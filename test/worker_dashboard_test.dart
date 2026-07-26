@@ -26,38 +26,26 @@ void main() {
     }
   }
 
-  testWidgets('Job board is hidden until checked in, then shows an eligible job',
+  testWidgets('Job board shows eligible jobs immediately with budget breakdown',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.dashboard);
     await settle(tester);
 
-    // The new Digital Check-In card pushed the job board's hint text below
-    // the initial viewport — scroll down to confirm it, then back up so the
-    // Check In button (near the top) is mounted again to tap.
-    await scrollDown(tester, times: 3);
-    expect(find.text(AppStrings.dashboardCheckInToSeeJobs), findsOneWidget);
-    expect(find.text(AppStrings.dashboardInterestedCta), findsNothing);
-    for (var i = 0; i < 3; i++) {
-      await tester.drag(find.byType(ListView).first, const Offset(0, 300));
-      await settle(tester);
-    }
-
-    await tester.tap(find.text(AppStrings.dashboardCheckIn));
-    await settle(tester);
-
     expect(find.text(AppStrings.dashboardCheckInToSeeJobs), findsNothing);
+    expect(find.text(AppStrings.dashboardCheckIn), findsNothing);
 
     await scrollDown(tester);
     expect(find.text(AppStrings.dashboardInterestedCta), findsWidgets);
+    expect(find.text('Client posted'), findsWidgets);
+    expect(find.text('Tasker gets'), findsWidgets);
+    expect(find.textContaining('Platform fee 15%'), findsNothing);
   });
 
-  testWidgets('Tapping Interested marks the job as Interest Received', (tester) async {
+  testWidgets('Tapping Interested marks the job as Interest Received',
+      (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.dashboard);
-    await settle(tester);
-
-    await tester.tap(find.text(AppStrings.dashboardCheckIn));
     await settle(tester);
 
     await scrollDown(tester);
@@ -74,7 +62,7 @@ void main() {
   });
 
   testWidgets(
-      'Dashboard (checked in, job board + filters visible) does not overflow at 360dp width and 1.6x text scale',
+      'Dashboard job board and filters do not overflow at 360dp width and 1.6x text scale',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -91,8 +79,6 @@ void main() {
     appRouter.go(Routes.dashboard);
     await settle(tester);
 
-    await tester.tap(find.text(AppStrings.dashboardCheckIn));
-    await settle(tester);
     expect(tester.takeException(), isNull);
 
     await scrollDown(tester, times: 15);

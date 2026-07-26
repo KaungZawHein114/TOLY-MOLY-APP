@@ -4,13 +4,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
-import '../../core/widgets/large_button.dart';
 import '../activity/activity_chat.dart';
+import 'task_execution_screen.dart';
 
 // LOCAL UI STATE (Riverpod) co-located in the screen file as per architecture rules.
-final activityTabProvider = StateProvider<int>((ref) => 0); // 0 = Messages, 1 = Bookings
-// 0 = Task Marked (Active), 1 = Interested/Discussing (Pending), 2 = History (Completed)
-final bookingFilterProvider = StateProvider<int>((ref) => 0);
+final activityTabProvider =
+    StateProvider<int>((ref) => 0); // 0 = Discussion, 1 = Check-in/out
 
 // The TASKER's two demo conversations (roles reversed vs the client page):
 //   Chat 1 — Discussion (the tasker pressed "Interested", negotiating now).
@@ -18,36 +17,6 @@ final bookingFilterProvider = StateProvider<int>((ref) => 0);
 const String _discussionClientName = 'ဒေါ်ခင် (အိမ်ရှင်)';
 const String _progressClientName = 'ကိုဇော် (အိမ်ရှင်)';
 const String _clientEmoji = '🧑';
-
-String _bookingStatusLabel(String status) {
-  switch (status) {
-    case 'Active':
-      return 'အလုပ်လက်ခံပြီး';
-    case 'Pending':
-      return 'စိတ်ဝင်စားထား';
-    case 'Completed':
-      return 'ပြီးဆုံးပြီး';
-    default:
-      return status;
-  }
-}
-
-String _bookingSkillLabel(String skill) {
-  switch (skill) {
-    case 'Electrician':
-      return 'လျှပ်စစ်ပြုပြင်ခြင်း';
-    case 'AC Technician':
-      return 'အဲကွန်းပြုပြင်ခြင်း';
-    case 'Plumber':
-      return 'ရေပိုက်ပြုပြင်ခြင်း';
-    case 'Cleaner':
-      return 'သန့်ရှင်းရေး';
-    case 'Carpenter':
-      return 'ပန်းရန်/လက်သမား';
-    default:
-      return skill;
-  }
-}
 
 class ActivityScreen extends ConsumerWidget {
   const ActivityScreen({super.key});
@@ -69,7 +38,8 @@ class ActivityScreen extends ConsumerWidget {
             ),
             decoration: const BoxDecoration(
               color: AppColors.purple700,
-              borderRadius: BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
+              borderRadius:
+                  BorderRadius.vertical(bottom: Radius.circular(AppRadius.xl)),
             ),
             child: Column(
               mainAxisSize: MainAxisSize.min,
@@ -90,8 +60,10 @@ class ActivityScreen extends ConsumerWidget {
                           label: 'အသိပေးချက်များ',
                           button: true,
                           child: IconButton(
-                            icon: const Icon(Icons.notifications_none_outlined, color: AppColors.onBrand),
-                            onPressed: () => showActivitySnack(context, 'အသိပေးချက်အသစ်များ မရှိသေးပါ။'),
+                            icon: const Icon(Icons.notifications_none_outlined,
+                                color: AppColors.onBrand),
+                            onPressed: () => showActivitySnack(
+                                context, 'အသိပေးချက်အသစ်များ မရှိသေးပါ။'),
                           ),
                         ),
                         Positioned(
@@ -103,7 +75,9 @@ class ActivityScreen extends ConsumerWidget {
                             decoration: BoxDecoration(
                               color: AppColors.error,
                               shape: BoxShape.circle,
-                              border: Border.all(color: AppColors.purple700, width: AppSpacing.xxs),
+                              border: Border.all(
+                                  color: AppColors.purple700,
+                                  width: AppSpacing.xxs),
                             ),
                           ),
                         ),
@@ -117,7 +91,9 @@ class ActivityScreen extends ConsumerWidget {
             ),
           ),
           Expanded(
-            child: activeTab == 0 ? const _MessagesView() : const _BookingsView(),
+            child: activeTab == 0
+                ? const _MessagesView()
+                : const _TaskerCheckInOutView(),
           ),
         ],
       ),
@@ -150,7 +126,7 @@ class _SegmentedControl extends ConsumerWidget {
           ),
           Expanded(
             child: _TabButton(
-              label: 'ဘွတ်ကင်များ',
+              label: 'Check In / Out',
               isActive: activeTab == 1,
               onTap: () => notifier.state = 1,
             ),
@@ -166,7 +142,8 @@ class _TabButton extends StatelessWidget {
   final bool isActive;
   final VoidCallback onTap;
 
-  const _TabButton({required this.label, required this.isActive, required this.onTap});
+  const _TabButton(
+      {required this.label, required this.isActive, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
@@ -182,7 +159,9 @@ class _TabButton extends StatelessWidget {
           constraints: const BoxConstraints(minHeight: AppSpacing.xl * 2),
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
           decoration: BoxDecoration(
-            color: isActive ? AppColors.lightSurface : AppColors.lightSurface.withValues(alpha: 0),
+            color: isActive
+                ? AppColors.lightSurface
+                : AppColors.lightSurface.withValues(alpha: 0),
             borderRadius: BorderRadius.circular(AppRadius.md),
           ),
           child: Text(
@@ -204,7 +183,8 @@ class _MessagesView extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final discussionEnded = ref.watch(taskPhaseProvider) != TaskPhase.discussing;
+    final discussionEnded =
+        ref.watch(taskPhaseProvider) != TaskPhase.discussing;
 
     final convos = [
       _ConvoData(
@@ -349,8 +329,8 @@ class _WorkerConvoCard extends StatelessWidget {
                     CircleAvatar(
                       radius: 28,
                       backgroundColor: AppColors.purple100,
-                      child: Text(c.emoji,
-                          style: theme.textTheme.headlineSmall),
+                      child:
+                          Text(c.emoji, style: theme.textTheme.headlineSmall),
                     ),
                     if (c.isOnline)
                       Positioned(
@@ -421,10 +401,8 @@ class _WorkerConvoCard extends StatelessWidget {
                                 horizontal: AppSpacing.sm,
                                 vertical: AppSpacing.xxs),
                             decoration: BoxDecoration(
-                              color:
-                                  c.statusColor.withValues(alpha: 0.12),
-                              borderRadius:
-                                  BorderRadius.circular(AppRadius.sm),
+                              color: c.statusColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(AppRadius.sm),
                             ),
                             child: Text(
                               c.statusLabel,
@@ -440,8 +418,8 @@ class _WorkerConvoCard extends StatelessWidget {
                               '• ${c.jobCategory}',
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.bodySmall?.copyWith(
-                                  color: AppColors.textSecondary),
+                              style: theme.textTheme.bodySmall
+                                  ?.copyWith(color: AppColors.textSecondary),
                             ),
                           ),
                         ],
@@ -491,300 +469,19 @@ class _WorkerConvoCard extends StatelessWidget {
   }
 }
 
-
-class _BookingsView extends ConsumerWidget {
-  const _BookingsView();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final filterIdx = ref.watch(bookingFilterProvider);
-    final notifier = ref.read(bookingFilterProvider.notifier);
-    final theme = Theme.of(context);
-
-    final filteredBookings = bookings.where((booking) {
-      if (filterIdx == 0) return booking.status == 'Active';
-      if (filterIdx == 1) return booking.status == 'Pending';
-      return booking.status == 'Completed';
-    }).toList();
-
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: AppSpacing.md),
-          child: SizedBox(
-            height: 38,
-            child: ListView(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
-              children: [
-                _FilterChip(label: 'အလုပ်လက်ခံပြီး', isSelected: filterIdx == 0, onTap: () => notifier.state = 0),
-                const SizedBox(width: AppSpacing.sm),
-                _FilterChip(label: 'စိတ်ဝင်စားထား', isSelected: filterIdx == 1, onTap: () => notifier.state = 1),
-                const SizedBox(width: AppSpacing.sm),
-                _FilterChip(label: 'မှတ်တမ်း', isSelected: filterIdx == 2, onTap: () => notifier.state = 2),
-              ],
-            ),
-          ),
-        ),
-        Expanded(
-          child: filteredBookings.isEmpty
-              ? Center(child: Text('မှတ်တမ်းမတွေ့ပါ', style: theme.textTheme.bodyMedium))
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
-                  itemCount: filteredBookings.length,
-                  itemBuilder: (context, index) {
-                    final booking = filteredBookings[index];
-                    return _BookingTaskCard(booking: booking, filterType: filterIdx);
-                  },
-                ),
-        ),
-      ],
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  const _FilterChip({required this.label, required this.isSelected, required this.onTap});
+class _TaskerCheckInOutView extends StatelessWidget {
+  const _TaskerCheckInOutView();
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        constraints: const BoxConstraints(minWidth: AppSpacing.xl * 2),
-        padding: const EdgeInsets.symmetric(horizontal: AppSpacing.xl, vertical: AppSpacing.sm),
-        decoration: BoxDecoration(
-          color: isSelected ? AppColors.purple700 : AppColors.lightSurface,
-          borderRadius: BorderRadius.circular(AppRadius.pill),
-          border: isSelected ? null : Border.all(color: AppColors.onboardingDivider),
-        ),
-        child: Center(
-          child: Text(
-            label,
-            style: theme.textTheme.labelMedium?.copyWith(
-              fontWeight: FontWeight.bold,
-              color: isSelected ? AppColors.onBrand : AppColors.textSecondary,
-            ),
-          ),
-        ),
-      ),
+    final activeBooking = bookings.firstWhere(
+      (booking) => booking.status == 'Active',
+      orElse: () => bookings.first,
     );
-  }
-}
 
-class _BookingTaskCard extends StatelessWidget {
-  final Booking booking;
-  // 0 = Task Marked, 1 = Interested/Discussing, 2 = History
-  final int filterType;
-
-  const _BookingTaskCard({required this.booking, required this.filterType});
-
-  Color get _statusBackgroundColor {
-    if (filterType == 0) return AppColors.blue100;
-    if (filterType == 1) return AppColors.indigo100;
-    return AppColors.lightBg;
-  }
-
-  Color get _statusTextColor {
-    if (filterType == 0) return AppColors.tealDark;
-    if (filterType == 1) return AppColors.indigo700;
-    return AppColors.textSecondary;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-
-    return Card(
-      margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Stack(
-        children: [
-          if (filterType == 0)
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(height: AppSpacing.xxs, color: AppColors.teal),
-            ),
-          Padding(
-            padding: const EdgeInsets.all(AppSpacing.lg),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                            decoration: BoxDecoration(
-                              color: _statusBackgroundColor,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                            ),
-                            child: Text(
-                              _bookingStatusLabel(booking.status),
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: _statusTextColor,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          Text(
-                            _bookingSkillLabel(booking.skill),
-                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                          ),
-                          Text(
-                            '${booking.date} • ${booking.township}',
-                            style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: AppSpacing.sm),
-                    Container(
-                      padding: const EdgeInsets.all(AppSpacing.sm),
-                      decoration: BoxDecoration(
-                        color: AppColors.blue100,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.end,
-                        children: [
-                          Text(
-                            'ဝင်ငွေ',
-                            style: theme.textTheme.labelSmall?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.purple500,
-                            ),
-                          ),
-                          Text(
-                            '${booking.totalMmk ~/ 1000}K MMK',
-                            style: theme.textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.orangeDark,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Client row. Task Marked → Chat 2 (progress) icon. Interested →
-                // Discussion chat icon. History → no messaging at all.
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightBg,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Row(
-                    children: [
-                      CircleAvatar(radius: AppSpacing.md, child: Text('🧑', style: theme.textTheme.bodyLarge)),
-                      const SizedBox(width: AppSpacing.sm),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              booking.customerName,
-                              style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'အလုပ်ရှင် • ${booking.timeSlot}',
-                              style: theme.textTheme.bodySmall?.copyWith(color: AppColors.textSecondary),
-                            ),
-                          ],
-                        ),
-                      ),
-                      if (filterType == 0)
-                        IconButton(
-                          tooltip: 'အလုပ်အခြေအနေ စာတိုပို့ရန်',
-                          icon: const Icon(Icons.chat_bubble_outline, size: AppSpacing.lg, color: AppColors.purple700),
-                          onPressed: () => openProgressChat(
-                            context,
-                            role: ActivityRole.tasker,
-                            counterpartName: booking.customerName,
-                            counterpartEmoji: '🧑',
-                          ),
-                        ),
-                      if (filterType == 1)
-                        IconButton(
-                          tooltip: 'ဆွေးနွေးရန်',
-                          icon: const Icon(Icons.forum_outlined, size: AppSpacing.lg, color: AppColors.indigo700),
-                          onPressed: () => openDiscussionChat(
-                            context,
-                            role: ActivityRole.tasker,
-                            counterpartName: booking.customerName,
-                            counterpartEmoji: '🧑',
-                          ),
-                        ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: AppSpacing.md),
-                // Primary action per state. NO "Edit Task" anywhere — that is a
-                // client-only capability.
-                if (filterType == 1)
-                  LargeButton(
-                    label: 'ဆွေးနွေးမှု ဆက်လုပ်ရန်',
-                    icon: Icons.forum_outlined,
-                    gradient: AppColors.purpleGradient,
-                    onTap: () => openDiscussionChat(
-                      context,
-                      role: ActivityRole.tasker,
-                      counterpartName: booking.customerName,
-                      counterpartEmoji: '🧑',
-                    ),
-                  )
-                else
-                  Row(
-                    children: [
-                      Expanded(
-                        child: LargeButton(
-                          label: 'Task အသေးစိတ်',
-                          gradient: AppColors.purpleGradient,
-                          onTap: () => showActivitySnack(
-                            context,
-                            'Task အသေးစိတ်ကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။',
-                          ),
-                        ),
-                      ),
-                      if (filterType == 0) ...[
-                        const SizedBox(width: AppSpacing.sm),
-                        Container(
-                          width: AppSpacing.xl * 2,
-                          height: AppSpacing.xl * 2,
-                          decoration: BoxDecoration(
-                            color: AppColors.error.withValues(alpha: 0.1),
-                            borderRadius: BorderRadius.circular(AppRadius.md),
-                            border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
-                          ),
-                          child: IconButton(
-                            tooltip: 'အရေးပေါ်အကူအညီ',
-                            icon: const Icon(Icons.warning_amber_rounded, color: AppColors.error),
-                            onPressed: () => showActivitySnack(context, 'အရေးပေါ်အကူအညီအတွက် Support ကို ဆက်သွယ်ပါ။'),
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
+    return TaskExecutionScreen(
+      booking: activeBooking,
+      embedded: true,
     );
   }
 }

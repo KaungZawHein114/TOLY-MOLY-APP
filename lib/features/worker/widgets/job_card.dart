@@ -31,7 +31,9 @@ String relativeTimeFor(DateTime createdAt, {DateTime? now}) {
   final n = now ?? DateTime.now();
   final diff = n.difference(createdAt);
   if (diff.inMinutes < 1) return "ခုနက";
-  if (diff.inMinutes < 60) return "${toBurmeseDigits(diff.inMinutes)} မိနစ်အရင်";
+  if (diff.inMinutes < 60) {
+    return "${toBurmeseDigits(diff.inMinutes)} မိနစ်အရင်";
+  }
   if (diff.inHours < 24) return "${toBurmeseDigits(diff.inHours)} နာရီအရင်";
   return "${toBurmeseDigits(diff.inDays)} ရက်အရင်";
 }
@@ -44,17 +46,71 @@ class BudgetBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
+    final taskerReceives = budgetMmk - (budgetMmk * 0.15).round();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(AppStrings.dashboardAiEstimatedBudget,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+        Row(
+          children: [
+            Expanded(
+              child: _MoneyLine(
+                label: 'Client posted',
+                amount: budgetMmk,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(width: AppSpacing.md),
+            Expanded(
+              child: _MoneyLine(
+                label: 'Tasker gets',
+                amount: taskerReceives,
+                color: AppColors.purple700,
+                emphasized: true,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+class _MoneyLine extends StatelessWidget {
+  final String label;
+  final int amount;
+  final Color color;
+  final bool emphasized;
+
+  const _MoneyLine({
+    required this.label,
+    required this.amount,
+    required this.color,
+    this.emphasized = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+        ),
         const SizedBox(height: AppSpacing.xxs),
         Text(
-          "$budgetMmk MMK",
-          style: theme.textTheme.headlineSmall
-              ?.copyWith(color: AppColors.purple700, fontWeight: FontWeight.w900, fontSize: 22),
+          '$amount ${AppStrings.currency}',
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: (emphasized
+                  ? theme.textTheme.titleLarge
+                  : theme.textTheme.titleMedium)
+              ?.copyWith(color: color, fontWeight: FontWeight.w900),
         ),
       ],
     );
@@ -72,7 +128,8 @@ class StatusBadge extends StatelessWidget {
     if (!urgent) return const SizedBox.shrink();
     final theme = Theme.of(context);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+      padding: const EdgeInsets.symmetric(
+          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
       decoration: BoxDecoration(
         color: AppColors.orange.withValues(alpha: 0.15),
         borderRadius: BorderRadius.circular(AppRadius.pill),
@@ -81,7 +138,8 @@ class StatusBadge extends StatelessWidget {
         "⚡ အရေးပေါ်",
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
-        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.orange, fontWeight: FontWeight.w700),
+        style: theme.textTheme.bodySmall
+            ?.copyWith(color: AppColors.orange, fontWeight: FontWeight.w700),
       ),
     );
   }
@@ -127,7 +185,8 @@ class _JobActionButtonsState extends State<JobActionButtons> {
         const SizedBox(width: AppSpacing.sm),
         Expanded(
           child: Listener(
-            onPointerDown: widget.accepted ? null : (_) => setState(() => _pressed = true),
+            onPointerDown:
+                widget.accepted ? null : (_) => setState(() => _pressed = true),
             onPointerUp: (_) => setState(() => _pressed = false),
             onPointerCancel: (_) => setState(() => _pressed = false),
             child: AnimatedScale(
@@ -143,10 +202,13 @@ class _JobActionButtonsState extends State<JobActionButtons> {
                       },
                 style: FilledButton.styleFrom(
                   minimumSize: const Size.fromHeight(44),
-                  backgroundColor: widget.accepted ? AppColors.success : AppColors.purple700,
+                  backgroundColor:
+                      widget.accepted ? AppColors.success : AppColors.purple700,
                 ),
                 child: Text(
-                  widget.accepted ? AppStrings.dashboardInterestReceived : AppStrings.dashboardInterestedCta,
+                  widget.accepted
+                      ? AppStrings.dashboardInterestReceived
+                      : AppStrings.dashboardInterestedCta,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -210,12 +272,15 @@ class JobCard extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppRadius.md),
                   ),
                   alignment: Alignment.center,
-                  child: Icon(categoryIconFor(job.category), color: AppColors.purple700, size: AppSizes.iconMd),
+                  child: Icon(categoryIconFor(job.category),
+                      color: AppColors.purple700, size: AppSizes.iconMd),
                 ),
                 const SizedBox(width: AppSpacing.md),
                 Expanded(
                   child: Text(job.category,
-                      maxLines: 1, overflow: TextOverflow.ellipsis, style: theme.textTheme.titleMedium),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleMedium),
                 ),
                 if (job.isUrgent) ...[
                   const SizedBox(width: AppSpacing.xs),
@@ -225,17 +290,21 @@ class JobCard extends StatelessWidget {
             ),
             const SizedBox(height: AppSpacing.sm),
             Text(job.description,
-                maxLines: 2, overflow: TextOverflow.ellipsis, style: theme.textTheme.bodyMedium),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: theme.textTheme.bodyMedium),
             const SizedBox(height: AppSpacing.sm + 2),
             Row(
               children: [
                 Icon(Icons.location_on, size: 14, color: theme.hintColor),
                 const SizedBox(width: AppSpacing.xxs),
                 Flexible(
-                  child: Text("${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
+                  child: Text(
+                      "${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.hintColor)),
                 ),
                 const SizedBox(width: AppSpacing.sm),
                 Icon(Icons.schedule, size: 14, color: theme.hintColor),
@@ -244,20 +313,24 @@ class JobCard extends StatelessWidget {
                   child: Text(relativeTimeFor(job.createdAt),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.hintColor)),
                 ),
               ],
             ),
             const SizedBox(height: AppSpacing.xs),
             Row(
               children: [
-                Icon(Icons.verified_user_outlined, size: 14, color: theme.hintColor),
+                Icon(Icons.verified_user_outlined,
+                    size: 14, color: theme.hintColor),
                 const SizedBox(width: AppSpacing.xxs),
                 Flexible(
-                  child: Text("${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
+                  child: Text(
+                      "${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: theme.hintColor)),
                 ),
               ],
             ),

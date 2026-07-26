@@ -6,23 +6,23 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import 'activity_screen.dart';
 import 'chat_screen.dart';
 import 'client_profile_screen.dart';
 import 'client_rewards_screen.dart';
 import 'home_screen.dart';
-import 'pending_screen.dart';
 
 // Which bottom-nav tab is active. Public because the task-posting flow's
 // success modal may switch tabs after publishing.
 final customerTabIndexProvider = StateProvider<int>((ref) => 0);
 
-/// Bottom-nav shell for the customer flow: Home / Chat / Pending / Account.
+/// Bottom-nav shell for the customer flow: Home / Chat / Activity / Rewards / Account.
 ///
 /// Each tab maps 1-to-1 to a dedicated screen — no shared screens, no
 /// content duplication between tabs:
 ///   0 → Home     (CustomerHomeScreen)
 ///   1 → Chat     (ChatScreen — conversations only)
-///   2 → Pending  (PendingScreen — bookings only)
+///   2 → Activity (ActivityScreen — discussion + check-in / check-out)
 ///   3 → Rewards  (ClientRewardsScreen — VIP & coupons, client only)
 ///   4 → Account  (ClientProfileScreen)
 class CustomerHomeShell extends ConsumerWidget {
@@ -40,11 +40,11 @@ class CustomerHomeShell extends ConsumerWidget {
       body: IndexedStack(
         index: index,
         children: const [
-          CustomerHomeScreen(),   // 0 — Home
-          ChatScreen(),           // 1 — Chat (conversations only)
-          PendingScreen(),        // 2 — Pending (bookings only)
-          ClientRewardsScreen(),  // 3 — Rewards (VIP & coupons)
-          ClientProfileScreen(),  // 4 — Account
+          CustomerHomeScreen(), // 0 — Home
+          ChatScreen(), // 1 — Chat (conversations only)
+          ActivityScreen(), // 2 — Activity
+          ClientRewardsScreen(), // 3 — Rewards (VIP & coupons)
+          ClientProfileScreen(), // 4 — Account
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -65,9 +65,9 @@ class CustomerHomeShell extends ConsumerWidget {
             label: AppStrings.chatTabLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.pending_actions_outlined),
-            selectedIcon: Icon(Icons.pending_actions_rounded),
-            label: AppStrings.pendingTabLabel,
+            icon: Icon(Icons.assignment_outlined),
+            selectedIcon: Icon(Icons.assignment_rounded),
+            label: AppStrings.activityTabLabel,
           ),
           NavigationDestination(
             icon: Icon(Icons.card_giftcard_outlined),
