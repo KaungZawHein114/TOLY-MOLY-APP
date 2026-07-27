@@ -49,6 +49,11 @@ class AuthApi {
 
   Future<Map<String, dynamic>> login(
       {required String phoneNumber, required String password}) {
+    assert(() {
+      final endpoint = _dio.options.baseUrl + '/api/auth/login';
+      debugPrint('AuthApi login endpoint: $endpoint');
+      return true;
+    }());
     return _post(
         "/api/auth/login", {"phone_number": phoneNumber, "password": password});
   }

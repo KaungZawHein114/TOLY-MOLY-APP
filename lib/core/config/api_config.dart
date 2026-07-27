@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 
 import 'local_config.dart';
 
+const String _androidEmulatorUrl = 'http://10.0.2.2:8000';
+
 /// Resolves the correct backend base URL for the current runtime environment.
 ///
 /// - Web / iOS simulator / desktop → localhost (same machine as the server)
@@ -15,18 +17,12 @@ String get apiBaseUrl {
   if (Platform.isIOS || Platform.isMacOS) return 'http://127.0.0.1:8000';
   if (Platform.isWindows || Platform.isLinux) return 'http://127.0.0.1:8000';
   if (Platform.isAndroid) {
-    // Detect emulator vs. physical device from the OS itself — never from
-    // whatever happens to be saved in local_config.dart. (A previous version
-    // trusted the saved value, which broke the emulator the moment
-    // physicalDeviceUrl held a real LAN IP left over from device testing.)
-    // The emulator's hostname is always "generic*" / "sdk_*" / "localhost";
-    // a real phone reports its actual device name.
-    final host = Platform.localHostname.toLowerCase();
-    final isEmulator = host.contains('generic') ||
-        host.contains('sdk') ||
-        host == 'localhost' ||
-        host.isEmpty;
-    return isEmulator ? 'http://10.0.2.2:8000' : physicalDeviceUrl;
+    // Keep Android deterministic: if local_config.dart is still at the template
+    // value, treat it as "emulator mode"; otherwise honor the developer's LAN
+    // URL for both USB-debugged phones and Wi-Fi phones.
+    return physicalDeviceUrl == _androidEmulatorUrl
+        ? _androidEmulatorUrl
+        : physicalDeviceUrl;
   }
   return physicalDeviceUrl;
 }
