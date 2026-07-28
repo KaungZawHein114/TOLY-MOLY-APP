@@ -5,8 +5,8 @@ import 'package:go_router/go_router.dart';
 import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
-import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import '../activity/activity_overview_screen.dart';
 import '../rewards/rewards_screen.dart';
 import 'activity_placeholder_screen.dart';
 import 'dashboard_screen.dart';
@@ -19,14 +19,14 @@ final workerTabIndexProvider = StateProvider<int>((ref) => 0);
 
 /// Bottom-nav shell for the WORKER flow only.
 ///
-/// This 5-tab structure (Home / Jobs / Pending / Rewards / Profile) and the
+/// This 5-tab structure (Home / Jobs / Activity / Rewards / Profile) and the
 /// Rewards & Gamification screen are STRICTLY worker-side. The Employer/Client
 /// experience lives in CustomerHomeShell, which keeps its own 4-tab
 /// NavigationBar and must NOT gain this tab set.
 ///
 ///   0 → Home     (WorkerDashboardScreen — the job board lives here)
-///   1 → Jobs     (ActivityScreen — the worker's job activity + bookings)
-///   2 → Pending  (interim placeholder — no dedicated worker screen yet)
+///   1 → Jobs     (ActivityScreen — discussion + check-in / check-out)
+///   2 → Activity (ActivityOverviewScreen — ongoing / pending / history)
 ///   3 → Rewards  (RewardsScreen — gamification, worker only)
 ///   4 → Profile  (TaskerProfileScreen)
 class WorkerHomeShell extends ConsumerWidget {
@@ -55,10 +55,12 @@ class WorkerHomeShell extends ConsumerWidget {
         index: index,
         children: const [
           WorkerDashboardScreen(), // 0 — Home
-          ActivityScreen(),        // 1 — Jobs
-          _PendingPlaceholder(),   // 2 — Pending (interim)
-          RewardsScreen(),         // 3 — Rewards
-          TaskerProfileScreen(),   // 4 — Profile
+          ActivityScreen(), // 1 — Jobs
+          ActivityOverviewScreen(
+            role: ActivityOverviewRole.tasker,
+          ), // 2 — Activity
+          RewardsScreen(), // 3 — Rewards
+          TaskerProfileScreen(), // 4 — Profile
         ],
       ),
       // 5 items → type MUST be fixed so the bar inherits our theme colors
@@ -82,9 +84,9 @@ class WorkerHomeShell extends ConsumerWidget {
             label: AppStrings.jobsTabLabel,
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.pending_actions_outlined),
-            activeIcon: Icon(Icons.pending_actions),
-            label: AppStrings.pendingTabLabel,
+            icon: Icon(Icons.assignment_outlined),
+            activeIcon: Icon(Icons.assignment),
+            label: AppStrings.activityTabLabel,
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.star_border),
@@ -97,49 +99,6 @@ class WorkerHomeShell extends ConsumerWidget {
             label: AppStrings.profileTabLabel,
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// Interim placeholder for the worker "Pending" tab until a dedicated screen
-/// exists. Kept intentionally minimal and theme-driven so it can be swapped
-/// for the real screen without touching the shell wiring above.
-class _PendingPlaceholder extends StatelessWidget {
-  const _PendingPlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(AppSpacing.xxl),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(
-                  Icons.pending_actions_outlined,
-                  size: 48,
-                  color: AppColors.purple500,
-                ),
-                const SizedBox(height: AppSpacing.md),
-                Text(
-                  AppStrings.comingSoonTitle,
-                  style: theme.textTheme.titleLarge,
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: AppSpacing.sm),
-                Text(
-                  AppStrings.comingSoonMessage,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

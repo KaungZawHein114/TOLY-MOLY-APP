@@ -127,6 +127,18 @@ class CustomerHomeScreen extends StatelessWidget {
               ),
             ),
 
+            const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.lg)),
+
+            // ── App guide entry ────────────────────────────────────────────
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.lg),
+                child: _HowToUseAppCard(
+                  onTap: () => context.push(Routes.clientGuide),
+                ),
+              ),
+            ),
+
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.xl)),
 
             // ── Recommended Workers ─────────────────────────────────────────
@@ -143,7 +155,7 @@ class CustomerHomeScreen extends StatelessWidget {
             const SliverToBoxAdapter(child: SizedBox(height: AppSpacing.md)),
             SliverToBoxAdapter(
               child: SizedBox(
-                height: 220,
+                height: 240,
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   padding:
@@ -801,6 +813,95 @@ class _SectionHeader extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+// ── App Guide Entry Card ─────────────────────────────────────
+
+class _HowToUseAppCard extends StatelessWidget {
+  final VoidCallback onTap;
+
+  const _HowToUseAppCard({required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Material(
+      color: AppColors.lightSurface,
+      borderRadius: BorderRadius.circular(AppRadius.lg),
+      shadowColor: AppColors.shadowSm,
+      elevation: 1,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        child: Container(
+          padding: const EdgeInsets.all(AppSpacing.md),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(AppRadius.lg),
+            border: Border.all(color: AppColors.onboardingDivider),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: AppColors.indigo100,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: const Icon(
+                  Icons.menu_book_rounded,
+                  color: AppColors.indigo700,
+                  size: 25,
+                ),
+              ),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'ဒီ App ကို ဘယ်လိုသုံးမလဲ?',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.titleSmall?.copyWith(
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      'အလုပ်တင်ခြင်း၊ worker ရှာခြင်း၊ booking နှင့် check-in/out အသုံးပြုနည်းများ',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                        height: 1.35,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                width: 34,
+                height: 34,
+                decoration: BoxDecoration(
+                  color: AppColors.purple100,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: AppColors.purple700,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

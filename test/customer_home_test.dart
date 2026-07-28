@@ -25,19 +25,31 @@ void main() {
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
     expect(find.text(AppStrings.homeCategoriesTitle), findsOneWidget);
 
-    // Chat tab → slot 1 (ChatScreen — conversations only).
-    await tester.tap(find.text(AppStrings.chatTabLabel));
+    // Jobs tab → slot 1 (discussion + check-in/check-out).
+    await tester.tap(find.text(AppStrings.jobsTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 1);
+    expect(find.text(AppStrings.jobsTabLabel), findsWidgets);
+    expect(find.text('စာတိုများ'), findsOneWidget);
+    expect(find.text('Check In / Out'), findsOneWidget);
 
     // Activity tab → slot 2 (ongoing / pending / history works).
     await tester.tap(find.text(AppStrings.activityTabLabel));
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 2);
-    expect(find.text('စာတိုများ'), findsOneWidget);
-    expect(find.text('Check In / Out'), findsOneWidget);
+    expect(find.text('လက်ရှိလုပ်နေသော အလုပ်များ'), findsOneWidget);
+
+    await tester.tap(find.text('စောင့်ဆိုင်းနေသည်'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('အတည်ပြုရန် စောင့်နေသော အလုပ်များ'), findsOneWidget);
+
+    await tester.tap(find.text('မှတ်တမ်း'));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+    expect(find.text('ပြီးဆုံးခဲ့သော အလုပ်မှတ်တမ်း'), findsOneWidget);
 
     // Account tab → slot 4.
     await tester.tap(find.text(AppStrings.profileTabLabel));
@@ -78,6 +90,30 @@ void main() {
     await tester.pump(const Duration(milliseconds: 400));
 
     expect(find.text(AppStrings.exploreAllWorkers), findsOneWidget);
+  });
+
+  testWidgets('How to use app card opens guide page with bottom nav',
+      (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
+    appRouter.go(Routes.customerHome);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    final guideCard = find.text('ဒီ App ကို ဘယ်လိုသုံးမလဲ?');
+    await tester.dragUntilVisible(
+      guideCard,
+      find.byType(CustomScrollView),
+      const Offset(0, -260),
+    );
+    await tester.pump();
+    await tester.tap(guideCard);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(find.text('အသုံးပြုနည်း'), findsOneWidget);
+    expect(find.text('TOLY MOLY App ဘယ်လိုအလုပ်လုပ်လဲ'), findsOneWidget);
+    expect(find.text(AppStrings.jobsTabLabel), findsWidgets);
+    expect(find.text(AppStrings.profileTabLabel), findsWidgets);
   });
 
   testWidgets('Profile worker signup card opens tasker signup', (tester) async {

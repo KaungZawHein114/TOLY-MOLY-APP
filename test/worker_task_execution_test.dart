@@ -36,6 +36,27 @@ void main() {
     expect(find.text(AppStrings.executionLeavingCta), findsOneWidget);
   });
 
+  testWidgets('Tasker Activity nav shows ongoing pending and history works',
+      (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
+    appRouter.go(Routes.dashboard);
+    await settle(tester);
+
+    await tester.tap(find.text(AppStrings.activityTabLabel));
+    await settle(tester);
+
+    expect(find.text(AppStrings.pendingTabLabel), findsNothing);
+    expect(find.text('လက်ရှိလုပ်နေသော အလုပ်များ'), findsOneWidget);
+
+    await tester.tap(find.text('စောင့်ဆိုင်းနေသည်'));
+    await settle(tester);
+    expect(find.text('အတည်ပြုရန် စောင့်နေသော အလုပ်များ'), findsOneWidget);
+
+    await tester.tap(find.text('မှတ်တမ်း'));
+    await settle(tester);
+    expect(find.text('ပြီးဆုံးခဲ့သော အလုပ်မှတ်တမ်း'), findsOneWidget);
+  });
+
   testWidgets(
       'Start Process walks through check-in and check-out automatically in demo',
       (tester) async {
