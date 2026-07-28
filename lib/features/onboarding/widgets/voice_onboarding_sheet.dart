@@ -10,7 +10,7 @@ import '../../../core/widgets/mascot/mascot_message_card.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
 import '../../../core/widgets/onboarding/read_aloud_button.dart';
-import '../../voice_task_posting/widgets/voice_input_button.dart';
+import '../../../core/widgets/voice_input_button.dart';
 import '../onboarding_models.dart';
 
 /// Onboarding voice mode surface (spec §4.1/§4.6). Pho Wa Yoke greets, shows a

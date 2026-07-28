@@ -16,8 +16,10 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 5 of 7: Task Description. "AI က ရေးပေးမည်" replaces the field's
-/// content with a generated description; the result stays editable.
+/// Task Description — no longer a step in either posting flow (voice fills it
+/// from the conversation, manual leaves it optional), but still the summary
+/// screen's edit target for the description row. "AI က ရေးပေးမည်" replaces the
+/// field's content with a generated description; the result stays editable.
 class TaskDescriptionScreen extends ConsumerStatefulWidget {
   const TaskDescriptionScreen({super.key});
 
@@ -79,7 +81,7 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
     if (_editMode) {
       context.pop();
     } else {
-      context.push(Routes.postTaskBudget);
+      context.push(Routes.postTaskReview);
     }
   }
 
@@ -88,7 +90,7 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
     final theme = Theme.of(context);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 5, totalSteps: 7),
+      progress: const OnboardingProgress(step: 4, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: TaskPostingStrings.descriptionTitle,
       title: TaskPostingStrings.descriptionTitle,

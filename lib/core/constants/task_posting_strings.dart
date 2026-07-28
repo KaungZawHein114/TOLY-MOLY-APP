@@ -1,7 +1,7 @@
-/// Static Burmese-first copy for the Task Posting Flow (Screen 1 through the
-/// review/publish success modal). Kept alongside [OnboardingStrings] but in
-/// its own file since this flow owns a large amount of copy, mirroring that
-/// file's convention.
+/// Static Burmese-first copy for the Task Posting Flow (method picker, the
+/// voice conversation, the manual steps and the shared summary). Kept alongside
+/// [OnboardingStrings] but in its own file since this flow owns a large amount
+/// of copy, mirroring that file's convention.
 class TaskPostingStrings {
   TaskPostingStrings._();
 
@@ -15,6 +15,29 @@ class TaskPostingStrings {
   static const String discardDraftConfirm = "ရပ်ဆိုင်းမည်";
   static const String discardDraftCancel = "ဆက်လုပ်မည်";
   static const String dropdownHint = "ရွေးချယ်ပါ";
+
+  // ── Posting method picker (the flow's entry screen) ──────────────────────
+  static const String methodTitle = "အလုပ်တင်နည်း ရွေးချယ်ပါ";
+  static const String methodMascotMessage =
+      "နှစ်မျိုးလုံး ရပါတယ်။ သင့်အတွက် အဆင်ပြေတာ ရွေးလိုက်ပါနော်။";
+  static const String methodVoiceLabel = "အသံဖြင့် ပြောမည်";
+  static const String methodVoiceSubtitle = "ဖိုးဝရုပ်နှင့် ပြောရင်း တင်မည်";
+  static const String methodManualLabel = "ကိုယ်တိုင် ဖြည့်မည်";
+  static const String methodManualSubtitle = "အဆင့် ၃ ဆင့် ဖြည့်မည်";
+  static const String methodHelperNote =
+      "နှစ်မျိုးလုံး နောက်ဆုံးမှာ အနှစ်ချုပ် စာမျက်နှာသို့ ရောက်ပါမည်။";
+
+  // ── Voice conversation (demo — scripted, offline) ────────────────────────
+  static const String voiceChatTitle = "ဖိုးဝရုပ်နှင့် ပြောဆိုပါ";
+  static const String voiceChatMascotMessage =
+      "မိုက်ကို နှိပ်ပြီး ပြောပါ။ စာရိုက်ချင်လည်း ရပါတယ်။";
+  static const String voiceChatInputHint = "စာရိုက်ပါ သို့မဟုတ် မိုက်ကို နှိပ်ပါ";
+  static const String voiceChatMicPrompt = "မိုက်ကို နှိပ်ပြီး ပြောပါ";
+  static const String voiceChatListening = "နားထောင်နေပါသည်…";
+  static const String voiceChatSendLabel = "ပို့မည်";
+  static const String voiceChatRestart = "အစမှ ပြန်စမည်";
+  static const String voiceChatDemoNote =
+      "ဒီမိုအတွက် ပြင်ဆင်ထားသော စကားဝိုင်း ဖြစ်ပါသည်။";
 
   // ── Screen 1: Task Title + Category Selection ───────────────────────────
   static const String categoryTitle = "ဘာအကူအညီ လိုအပ်ပါသလဲ";
@@ -31,7 +54,10 @@ class TaskPostingStrings {
   static const String specifyCategoryHint = "ဥပမာ - အိမ်ပြောင်းရွှေ့ခြင်း";
   static const String specifyCategoryRequiredError = "အမျိုးအစားကို ဖော်ပြပေးပါနော်";
 
-  // ── Screen 2: Task Location & Work Mode ──────────────────────────────────
+  // ── Screen 2: When & Where (date, time, place, urgent) ───────────────────
+  static const String whenWhereTitle = "ဘယ်အချိန် ဘယ်နေရာ လိုအပ်ပါသလဲ";
+  static const String scheduleSectionTitle = "ရက်စွဲနှင့် အချိန်";
+  static const String placeSectionTitle = "အလုပ်လုပ်မည့် နေရာ";
   static const String typeLocationTitle = "အလုပ်နေရာ ရွေးချယ်ပါ";
   static const String taskTypeOnSiteLabel = "နေရာသို့ လာရမည်";
   static const String taskTypeRemoteLabel = "အဝေးမှ လုပ်နိုင်သည်";
@@ -89,6 +115,17 @@ class TaskPostingStrings {
   static const String urgentStaffNote =
       "တိုလီမိုလီ ဝန်ဆောင်မှု အဖွဲ့သားများက အနီးအနားရှိ အလုပ်သမားများကို တိုက်ရိုက် ဆက်သွယ်ပြီး အလုပ်ပြီးမြောက်ရန် အရှိန်မြှင့်ပေးပါမည်။";
 
+  // ── Screen 3: Tasker Level + AI-estimated budget ─────────────────────────
+  // The client no longer types a price. Each level card carries the AI's
+  // estimate for that level, and the selected one becomes the task's budget.
+  static const String estimatedBudgetTitle = "ခန့်မှန်း ဈေးနှုန်း";
+  static const String estimatedByAi = "AI က ခန့်မှန်းထားသည်";
+  static const String estimatedBudgetNote =
+      "ဈေးနှုန်းကို သင်ရွေးထားသော အလုပ်သမား အဆင့်အလိုက် AI က တွက်ချက်ပေးပါသည်။";
+  static const String estimatedBudgetPlaceholder =
+      "အဆင့် ရွေးလိုက်ရင် ဈေးနှုန်း ပေါ်လာပါမည်";
+  static String tierPriceSublabel(String price) => "ခန့်မှန်း $price";
+
   // ── Screen 4: Tasker Tier Selection ──────────────────────────────────────
   static const String workersTierTitle = "အလုပ်သမား အဆင့် ရွေးချယ်ပါ";
   static const String workerTierSectionTitle = "အလုပ်သမား အဆင့်";
@@ -119,21 +156,11 @@ class TaskPostingStrings {
   static const String aiWriteButton = "AI က ရေးပေးမည်";
   static const String descriptionRequiredError = "အလုပ်အကြောင်း ဖော်ပြပေးပါနော်";
 
-  // ── Screen 6: Budget & AI Price Evaluation ───────────────────────────────
-  static const String budgetTitle = "ဈေးနှုန်း သတ်မှတ်ပါ";
-  static const String budgetInputLabel = "သင် ပေးလိုသော ဈေးနှုန်း (ကျပ်)";
-  static const String budgetInputHint = "ဥပမာ - ၁၀၀၀၀";
   static const String budgetCurrency = "ကျပ်";
-  static const String budgetRequiredError = "ဈေးနှုန်း ထည့်သွင်းပေးပါနော်";
-  static const String budgetEvalTitle = "AI ၏ အကြံပြုချက်";
-  static const String budgetVerdictLow = "ဈေးနှုန်း သတ်မှတ်ထားသည်ထက် နည်းနေနိုင်ပါသည်။";
-  static const String budgetVerdictReasonable = "ဈေးနှုန်း သင့်တင့်မျှတ ပါသည်။";
-  static const String budgetVerdictHigh = "ဈေးနှုန်း သတ်မှတ်ထားသည်ထက် များနေနိုင်ပါသည်။";
-  static const String budgetGuidanceNote =
-      "AI သည် အကြံပြုရုံသာ ဖြစ်ပါသည်။ နောက်ဆုံး ဈေးနှုန်းကို သင်ကိုယ်တိုင် ဆုံးဖြတ်ပါသည်။";
 
-  // ── Screen 7: Review & Submit ────────────────────────────────────────────
+  // ── Summary: Review & Submit (shared by the voice and manual flows) ──────
   static const String reviewTitle = "အချက်အလက်များ စစ်ဆေးပါ";
+  static const String reviewTitleLabel = "အလုပ် ခေါင်းစဉ်";
   static const String reviewCategoryLabel = "အလုပ်အမျိုးအစား";
   static const String reviewLocationLabel = "နေရာ";
   static const String reviewWorkMethodLabel = "လုပ်ဆောင်ပုံ";
@@ -143,7 +170,7 @@ class TaskPostingStrings {
   static const String reviewUrgentYes = "ဟုတ် (+၃,၀၀၀ ကျပ်)";
   static const String reviewUrgentNo = "မဟုတ်";
   static const String reviewTierLabel = "အလုပ်သမား အဆင့်";
-  static const String reviewBudgetLabel = "ဈေးနှုန်း";
+  static const String reviewBudgetLabel = "ခန့်မှန်း ဈေးနှုန်း (AI)";
   static const String reviewDescriptionLabel = "အသေးစိတ်ဖော်ပြချက်";
   static const String reviewNotesLabel = "ထပ်ဆောင်း မှတ်ချက် (ရွေးချယ်နိုင်)";
   static const String reviewNotesHint = "ပြောင်းလဲလိုသည်များ သို့မဟုတ် မှတ်ချက် ပြောပါ";

@@ -21,17 +21,20 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 1 of 7: Task Title + Category Selection. The user names the task in
-/// the title field (free text — AI detects a category from it) or picks a
-/// category card directly. "Other" reveals a free-text "specify category" box.
-class AiCategoryScreen extends ConsumerStatefulWidget {
-  const AiCategoryScreen({super.key});
+/// Manual step 1 of 3: Task Title. The user names the task in the title field
+/// (free text — AI detects a category from it) or picks a category card
+/// directly. "Other" reveals a free-text "specify category" box.
+///
+/// Also serves as the summary screen's "Title"/"Category" edit target, for
+/// tasks that came from either posting method.
+class TaskTitleScreen extends ConsumerStatefulWidget {
+  const TaskTitleScreen({super.key});
 
   @override
-  ConsumerState<AiCategoryScreen> createState() => _AiCategoryScreenState();
+  ConsumerState<TaskTitleScreen> createState() => _TaskTitleScreenState();
 }
 
-class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
+class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _customCategoryController;
   String? _aiSuggestion;
@@ -165,7 +168,7 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
     if (_editMode) {
       context.pop();
     } else {
-      context.push(Routes.postTaskTypeLocation);
+      context.push(Routes.postTaskWhenWhere);
     }
   }
 
@@ -177,7 +180,7 @@ class _AiCategoryScreenState extends ConsumerState<AiCategoryScreen> {
     final isOther = category == kOtherCategory;
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 1, totalSteps: 7),
+      progress: const OnboardingProgress(step: 1, totalSteps: 4),
       mascotState: PhoWaYokeState.thinking,
       mascotMessage: TaskPostingStrings.categoryTitle,
       title: TaskPostingStrings.categoryTitle,

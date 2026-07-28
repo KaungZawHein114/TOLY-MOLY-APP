@@ -3,13 +3,13 @@ import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../features/customer/customer_home_shell.dart';
-import '../../features/customer/task_posting/ai_category_screen.dart';
-import '../../features/customer/task_posting/budget_screen.dart';
-import '../../features/customer/task_posting/date_time_screen.dart';
+import '../../features/customer/task_posting/post_method_screen.dart';
 import '../../features/customer/task_posting/review_publish_screen.dart';
 import '../../features/customer/task_posting/task_description_screen.dart';
-import '../../features/customer/task_posting/task_type_location_screen.dart';
-import '../../features/customer/task_posting/workers_tier_urgency_screen.dart';
+import '../../features/customer/task_posting/task_title_screen.dart';
+import '../../features/customer/task_posting/tasker_level_screen.dart';
+import '../../features/customer/task_posting/voice_task_chat_screen.dart';
+import '../../features/customer/task_posting/when_where_screen.dart';
 import '../../features/customer/worker_list_screen.dart';
 import '../../features/customer/worker_profile_screen.dart';
 import '../../features/customer/client_profile_screen.dart';
@@ -32,10 +32,7 @@ import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/worker/wallet/wallet_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
-import '../../features/ai_task_posting/screens/ai_task_posting_screen.dart';
 import '../../features/auth/audio/auth_audio_nav_observer.dart';
-import '../../features/voice_task_posting/screens/voice_task_intro_screen.dart';
-import '../../features/voice_task_posting/screens/voice_task_review_screen.dart';
 import '../data/demo_data.dart';
 import '../theme/app_spacing.dart';
 import '../../features/customer/activity_screen.dart';
@@ -62,15 +59,14 @@ class Routes {
 
   // ── customer ────────────────────────────────────────────────────────────
   static const String customerHome = '/customer/home';
+  // Task posting: [postTask] is the method picker; from there either the voice
+  // conversation or the three manual steps, both ending on [postTaskReview].
   static const String postTask = '/customer/post-task';
-  static const String aiTaskPosting = '/customer/post-task/ai';
-  static const String voiceTaskPosting = '/customer/post-task/voice';
-  static const String voiceTaskReview = '/customer/post-task/voice/review';
-  static const String postTaskTypeLocation = '/customer/post-task/type-location';
-  static const String postTaskDateTime = '/customer/post-task/date-time';
-  static const String postTaskWorkersTier = '/customer/post-task/workers-tier';
+  static const String postTaskVoice = '/customer/post-task/voice';
+  static const String postTaskTitle = '/customer/post-task/title';
+  static const String postTaskWhenWhere = '/customer/post-task/when-where';
+  static const String postTaskTaskerLevel = '/customer/post-task/tasker-level';
   static const String postTaskDescription = '/customer/post-task/description';
-  static const String postTaskBudget = '/customer/post-task/budget';
   static const String postTaskReview = '/customer/post-task/review';
   static const String workerList = '/customer/workers';
   static const String workerProfile = '/customer/worker'; // + /:id
@@ -203,49 +199,35 @@ final List<RouteBase> _customerRoutes = [
     path: Routes.postTask,
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
-      child: const AiCategoryScreen(),
+      child: const PostMethodScreen(),
     ),
   ),
   GoRoute(
-    path: Routes.aiTaskPosting,
+    path: Routes.postTaskVoice,
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
-      child: const AiTaskPostingScreen(),
+      child: const VoiceTaskChatScreen(),
     ),
   ),
   GoRoute(
-    path: Routes.voiceTaskPosting,
+    path: Routes.postTaskTitle,
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
-      child: const VoiceTaskIntroScreen(),
+      child: const TaskTitleScreen(),
     ),
   ),
   GoRoute(
-    path: Routes.voiceTaskReview,
+    path: Routes.postTaskWhenWhere,
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
-      child: const VoiceTaskReviewScreen(),
+      child: const WhenWhereScreen(),
     ),
   ),
   GoRoute(
-    path: Routes.postTaskTypeLocation,
+    path: Routes.postTaskTaskerLevel,
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
-      child: const TaskTypeLocationScreen(),
-    ),
-  ),
-  GoRoute(
-    path: Routes.postTaskDateTime,
-    pageBuilder: (context, state) => _onboardingTransitionPage(
-      key: state.pageKey,
-      child: const DateTimeScreen(),
-    ),
-  ),
-  GoRoute(
-    path: Routes.postTaskWorkersTier,
-    pageBuilder: (context, state) => _onboardingTransitionPage(
-      key: state.pageKey,
-      child: const WorkersTierUrgencyScreen(),
+      child: const TaskerLevelScreen(),
     ),
   ),
   GoRoute(
@@ -253,13 +235,6 @@ final List<RouteBase> _customerRoutes = [
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
       child: const TaskDescriptionScreen(),
-    ),
-  ),
-  GoRoute(
-    path: Routes.postTaskBudget,
-    pageBuilder: (context, state) => _onboardingTransitionPage(
-      key: state.pageKey,
-      child: const BudgetScreen(),
     ),
   ),
   GoRoute(

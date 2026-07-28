@@ -4,6 +4,7 @@
 // ============================================================================
 
 import '../../../core/constants/task_posting_strings.dart';
+import '../../onboarding/onboarding_models.dart' show toBurmeseDigits;
 
 /// Sentinel category value for a client-specified ("Other") category. When
 /// [TaskDraft.category] equals this, the real label lives in
@@ -12,6 +13,17 @@ const String kOtherCategory = "Other";
 
 /// Flat platform fee added when a task is marked urgent.
 const int kUrgentFeeMmk = 3000;
+
+/// Formats an MMK amount Burmese-first for display: 22000 -> "၂၂,၀၀၀ ကျပ်".
+String formatBudgetMmk(int amount) {
+  final digits = toBurmeseDigits(amount).split("");
+  final out = StringBuffer();
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) out.write(",");
+    out.write(digits[i]);
+  }
+  return "$out ${TaskPostingStrings.budgetCurrency}";
+}
 
 /// Where the task happens.
 enum TaskType { onSite, remote }

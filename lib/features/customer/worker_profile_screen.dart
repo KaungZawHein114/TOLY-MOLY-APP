@@ -21,8 +21,8 @@ class WorkerProfileScreen extends ConsumerWidget {
   const WorkerProfileScreen({super.key, required this.worker});
 
   /// "Schedule Worker" starts a fresh task-posting draft with this worker's
-  /// category + tier already filled in, then jumps straight to the Location
-  /// step — the category-pick and tier-pick steps are skipped entirely since
+  /// category + tier already filled in, then jumps straight to the When & Where
+  /// step — the method picker, title and level steps are skipped entirely since
   /// they're no longer a choice (the client picked this exact worker).
   void _scheduleWorker(BuildContext context, WidgetRef ref) {
     ref.read(taskDraftProvider.notifier).state = TaskDraft(
@@ -30,7 +30,7 @@ class WorkerProfileScreen extends ConsumerWidget {
       workerTier: WorkerTier.values[worker.currentTier.clamp(1, 7) - 1],
       presetWorkerId: worker.id,
     );
-    context.push(Routes.postTaskTypeLocation);
+    context.push(Routes.postTaskWhenWhere);
   }
 
   @override

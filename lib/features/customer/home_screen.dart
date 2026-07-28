@@ -93,7 +93,7 @@ class CustomerHomeScreen extends StatelessWidget {
                         subtitle: AppStrings.homePostTaskSubtitle,
                         icon: Icons.edit_note_rounded,
                         filled: true,
-                        onTap: () => context.push(Routes.aiTaskPosting),
+                        onTap: () => context.push(Routes.postTask),
                       ),
                     ),
                     const SizedBox(width: AppSpacing.md),

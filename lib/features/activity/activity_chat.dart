@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import 'discussion/discussion_workspace_sheet.dart';
 
 // ---------------------------------------------------------------------------
 // SHARED ACTIVITY CHAT ENGINE (demo)
@@ -67,12 +68,17 @@ class DiscussionTask {
   final String timeSlot;
   final String location;
 
+  /// Urgent jobs carry a surcharge and are flagged in the discussion header, so
+  /// neither side can later claim they didn't know why the price differs.
+  final bool isUrgent;
+
   const DiscussionTask({
     required this.skillLabel,
     required this.budgetMmk,
     required this.date,
     required this.timeSlot,
     required this.location,
+    this.isUrgent = false,
   });
 
   DiscussionTask copyWith({
@@ -80,6 +86,7 @@ class DiscussionTask {
     String? date,
     String? timeSlot,
     String? location,
+    bool? isUrgent,
   }) {
     return DiscussionTask(
       skillLabel: skillLabel,
@@ -87,6 +94,7 @@ class DiscussionTask {
       date: date ?? this.date,
       timeSlot: timeSlot ?? this.timeSlot,
       location: location ?? this.location,
+      isUrgent: isUrgent ?? this.isUrgent,
     );
   }
 }
@@ -100,6 +108,7 @@ final discussionTaskProvider = StateProvider<DiscussionTask>(
     date: 'ဇွန် ၂၈ ရက်',
     timeSlot: 'နေ့လည် ၂:၀၀',
     location: 'ကမာရွတ်မြို့နယ်',
+    isUrgent: true,
   ),
 );
 
@@ -312,20 +321,24 @@ String? aiBlockReason(String text) {
 // Public openers
 // ---------------------------------------------------------------------------
 
+/// Opens the Phase-2 discussion surface.
+///
+/// Same signature as before so every caller (chat list, activity list, booking
+/// card) is untouched — but the destination is now the Collaborative Agreement
+/// Workspace in `discussion/`, where decisions are structured cards instead of
+/// a scroll of quick replies. The scripted quick-reply sheet below still backs
+/// the Phase-3 progress chat.
 void openDiscussionChat(
   BuildContext context, {
   required ActivityRole role,
   required String counterpartName,
   required String counterpartEmoji,
 }) {
-  _openSheet(
+  openDiscussionWorkspace(
     context,
-    _ChatSheet(
-      role: role,
-      isDiscussion: true,
-      counterpartName: counterpartName,
-      counterpartEmoji: counterpartEmoji,
-    ),
+    role: role,
+    counterpartName: counterpartName,
+    counterpartEmoji: counterpartEmoji,
   );
 }
 

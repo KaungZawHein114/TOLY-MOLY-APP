@@ -12,7 +12,7 @@ import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
 import '../../../core/widgets/onboarding/read_aloud_button.dart';
-import '../../voice_task_posting/widgets/voice_input_button.dart';
+import '../../../core/widgets/voice_input_button.dart';
 
 /// Tasker-Finding mode surface (spec §4.3). A modal bottom sheet that shows
 /// Pho Wa Yoke `thinking → success` while [AiService.matchTaskers] ranks the

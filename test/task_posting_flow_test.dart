@@ -8,6 +8,7 @@ import 'package:toly_moly/core/constants/task_posting_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 import 'package:toly_moly/core/utils/ai_mock.dart';
 import 'package:toly_moly/core/utils/ai_service.dart';
+import 'package:toly_moly/features/customer/task_posting/task_posting_models.dart';
 import 'package:toly_moly/features/customer/task_posting/task_posting_state.dart';
 
 Future<void> _settle(WidgetTester tester) async {
@@ -15,15 +16,31 @@ Future<void> _settle(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-/// Walks Screen 1 → Screen 7 (review) through the real UI, leaving the full
-/// posting stack in place WITHOUT publishing — the precondition for exercising
-/// the "Edit" links (which re-push routes already on the back stack).
-Future<void> _walkToReview(WidgetTester tester) async {
+/// Advances past the voice flow's scripted "listening"/"thinking" pauses.
+Future<void> _settleVoice(WidgetTester tester) async {
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 1600));
+  await tester.pump(const Duration(milliseconds: 1600));
+}
+
+ProviderContainer _containerAt(WidgetTester tester, Finder finder) =>
+    ProviderScope.containerOf(tester.element(finder));
+
+/// Walks the MANUAL method (method picker → title → when/where → level) to the
+/// summary through the real UI, leaving the whole stack in place WITHOUT
+/// publishing — the precondition for exercising the "Edit" links (which
+/// re-push routes already on the back stack).
+Future<void> _walkToSummary(WidgetTester tester) async {
   appRouter.go(Routes.postTask);
   await _settle(tester);
 
-  // Screen 1: pick a category card manually (scroll it into view first — the
-  // AI "Suggest Category" button sits above the grid).
+  // Method picker: choose "fill it in myself".
+  await tester.tap(find.text(TaskPostingStrings.methodManualLabel));
+  await _settle(tester);
+
+  // Step 1: title + pick a category card (scroll it into view first — the AI
+  // "Suggest Category" button sits above the grid).
+  await tester.enterText(find.byType(TextField).first, "အိမ် သန့်ရှင်းရေး");
   await tester.ensureVisible(find.text("အိမ်သန့်ရှင်းရေး"));
   await _settle(tester);
   await tester.tap(find.text("အိမ်သန့်ရှင်းရေး"));
@@ -31,42 +48,40 @@ Future<void> _walkToReview(WidgetTester tester) async {
   await tester.tap(find.text(TaskPostingStrings.continueButton));
   await _settle(tester);
 
-  // Screen 2: on-site + township dropdown + address.
+  // Step 2: date/time via the provider (native pickers), on-site + township +
+  // address, and the urgent switch — all one step now.
+  final container = _containerAt(
+      tester, find.text(TaskPostingStrings.whenWhereTitle).first);
+  container.read(taskDraftProvider.notifier).state = container
+      .read(taskDraftProvider)
+      .copyWith(date: DateTime.now(), timeSlot: "10:00");
+  await _settle(tester);
+  await tester.ensureVisible(find.text(TaskPostingStrings.taskTypeOnSiteLabel));
+  await _settle(tester);
   await tester.tap(find.text(TaskPostingStrings.taskTypeOnSiteLabel));
+  await _settle(tester);
+  await tester.ensureVisible(find.byType(DropdownButton<String>));
   await _settle(tester);
   await tester.tap(find.byType(DropdownButton<String>));
   await _settle(tester);
   await tester.tap(find.text("လှိုင်").last);
   await _settle(tester);
   await tester.enterText(find.byType(TextField).first, "အမှတ် ၁၂");
-  await tester.tap(find.text(TaskPostingStrings.continueButton));
   await _settle(tester);
-
-  // Screen 3: set date/time via the provider (native pickers), toggle urgent.
-  final container = ProviderScope.containerOf(
-      tester.element(find.text(TaskPostingStrings.dateTimeTitle).first));
-  container.read(taskDraftProvider.notifier).state = container
-      .read(taskDraftProvider)
-      .copyWith(date: DateTime.now(), timeSlot: "10:00");
+  // The urgent card sits at the bottom of this now-longer step, so scroll the
+  // step's own scroll view rather than relying on ensureVisible's minimal
+  // alignment (which can leave the switch under the pinned header).
+  await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
   await _settle(tester);
   await tester.tap(find.byType(Switch));
   await _settle(tester);
+  expect(container.read(taskDraftProvider).urgent, isTrue);
+
   await tester.tap(find.text(TaskPostingStrings.continueButton));
   await _settle(tester);
 
-  // Screen 4: tier.
+  // Step 3: tasker level — this is also what sets the AI-estimated budget.
   await tester.tap(find.text(TaskPostingStrings.tier1Label));
-  await _settle(tester);
-  await tester.tap(find.text(TaskPostingStrings.continueButton));
-  await _settle(tester);
-
-  // Screen 5: description.
-  await tester.enterText(find.byType(TextField).first, "ရေယိုနေတယ်");
-  await tester.tap(find.text(TaskPostingStrings.continueButton));
-  await _settle(tester);
-
-  // Screen 6: budget.
-  await tester.enterText(find.byType(TextField).first, "10000");
   await _settle(tester);
   await tester.tap(find.text(TaskPostingStrings.continueButton));
   await _settle(tester);
@@ -80,7 +95,7 @@ void main() {
     appRouter.go(Routes.onboardingWelcome);
   });
 
-  testWidgets('Full happy path: walk to review, then publish to success modal',
+  testWidgets('Manual method: walk to summary, then publish to success modal',
       (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3.0;
@@ -88,9 +103,15 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
-    await _walkToReview(tester);
+    await _walkToSummary(tester);
 
     expect(find.text(TaskPostingStrings.reviewTitle), findsWidgets);
+
+    // The budget was set by the level step, never typed by the client.
+    final container =
+        _containerAt(tester, find.text(TaskPostingStrings.reviewTitle).first);
+    expect(container.read(taskDraftProvider).budgetMmk, isNotNull);
+
     await tester.tap(find.text(TaskPostingStrings.publishButton));
     await _settle(tester);
 
@@ -101,36 +122,36 @@ void main() {
   });
 
   testWidgets(
-      'Review "Edit" re-pushes a route already on the stack without crashing, '
-      'preserves data, and returns to review', (tester) async {
+      'Summary "Edit" re-pushes a route already on the stack without crashing, '
+      'preserves data, and returns to the summary', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
 
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
-    await _walkToReview(tester);
+    await _walkToSummary(tester);
     expect(find.text(TaskPostingStrings.reviewTitle), findsWidgets);
 
-    // Tap the FIRST "Edit" (Task Title & Category → Screen 1). Screen 1 sits at
-    // the BOTTOM of the stack, so this is the worst-case duplicate-key path —
-    // it used to crash the Navigator with a red error screen.
+    // Tap the FIRST "Edit" (Title → step 1). Step 1 sits at the BOTTOM of the
+    // stack, so this is the worst-case duplicate-key path — it used to crash
+    // the Navigator with a red error screen.
     await tester.ensureVisible(find.text(TaskPostingStrings.editLink).first);
     await _settle(tester);
     await tester.tap(find.text(TaskPostingStrings.editLink).first);
     await _settle(tester);
 
-    // No crash, and Screen 1 (with the save-and-return affordance) is shown.
+    // No crash, and step 1 (with the save-and-return affordance) is shown.
     expect(tester.takeException(), isNull);
     expect(find.text(TaskPostingStrings.categoryTitle), findsWidgets);
     expect(find.text(TaskPostingStrings.saveButton), findsOneWidget);
 
     // Previously entered category is still selected (data preserved).
-    final container = ProviderScope.containerOf(
-        tester.element(find.text(TaskPostingStrings.categoryTitle).first));
+    final container =
+        _containerAt(tester, find.text(TaskPostingStrings.categoryTitle).first);
     expect(container.read(taskDraftProvider).category, "Cleaner");
 
-    // Save returns to the review screen, still crash-free.
+    // Save returns to the summary screen, still crash-free.
     await tester.tap(find.text(TaskPostingStrings.saveButton));
     await _settle(tester);
     expect(tester.takeException(), isNull);
@@ -138,10 +159,49 @@ void main() {
     expect(container.read(taskDraftProvider).category, "Cleaner");
   });
 
-  testWidgets('Screen 1 "Suggest Category": tapping detects Plumber (mock path)',
-      (tester) async {
+  testWidgets('Voice method: the scripted conversation fills the same draft '
+      'and lands on the same summary screen', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 3.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.postTask);
+    await _settle(tester);
+
+    await tester.tap(find.text(TaskPostingStrings.methodVoiceLabel));
+    await _settle(tester);
+    expect(find.text(taskVoiceScript.first.question), findsOneWidget);
+
+    final container =
+        _containerAt(tester, find.text(taskVoiceScript.first.question));
+
+    // Answer every scripted question by tapping its first quick reply.
+    for (var i = 0; i < taskVoiceScript.length; i++) {
+      await tester.tap(find.byType(ActionChip).first);
+      await _settleVoice(tester);
+    }
+    await _settleVoice(tester);
+
+    // Same summary screen the manual flow reaches — no duplicate.
+    expect(find.text(TaskPostingStrings.reviewTitle), findsWidgets);
+
+    // Every field the summary shows was filled by the conversation.
+    final draft = container.read(taskDraftProvider);
+    expect(draft.category, isNotNull);
+    expect(draft.title, isNotEmpty);
+    expect(draft.township, "လှိုင်");
+    expect(draft.date, isNotNull);
+    expect(draft.timeSlot, isNotNull);
+    expect(draft.workerTier, isNotNull);
+    expect(draft.budgetMmk, isNotNull);
+  });
+
+  testWidgets('Title step "Suggest Category": tapping detects Plumber '
+      '(mock path)', (tester) async {
+    await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
+    appRouter.go(Routes.postTaskTitle);
     await _settle(tester);
 
     await tester.enterText(find.byType(TextField).first, "ရေယိုနေတယ်");
@@ -151,6 +211,44 @@ void main() {
 
     expect(categorizeJob("ရေယိုနေတယ်"), "Plumber");
     expect(find.textContaining("Plumber"), findsOneWidget);
+  });
+
+  test('The AI budget estimate scales with the tasker level', () {
+    final tier1 = estimateTaskBudgetMmk(category: "Plumber", tierNumber: 1);
+    final tier7 = estimateTaskBudgetMmk(category: "Plumber", tierNumber: 7);
+    expect(tier1, lessThan(tier7));
+    // Urgent work costs more at the same level, and every figure is a round
+    // number a client can read at a glance.
+    expect(
+      estimateTaskBudgetMmk(category: "Plumber", tierNumber: 3, urgent: true),
+      greaterThan(estimateTaskBudgetMmk(category: "Plumber", tierNumber: 3)),
+    );
+    expect(tier7 % 500, 0);
+    // An unknown category still returns a usable figure, never zero.
+    expect(estimateTaskBudgetMmk(category: "", tierNumber: 3), greaterThan(0));
+  });
+
+  test('The voice script extracts every field the summary needs', () {
+    final need = voiceTaskNeed("မီးဖိုချောင်က ရေပိုက် ယိုနေတယ်");
+    expect(need.category, "Plumber");
+    expect(need.title, isNotEmpty);
+
+    expect(voiceTaskPlace("လှိုင် မြို့နယ်မှာ ပါ").township, "လှိုင်");
+    expect(voiceTaskPlace("ဘယ်နေရာမှန်း မသိ").township, isEmpty);
+
+    expect(voiceTaskSchedule("မနက်ဖြန် မနက်").timeSlot, "09:00");
+    expect(voiceTaskSchedule("ဒီနေ့ ညနေ").timeSlot, "17:00");
+
+    expect(voiceTaskUrgent("ဟုတ်ကဲ့၊ အရေးပေါ်"), isTrue);
+    expect(voiceTaskUrgent("မဟုတ်ပါ"), isFalse);
+
+    expect(voiceTaskTierNumber(TaskPostingStrings.tier5Label), 5);
+    expect(voiceTaskTierNumber("ဘာမှ မပြောဘူး"), 3); // safe middle default
+  });
+
+  test('formatBudgetMmk renders Burmese digits with thousands separators', () {
+    expect(formatBudgetMmk(22000), "၂၂,၀၀၀ ${TaskPostingStrings.budgetCurrency}");
+    expect(formatBudgetMmk(500), "၅၀၀ ${TaskPostingStrings.budgetCurrency}");
   });
 
   test('PriceRange.statusFor classifies amount against the AI band', () {
@@ -181,7 +279,8 @@ void main() {
   });
 
   testWidgets(
-      'Screen 4 (section title + info button + 7 tier cards) does not overflow at 360dp width and 1.6x text scale',
+      'Tasker level step (estimate card + section title + info button + 7 tier '
+      'cards) does not overflow at 360dp width and 1.6x text scale',
       (tester) async {
     await tester.binding.setSurfaceSize(const Size(360, 800));
     addTearDown(() => tester.binding.setSurfaceSize(null));
@@ -195,7 +294,7 @@ void main() {
         child: const ProviderScope(child: TolyMolyApp()),
       ),
     );
-    appRouter.go(Routes.postTaskWorkersTier);
+    appRouter.go(Routes.postTaskTaskerLevel);
     await _settle(tester);
 
     expect(tester.takeException(), isNull);

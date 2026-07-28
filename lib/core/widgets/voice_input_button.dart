@@ -2,14 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:speech_to_text/speech_recognition_error.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 
-import '../../../core/theme/app_colors.dart';
+import '../theme/app_colors.dart';
 
-/// Large, on-device speech-to-text button for the voice task flow.
+/// Large, on-device speech-to-text button, shared by the tasker shortlist sheet
+/// and the onboarding voice sheet.
 ///
-/// Separate from ai_task_posting's VoiceRecordButton (which hard-forces
-/// Burmese): this one defaults to ENGLISH for the current testing phase, but
-/// the locale is a parameter, so switching the whole flow to Burmese later is
-/// a one-line change at the call site — no rewrite here.
+/// Defaults to ENGLISH for the current testing phase, but the locale is a
+/// parameter, so switching a caller to Burmese later is a one-line change at
+/// the call site — no rewrite here.
+///
+/// Note this is REAL recognition. The task-posting voice flow is a scripted
+/// demo and deliberately uses its own mock mic instead.
 ///
 /// Recognized words stream back live via [onPartialResult] as the user speaks,
 /// and the final transcript via [onFinalResult] once they stop.

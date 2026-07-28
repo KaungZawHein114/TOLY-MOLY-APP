@@ -490,6 +490,199 @@ List<({int workerId, String reason})> matchTaskersMock(
 }
 
 // ----------------------------------------------------------------------------
+// Voice task posting (demo) — scripted conversation + synchronous extraction.
+// ----------------------------------------------------------------------------
+// The voice posting flow is a DEMO: there is no speech engine and no model
+// behind it. Pho Wa Yoke walks a fixed question script, and each answer (typed,
+// tapped as a quick reply, or handed over by the mock mic) is read here with
+// the same keyword matching the rest of this file uses. Nothing is invented:
+// a field that can't be read falls back to an obvious, sensible default so the
+// summary screen is never blank.
+
+/// The fields the scripted conversation collects, in the order it asks for them.
+enum VoiceTaskField { need, place, schedule, urgency, tier }
+
+/// One scripted turn: what Pho Wa Yoke asks, the canned transcript the mock mic
+/// "hears" for that turn, and tappable quick replies for keyboard-free demos.
+typedef VoiceTaskQuestion = ({
+  VoiceTaskField field,
+  String question,
+  String micTranscript,
+  List<String> quickReplies,
+});
+
+/// The whole demo conversation, start to finish. Five short questions is enough
+/// to fill every field the summary screen shows.
+const List<VoiceTaskQuestion> taskVoiceScript = [
+  (
+    field: VoiceTaskField.need,
+    question: "မင်္ဂလာပါ။ ကျွန်တော် ဖိုးဝရုပ်ပါ။ ဘာအကူအညီ လိုအပ်လဲ ပြောပြပါနော်။",
+    micTranscript: "မီးဖိုချောင်က ရေပိုက် ယိုနေလို့ ပြင်ချင်ပါတယ်",
+    quickReplies: [
+      "ရေပိုက် ယိုနေတယ်",
+      "အိမ် သန့်ရှင်းရေး လုပ်ချင်တယ်",
+      "ပန်ကာ တပ်ချင်တယ်",
+    ],
+  ),
+  (
+    field: VoiceTaskField.place,
+    question: "ရပါပြီ။ ဘယ်မြို့နယ်မှာလဲ ပြောပေးပါ။",
+    micTranscript: "လှိုင် မြို့နယ်မှာ ပါ",
+    quickReplies: ["လှိုင်", "ကမာရွတ်", "မရမ်းကုန်း"],
+  ),
+  (
+    field: VoiceTaskField.schedule,
+    question: "ဘယ်အချိန် လိုအပ်ပါသလဲ။",
+    micTranscript: "မနက်ဖြန် မနက်ပိုင်း ရောက်ပေးပါ",
+    quickReplies: ["ဒီနေ့ ညနေ", "မနက်ဖြန် မနက်", "နောက်တစ်ပတ်"],
+  ),
+  (
+    field: VoiceTaskField.urgency,
+    question: "ဒါက အရေးပေါ် အလုပ်လား။",
+    micTranscript: "မဟုတ်ပါဘူး၊ ပုံမှန်ပါ",
+    quickReplies: ["ဟုတ်ကဲ့၊ အရေးပေါ်", "မဟုတ်ပါ"],
+  ),
+  (
+    field: VoiceTaskField.tier,
+    question: "ဘယ်လို အလုပ်သမား အဆင့် လိုချင်ပါသလဲ။",
+    micTranscript: "အတည်ပြုပြီးသား လုပ်သား ဖြစ်ရင် ကောင်းမယ်",
+    quickReplies: [
+      TaskPostingStrings.tier1Label,
+      TaskPostingStrings.tier3Label,
+      TaskPostingStrings.tier5Label,
+    ],
+  ),
+];
+
+/// Pho Wa Yoke's closing line, spoken just before the summary screen opens.
+const String voiceTaskWrapUpMessage =
+    "ကျေးဇူးတင်ပါတယ်။ အချက်အလက်တွေ စုစည်းပြီးပါပြီ — အနှစ်ချုပ်ကို ပြပါမယ်နော်။";
+
+/// Reads the "what do you need?" answer into a category, a short title and a
+/// templated description. [answer] doubles as the title so the client's own
+/// words survive to the summary.
+({String category, String title, String description}) voiceTaskNeed(
+  String answer,
+) {
+  final category = _skillForQuery(answer);
+  final title = answer.trim();
+  return (
+    category: category,
+    title: title.isEmpty ? generateTaskDescription(category, '') : title,
+    description: generateTaskDescription(category, answer),
+  );
+}
+
+/// Matches a spoken place against the Yangon township list. Anything we can't
+/// recognise is kept verbatim as a free-text address instead of being dropped.
+({String township, String address}) voiceTaskPlace(String answer) {
+  final text = answer.trim();
+  for (final t in TaskPostingStrings.yangonTownships) {
+    if (text.contains(t)) return (township: t, address: text);
+  }
+  return (township: '', address: text);
+}
+
+/// Reads a spoken date/time into a concrete slot. Defaults to tomorrow morning
+/// — the most common request — so the summary always has a real date.
+({DateTime date, String timeSlot}) voiceTaskSchedule(String answer) {
+  final lower = answer.toLowerCase();
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+
+  var date = today.add(const Duration(days: 1));
+  if (_hasAny(lower, const ["ဒီနေ့", "ယနေ့", "အခု", "today", "now"])) {
+    date = today;
+  } else if (_hasAny(lower, const ["နောက်တစ်ပတ်", "သီတင်းပတ်", "next week"])) {
+    date = today.add(const Duration(days: 7));
+  }
+
+  var timeSlot = "09:00";
+  if (_hasAny(lower, const ["ညနေ", "ည ", "afternoon", "evening", "night"])) {
+    timeSlot = "17:00";
+  } else if (_hasAny(lower, const ["နေ့လယ်", "မွန်းတည့်", "noon", "midday"])) {
+    timeSlot = "12:00";
+  }
+  // An explicit hour ("၉ နာရီ" / "9am") always wins over the coarse guess.
+  final hour = _firstNumber(_asciiDigits(answer));
+  if (hour != null && hour >= 1 && hour <= 23) {
+    final isPm = hour < 12 &&
+        _hasAny(lower, const ["ညနေ", "pm", "afternoon", "evening"]);
+    final normalized = isPm ? hour + 12 : hour;
+    timeSlot = "${normalized.toString().padLeft(2, '0')}:00";
+  }
+  return (date: date, timeSlot: timeSlot);
+}
+
+/// True only on an explicit "yes, it's urgent" — silence means not urgent.
+bool voiceTaskUrgent(String answer) {
+  final lower = answer.toLowerCase();
+  if (_hasAny(lower, const ["မဟုတ်", "မလို", "no", "not urgent", "ပုံမှန်"])) {
+    return false;
+  }
+  return _hasAny(
+      lower, const ["အရေးပေါ်", "မြန်မြန်", "ချက်ချင်း", "urgent", "asap", "yes"]);
+}
+
+/// Maps a spoken tier answer to a tier number, 1-7. Falls back to tier 3
+/// ("အတည်ပြုပြီး လုပ်သား") — the safe middle of the ladder.
+int voiceTaskTierNumber(String answer) {
+  const labels = [
+    TaskPostingStrings.tier1Label,
+    TaskPostingStrings.tier2Label,
+    TaskPostingStrings.tier3Label,
+    TaskPostingStrings.tier4Label,
+    TaskPostingStrings.tier5Label,
+    TaskPostingStrings.tier6Label,
+    TaskPostingStrings.tier7Label,
+  ];
+  final text = answer.trim();
+  for (var i = 0; i < labels.length; i++) {
+    if (text.contains(labels[i])) return i + 1;
+  }
+  final lower = text.toLowerCase();
+  if (_hasAny(lower, const ["ထိပ်တန်း", "အကောင်းဆုံး", "best", "top"])) return 7;
+  if (_hasAny(lower, const ["ကျွမ်းကျင်", "အဆင့်မြင့်", "expert", "pro"])) return 5;
+  if (_hasAny(lower, const ["အသစ်", "စတင်", "သက်သာ", "cheap", "new"])) return 1;
+  return 3;
+}
+
+// ----------------------------------------------------------------------------
+// AI budget estimate — the client no longer types a price; the tasker level
+// they pick determines it. Deterministic and offline: a per-category base rate
+// scaled by the tier ladder, so every tier card can show its own figure.
+// ----------------------------------------------------------------------------
+
+const Map<String, int> _categoryBaseRateMmk = {
+  "Plumber": 15000,
+  "Electrician": 18000,
+  "AC Technician": 25000,
+  "Cleaner": 12000,
+  "Carpenter": 20000,
+  "Tutor": 15000,
+  "Gardener": 12000,
+  "Delivery": 8000,
+  "Handyman": 15000,
+};
+
+/// Tier 1 (newest) → tier 7 (elite) price multipliers.
+const List<double> _tierRateFactor = [0.8, 0.9, 1.0, 1.15, 1.3, 1.5, 1.75];
+
+/// The AI's estimated budget in MMK for [category] at [tierNumber] (1-7),
+/// rounded to the nearest 500 so it reads like a real quote. Urgent tasks carry
+/// a 10% premium on top (the flat urgent platform fee is shown separately).
+int estimateTaskBudgetMmk({
+  required String category,
+  required int tierNumber,
+  bool urgent = false,
+}) {
+  final base = _categoryBaseRateMmk[category] ?? 15000;
+  final factor = _tierRateFactor[(tierNumber - 1).clamp(0, 6)];
+  final raw = base * factor * (urgent ? 1.1 : 1.0);
+  return (raw / 500).round() * 500;
+}
+
+// ----------------------------------------------------------------------------
 // Internal keyword matcher — maps any free text to a known worker skill.
 // Lifted to file scope so the chatbot's app-topic gate can reuse the same set.
 // ----------------------------------------------------------------------------

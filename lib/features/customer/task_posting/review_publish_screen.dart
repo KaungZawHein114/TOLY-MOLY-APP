@@ -19,9 +19,14 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 7 of 7: Review & Submit. Each summary row's "Edit" link pushes back to
-/// the owning screen in edit mode (`?edit=1`) — that screen pre-fills from the
-/// shared draft and, on save, pops straight back here with data preserved.
+/// The Summary — the single screen BOTH posting methods end on. Whether the
+/// draft was dictated to Pho Wa Yoke or typed through the manual steps, it is
+/// this screen that reviews and publishes it.
+///
+/// Each row's "Edit" link pushes the owning screen in edit mode (`?edit=1`) —
+/// that screen pre-fills from the shared draft and, on save, pops straight back
+/// here with data preserved. Identical for both methods, since both wrote to
+/// the same [taskDraftProvider].
 class ReviewPublishScreen extends ConsumerStatefulWidget {
   const ReviewPublishScreen({super.key});
 
@@ -128,7 +133,7 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
     final isRemote = draft.taskType == TaskType.remote;
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 7, totalSteps: 7),
+      progress: const OnboardingProgress(step: 4, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: TaskPostingStrings.reviewTitle,
       title: TaskPostingStrings.reviewTitle,
@@ -148,51 +153,58 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 _SummaryRow(
+                  label: TaskPostingStrings.reviewTitleLabel,
+                  value: draft.title.isEmpty ? "-" : draft.title,
+                  onEdit: () => _editAt(Routes.postTaskTitle),
+                ),
+                _SummaryRow(
                   label: TaskPostingStrings.reviewCategoryLabel,
                   value: draft.effectiveCategory.isEmpty
                       ? "-"
                       : draft.effectiveCategory,
-                  onEdit: () => _editAt(Routes.postTask),
+                  onEdit: () => _editAt(Routes.postTaskTitle),
                 ),
                 _SummaryRow(
                   label: TaskPostingStrings.reviewLocationLabel,
                   value: _formatLocation(draft),
-                  onEdit: () => _editAt(Routes.postTaskTypeLocation),
+                  onEdit: () => _editAt(Routes.postTaskWhenWhere),
                 ),
                 if (isRemote && draft.remoteWorkMethod != null)
                   _SummaryRow(
                     label: TaskPostingStrings.reviewWorkMethodLabel,
                     value: draft.remoteWorkMethod!.label,
-                    onEdit: () => _editAt(Routes.postTaskTypeLocation),
+                    onEdit: () => _editAt(Routes.postTaskWhenWhere),
                   ),
                 _SummaryRow(
                   label: TaskPostingStrings.reviewDateLabel,
                   value: _formatDate(draft.date),
-                  onEdit: () => _editAt(Routes.postTaskDateTime),
+                  onEdit: () => _editAt(Routes.postTaskWhenWhere),
                 ),
                 _SummaryRow(
                   label: TaskPostingStrings.reviewTimeLabel,
                   value: draft.timeSlot ?? "-",
-                  onEdit: () => _editAt(Routes.postTaskDateTime),
+                  onEdit: () => _editAt(Routes.postTaskWhenWhere),
                 ),
                 _SummaryRow(
                   label: TaskPostingStrings.reviewUrgentLabel,
                   value: draft.urgent
                       ? TaskPostingStrings.reviewUrgentYes
                       : TaskPostingStrings.reviewUrgentNo,
-                  onEdit: () => _editAt(Routes.postTaskDateTime),
+                  onEdit: () => _editAt(Routes.postTaskWhenWhere),
                 ),
                 _SummaryRow(
                   label: TaskPostingStrings.reviewTierLabel,
                   value: draft.workerTier?.label ?? "-",
-                  onEdit: () => _editAt(Routes.postTaskWorkersTier),
+                  onEdit: () => _editAt(Routes.postTaskTaskerLevel),
                 ),
+                // Budget is AI-derived from the tasker level, so its Edit link
+                // goes to the level step rather than to a price field.
                 _SummaryRow(
                   label: TaskPostingStrings.reviewBudgetLabel,
                   value: draft.budgetMmk == null
                       ? "-"
-                      : "${draft.budgetMmk} ${TaskPostingStrings.budgetCurrency}",
-                  onEdit: () => _editAt(Routes.postTaskBudget),
+                      : formatBudgetMmk(draft.budgetMmk!),
+                  onEdit: () => _editAt(Routes.postTaskTaskerLevel),
                 ),
                 _SummaryRow(
                   label: TaskPostingStrings.reviewDescriptionLabel,

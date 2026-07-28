@@ -6,6 +6,7 @@ import '../../../core/constants/task_posting_strings.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/ai_mock.dart';
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
@@ -15,20 +16,22 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Step 2 of 7: Task Location & Work Mode. On-site shows a township dropdown,
-/// an address field and a map picker (current vs. different location). Remote
-/// shows work method / completion / deliverable choices instead.
-class TaskTypeLocationScreen extends ConsumerStatefulWidget {
-  const TaskTypeLocationScreen({super.key});
+/// Manual step 2 of 3: When & Where — date, time, place and the urgent option
+/// in one step. On-site shows a township dropdown, an address field and a map
+/// picker (current vs. different location); remote shows work method /
+/// completion / deliverable choices instead.
+///
+/// Also the summary screen's edit target for every date/time/place/urgent row.
+class WhenWhereScreen extends ConsumerStatefulWidget {
+  const WhenWhereScreen({super.key});
 
   @override
-  ConsumerState<TaskTypeLocationScreen> createState() =>
-      _TaskTypeLocationScreenState();
+  ConsumerState<WhenWhereScreen> createState() => _WhenWhereScreenState();
 }
 
-class _TaskTypeLocationScreenState
-    extends ConsumerState<TaskTypeLocationScreen> {
+class _WhenWhereScreenState extends ConsumerState<WhenWhereScreen> {
   late final TextEditingController _addressController;
+  String? _scheduleError;
   String? _taskTypeError;
   String? _locationError;
 
@@ -65,6 +68,33 @@ class _TaskTypeLocationScreenState
     _update(_draft.copyWith(township: value));
     setState(() => _locationError = null);
   }
+
+  Future<void> _pickDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _draft.date ?? now,
+      firstDate: now,
+      lastDate: now.add(const Duration(days: 90)),
+    );
+    if (picked != null) {
+      _update(_draft.copyWith(date: picked));
+      setState(() => _scheduleError = null);
+    }
+  }
+
+  Future<void> _pickTime() async {
+    final picked =
+        await showTimePicker(context: context, initialTime: TimeOfDay.now());
+    if (picked != null) {
+      final formatted =
+          "${picked.hour.toString().padLeft(2, '0')}:${picked.minute.toString().padLeft(2, '0')}";
+      _update(_draft.copyWith(timeSlot: formatted));
+      setState(() => _scheduleError = null);
+    }
+  }
+
+  void _setUrgent(bool value) => _update(_draft.copyWith(urgent: value));
 
   Future<void> _openMapSheet() async {
     final choice = await showModalBottomSheet<String>(
@@ -121,6 +151,11 @@ class _TaskTypeLocationScreenState
     final draft = _draft;
     final address = _addressController.text.trim();
     setState(() {
+      _scheduleError = draft.date == null
+          ? TaskPostingStrings.dateRequiredError
+          : draft.timeSlot == null
+              ? TaskPostingStrings.timeRequiredError
+              : null;
       _taskTypeError = draft.taskType == null
           ? TaskPostingStrings.taskTypeRequiredError
           : null;
@@ -134,13 +169,32 @@ class _TaskTypeLocationScreenState
             : null;
       }
     });
-    if (_taskTypeError != null || _locationError != null) return;
+    if (_scheduleError != null ||
+        _taskTypeError != null ||
+        _locationError != null) {
+      return;
+    }
 
-    _update(draft.copyWith(address: address));
+    final updated = draft.copyWith(address: address);
+    _update(updated);
     if (_editMode) {
       context.pop();
+      return;
+    }
+    if (updated.presetWorkerId != null) {
+      // Scheduling a specific worker already fixed the category + tier on their
+      // profile, so the level step has nothing left to ask — price the task at
+      // that worker's tier and go straight to the summary.
+      _update(updated.copyWith(
+        budgetMmk: estimateTaskBudgetMmk(
+          category: updated.effectiveCategory,
+          tierNumber: updated.workerTier?.number ?? 1,
+          urgent: updated.urgent,
+        ),
+      ));
+      context.push(Routes.postTaskReview);
     } else {
-      context.push(Routes.postTaskDateTime);
+      context.push(Routes.postTaskTaskerLevel);
     }
   }
 
@@ -150,14 +204,47 @@ class _TaskTypeLocationScreenState
     final draft = ref.watch(taskDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 2, totalSteps: 7),
+      progress: const OnboardingProgress(step: 2, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
-      mascotMessage: TaskPostingStrings.typeLocationTitle,
-      title: TaskPostingStrings.typeLocationTitle,
+      mascotMessage: TaskPostingStrings.whenWhereTitle,
+      title: TaskPostingStrings.whenWhereTitle,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
+          // ── Date & time ─────────────────────────────────────────────────
+          Text(TaskPostingStrings.scheduleSectionTitle,
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.md),
+          LargeButton(
+            label: draft.date == null
+                ? TaskPostingStrings.pickDateButton
+                : "${draft.date!.year}-${draft.date!.month.toString().padLeft(2, '0')}-${draft.date!.day.toString().padLeft(2, '0')}",
+            icon: Icons.calendar_month,
+            filled: false,
+            outlineColor: AppColors.purple700,
+            onTap: _pickDate,
+          ),
+          const SizedBox(height: AppSpacing.md),
+          LargeButton(
+            label: draft.timeSlot ?? TaskPostingStrings.customTimeButton,
+            icon: Icons.access_time,
+            filled: false,
+            outlineColor: AppColors.purple700,
+            onTap: _pickTime,
+          ),
+          if (_scheduleError != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            Text(_scheduleError!,
+                style: theme.textTheme.bodySmall
+                    ?.copyWith(color: AppColors.error)),
+          ],
+
+          // ── Place ───────────────────────────────────────────────────────
+          const SizedBox(height: AppSpacing.xl),
+          Text(TaskPostingStrings.placeSectionTitle,
+              style: theme.textTheme.titleMedium),
+          const SizedBox(height: AppSpacing.md),
           Row(
             children: [
               Expanded(
@@ -284,6 +371,10 @@ class _TaskTypeLocationScreenState
                       ?.copyWith(color: AppColors.error)),
             ],
           ],
+
+          // ── Urgent ──────────────────────────────────────────────────────
+          const SizedBox(height: AppSpacing.xl),
+          _UrgentCard(urgent: draft.urgent, onChanged: _setUrgent),
         ],
       ),
       bottomBar: TaskPostingBottomBar(
@@ -293,6 +384,113 @@ class _TaskTypeLocationScreenState
             ? TaskPostingStrings.saveButton
             : TaskPostingStrings.continueButton,
         continueIcon: _editMode ? Icons.check : Icons.arrow_forward,
+      ),
+    );
+  }
+}
+
+/// Prominent, benefits-explaining urgent-task card with a switch, a benefits
+/// list, the extra fee, and the operational-team note.
+class _UrgentCard extends StatelessWidget {
+  final bool urgent;
+  final ValueChanged<bool> onChanged;
+
+  const _UrgentCard({required this.urgent, required this.onChanged});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return AnimatedContainer(
+      duration: AppMotion.fast,
+      padding: const EdgeInsets.all(AppSpacing.lg),
+      decoration: BoxDecoration(
+        gradient: urgent ? AppColors.guidanceSurfaceGradient : null,
+        color: urgent ? null : AppColors.blue100,
+        borderRadius: BorderRadius.circular(AppRadius.lg),
+        border: Border.all(
+          color: urgent ? AppColors.purple700 : AppColors.onboardingDivider,
+          width: urgent ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Text("⚡", style: TextStyle(fontSize: 22)),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(TaskPostingStrings.urgentToggleLabel,
+                    style: theme.textTheme.titleMedium
+                        ?.copyWith(color: AppColors.brandPurple)),
+              ),
+              Switch(
+                value: urgent,
+                activeThumbColor: AppColors.purple700,
+                onChanged: onChanged,
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(TaskPostingStrings.urgentCardSubtitle,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary)),
+          const SizedBox(height: AppSpacing.md),
+          Text(TaskPostingStrings.urgentBenefitsTitle,
+              style: theme.textTheme.titleSmall
+                  ?.copyWith(color: AppColors.brandPurple)),
+          const SizedBox(height: AppSpacing.xs),
+          ...[
+            TaskPostingStrings.urgentBenefit1,
+            TaskPostingStrings.urgentBenefit2,
+            TaskPostingStrings.urgentBenefit3,
+            TaskPostingStrings.urgentBenefit4,
+          ].map((b) => Padding(
+                padding: const EdgeInsets.only(bottom: AppSpacing.xxs),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Icon(Icons.check_circle,
+                        size: AppSizes.iconSm, color: AppColors.success),
+                    const SizedBox(width: AppSpacing.sm),
+                    Expanded(
+                      child: Text(b, style: theme.textTheme.bodyMedium),
+                    ),
+                  ],
+                ),
+              )),
+          const SizedBox(height: AppSpacing.md),
+          Container(
+            padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.md, vertical: AppSpacing.sm),
+            decoration: BoxDecoration(
+              color: AppColors.lightSurface,
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.payments_outlined,
+                    size: AppSizes.iconMd, color: AppColors.warning),
+                const SizedBox(width: AppSpacing.sm),
+                Expanded(
+                  child: Text(TaskPostingStrings.urgentFeeLabel,
+                      style: theme.textTheme.bodyMedium),
+                ),
+                const SizedBox(width: AppSpacing.sm),
+                Flexible(
+                  child: Text(TaskPostingStrings.urgentFeeValue,
+                      textAlign: TextAlign.right,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(color: AppColors.brandPurple)),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Text(TaskPostingStrings.urgentStaffNote,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textSecondary)),
+        ],
       ),
     );
   }
