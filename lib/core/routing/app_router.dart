@@ -13,6 +13,7 @@ import '../../features/customer/task_posting/when_where_screen.dart';
 import '../../features/customer/worker_list_screen.dart';
 import '../../features/customer/worker_profile_screen.dart';
 import '../../features/customer/client_profile_screen.dart';
+import '../../features/customer/client_guide_screen.dart';
 import '../../features/customer/booking_screen.dart';
 import '../../features/onboarding/welcome_screen.dart';
 import '../../features/onboarding/sign_in_screen.dart';
@@ -72,6 +73,7 @@ class Routes {
   static const String workerProfile = '/customer/worker'; // + /:id
   static const String clientProfileScreen = '/customer/profile'; // own profile
   static const String booking = '/customer/booking'; // + /:id
+  static const String clientGuide = '/customer/guide';
 
   // ── worker ──────────────────────────────────────────────────────────────
   static const String dashboard = '/worker/dashboard';
@@ -84,8 +86,6 @@ class Routes {
 
   static const String activity = '/customer/activity';
 }
-
-
 
 // ============================================================================
 // FEATURE ROUTE GROUPS
@@ -100,13 +100,15 @@ class Routes {
 // the back stack (e.g. editing Screen 2 from the Screen 7 review), so a
 // path-derived key would collide with the existing page and crash the
 // Navigator with a duplicate-key error.
-Page<void> _onboardingTransitionPage({required LocalKey key, required Widget child}) {
+Page<void> _onboardingTransitionPage(
+    {required LocalKey key, required Widget child}) {
   return CustomTransitionPage<void>(
     key: key,
     transitionDuration: AppMotion.medium,
     reverseTransitionDuration: AppMotion.medium,
     child: child,
-    transitionsBuilder: (context, animation, secondaryAnimation, transitionChild) {
+    transitionsBuilder:
+        (context, animation, secondaryAnimation, transitionChild) {
       final curved = CurvedAnimation(parent: animation, curve: AppMotion.enter);
       return FadeTransition(
         opacity: curved,
@@ -268,6 +270,10 @@ final List<RouteBase> _customerRoutes = [
     builder: (context, state) =>
         BookingScreen(worker: _findWorker(state.pathParameters['id'])),
   ),
+  GoRoute(
+    path: Routes.clientGuide,
+    builder: (context, state) => const ClientGuideScreen(),
+  ),
 ];
 
 final List<RouteBase> _workerRoutes = [
@@ -297,9 +303,8 @@ final List<RouteBase> _chatbotRoutes = [
     path: Routes.chatbot,
     builder: (context, state) {
       // Optional ?role=client|tasker hint from whichever dashboard opened it.
-      final role = state.uri.queryParameters['role'] == 'tasker'
-          ? 'tasker'
-          : 'client';
+      final role =
+          state.uri.queryParameters['role'] == 'tasker' ? 'tasker' : 'client';
       return ChatbotScreen(role: role);
     },
   ),

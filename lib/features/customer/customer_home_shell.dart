@@ -6,8 +6,8 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import '../activity/activity_overview_screen.dart';
 import 'activity_screen.dart';
-import 'chat_screen.dart';
 import 'client_profile_screen.dart';
 import 'client_rewards_screen.dart';
 import 'home_screen.dart';
@@ -16,13 +16,13 @@ import 'home_screen.dart';
 // success modal may switch tabs after publishing.
 final customerTabIndexProvider = StateProvider<int>((ref) => 0);
 
-/// Bottom-nav shell for the customer flow: Home / Chat / Activity / Rewards / Account.
+/// Bottom-nav shell for the customer flow: Home / Jobs / Activity / Rewards / Account.
 ///
 /// Each tab maps 1-to-1 to a dedicated screen — no shared screens, no
 /// content duplication between tabs:
 ///   0 → Home     (CustomerHomeScreen)
-///   1 → Chat     (ChatScreen — conversations only)
-///   2 → Activity (ActivityScreen — discussion + check-in / check-out)
+///   1 → Jobs     (ActivityScreen — discussion + check-in / check-out)
+///   2 → Activity (ActivityOverviewScreen — ongoing / pending / history)
 ///   3 → Rewards  (ClientRewardsScreen — VIP & coupons, client only)
 ///   4 → Account  (ClientProfileScreen)
 class CustomerHomeShell extends ConsumerWidget {
@@ -41,8 +41,10 @@ class CustomerHomeShell extends ConsumerWidget {
         index: index,
         children: const [
           CustomerHomeScreen(), // 0 — Home
-          ChatScreen(), // 1 — Chat (conversations only)
-          ActivityScreen(), // 2 — Activity
+          ActivityScreen(), // 1 — Jobs
+          ActivityOverviewScreen(
+            role: ActivityOverviewRole.client,
+          ), // 2 — Activity
           ClientRewardsScreen(), // 3 — Rewards (VIP & coupons)
           ClientProfileScreen(), // 4 — Account
         ],
@@ -60,9 +62,9 @@ class CustomerHomeShell extends ConsumerWidget {
             label: AppStrings.homeTabLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.chat_bubble_outline_rounded),
-            selectedIcon: Icon(Icons.chat_bubble_rounded),
-            label: AppStrings.chatTabLabel,
+            icon: Icon(Icons.work_outline),
+            selectedIcon: Icon(Icons.work),
+            label: AppStrings.jobsTabLabel,
           ),
           NavigationDestination(
             icon: Icon(Icons.assignment_outlined),

@@ -63,7 +63,7 @@ class ActivityScreen extends ConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'လှုပ်ရှားမှုများ',
+                      AppStrings.jobsTabLabel,
                       style: theme.textTheme.headlineSmall?.copyWith(
                         color: AppColors.onBrand,
                         fontWeight: FontWeight.bold,
