@@ -103,6 +103,14 @@ class OnboardingStrings {
   static const String rulesReadFull = "အပြည့်အစုံ ဖတ်မည်";
   static const String rulesHideFull = "ချုံ့မည်";
   static const String rulesAgreeCta = "သဘောတူပါသည် — ဆက်လက်မည်";
+  // Inline (consolidated) Terms & Conditions agreement — shown on the final
+  // signup step instead of a separate Terms page.
+  static const String termsInlineAgree =
+      "စည်းမျဉ်းနှင့် စည်းကမ်းချက်များကို သဘောတူပါသည်";
+  static const String termsViewDetails = "အသေးစိတ်ကြည့်ရန်";
+  static const String termsAcceptClose = "လက်ခံပါသည်";
+  static const String termsRequiredWarning =
+      "ရှေ့ဆက်ရန် စည်းကမ်းချက်များကို သဘောတူရန် လိုအပ်ပါသည်";
   static const String rulesSummaryHonesty = "မှန်ကန်သော အချက်အလက်များကိုသာ ဖြည့်ပါ";
   static const String rulesSummaryPunctual = "သတ်မှတ်အချိန်ကို လေးစားပါ";
   static const String rulesSummaryRespect = "အခြားသူများကို လေးစားစွာ ဆက်ဆံပါ";

@@ -8,6 +8,7 @@ import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import '../safety/emergency_bottom_sheet.dart';
 import 'task_execution_state.dart';
 import 'wallet/wallet_service.dart';
 import 'widgets/task_handling_cards.dart';
@@ -152,6 +153,18 @@ class TaskExecutionScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(title: const Text(AppStrings.executionPageTitle)),
+      // Safety Center / SOS — always reachable while a task is live. Extended
+      // FAB (needs a deliberate tap, not a stray touch) in the urgent error red.
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.error,
+        foregroundColor: AppColors.onBrand,
+        icon: const Icon(Icons.shield),
+        label: const Text(
+          'SOS',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+        ),
+        onPressed: () => showEmergencyBottomSheet(context, location: booking.township),
+      ),
       body: content,
     );
   }

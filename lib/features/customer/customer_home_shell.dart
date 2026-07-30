@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import '../safety/emergency_bottom_sheet.dart';
 import '../activity/activity_overview_screen.dart';
 import 'activity_screen.dart';
 import 'client_profile_screen.dart';
@@ -33,10 +34,25 @@ class CustomerHomeShell extends ConsumerWidget {
     final index = ref.watch(customerTabIndexProvider);
 
     return Scaffold(
-      // Floating AI assistant — only on the Home tab.
-      floatingActionButton: index == 0
-          ? AgentFab(onTap: () => context.push('${Routes.chatbot}?role=client'))
-          : null,
+      // Home → AI assistant. Jobs tab (messages + check-in/out) → red SOS
+      // button so safety is one tap away while a task is in progress. Placed on
+      // the shell (not a nested screen) so it can never be hidden.
+      floatingActionButton: switch (index) {
+        0 => AgentFab(onTap: () => context.push('${Routes.chatbot}?role=client')),
+        1 => FloatingActionButton.extended(
+            heroTag: 'client-sos',
+            backgroundColor: AppColors.error,
+            foregroundColor: AppColors.onBrand,
+            icon: const Icon(Icons.shield),
+            label: const Text(
+              'SOS',
+              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+            ),
+            onPressed: () =>
+                showEmergencyBottomSheet(context, location: 'လက်ရှိတည်နေရာ'),
+          ),
+        _ => null,
+      },
       body: IndexedStack(
         index: index,
         children: const [

@@ -6,6 +6,7 @@ import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../activity/activity_chat.dart';
+import '../safety/emergency_bottom_sheet.dart';
 import '../worker/task_execution_state.dart';
 import 'activity_screen.dart';
 import 'widgets/checkin_confirmation_card.dart';
@@ -52,6 +53,21 @@ class PendingScreen extends ConsumerWidget {
         execution?.status == ExecutionStatus.waitingCheckoutConfirm;
 
     return Scaffold(
+      // Safety Center / SOS — reachable for the client while a task is live at
+      // their location. Extended FAB (deliberate tap) in the urgent error red.
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppColors.error,
+        foregroundColor: AppColors.onBrand,
+        icon: const Icon(Icons.shield),
+        label: const Text(
+          'SOS',
+          style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+        ),
+        onPressed: () => showEmergencyBottomSheet(
+          context,
+          location: activeBooking?.township ?? 'လက်ရှိတည်နေရာ',
+        ),
+      ),
       // CustomScrollView + SliverFillRemaining(hasScrollBody: true) instead of
       // a plain Column: at large text scale, the header plus any pinned cards
       // can exceed the viewport height on their own — a Column would overflow

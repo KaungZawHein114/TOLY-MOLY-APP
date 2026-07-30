@@ -18,6 +18,7 @@ import '../onboarding/onboarding_models.dart';
 import '../profile/data/profile_repository.dart';
 import '../profile/data/profile_repository_impl.dart';
 import '../profile/models/profile_models.dart';
+import '../safety/safety_menu_tile.dart';
 
 // ============================================================================
 // PROFILE PROVIDER — backend-connected (name/phone/age/gender/accountStatus).
@@ -222,6 +223,12 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
           state: verified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
           message: verified ? ProfileStrings.mascotClientVerified : ProfileStrings.mascotClientUnverified,
           mascotSize: 64,
+        ),
+        const SizedBox(height: AppSpacing.lg),
+
+        // ── Safety & Emergency Contacts (shared SafetyProvider) ──
+        SafetyMenuTile(
+          onTap: () => context.push(Routes.emergencyContacts),
         ),
         const SizedBox(height: AppSpacing.lg),
 
