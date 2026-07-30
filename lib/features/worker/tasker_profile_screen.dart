@@ -20,6 +20,7 @@ import '../profile/data/profile_repository_impl.dart';
 import '../profile/data/skills_repository.dart';
 import '../profile/data/skills_repository_impl.dart';
 import '../profile/models/profile_models.dart';
+import '../safety/safety_menu_tile.dart';
 import 'wallet/wallet_screen.dart';
 import 'worker_home_shell.dart';
 
@@ -315,6 +316,12 @@ class _TaskerProfileScreenState extends ConsumerState<TaskerProfileScreen> {
         // ── My Wallet / Earnings (worker-only; local WalletProvider) ──
         WalletMenuTile(
           onTap: () => context.push(Routes.workerWallet),
+        ),
+
+        // ── Safety & Emergency Contacts (shared SafetyProvider) ──
+        const SizedBox(height: AppSpacing.md),
+        SafetyMenuTile(
+          onTap: () => context.push(Routes.emergencyContacts),
         ),
 
         // ── Public information (backend: age, gender — editable) ──

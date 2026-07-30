@@ -65,6 +65,7 @@ dependencies:
   # uploading it to the backend's Whisper endpoint. Location is demo-only (a
   # fixed coordinate in ai_task_posting_screen.dart), so no GPS package.
   speech_to_text: ^7.0.0
+  url_launcher: ^6.3.2
 
 dev_dependencies:
   flutter_test:

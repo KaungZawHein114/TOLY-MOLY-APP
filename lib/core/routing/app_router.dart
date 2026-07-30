@@ -21,17 +21,16 @@ import '../../features/onboarding/create_account_screen.dart';
 import '../../features/onboarding/basic_info_screen.dart';
 import '../../features/onboarding/client/client_personal_info_screen.dart';
 import '../../features/onboarding/client/client_phone_verification_screen.dart';
-import '../../features/onboarding/client/client_rules_screen.dart';
 import '../../features/onboarding/client/client_welcome_screen.dart';
 import '../../features/onboarding/tasker/tasker_personal_info_screen.dart';
 import '../../features/onboarding/tasker/tasker_phone_verification_screen.dart';
 import '../../features/onboarding/tasker/tasker_skills_screen.dart';
-import '../../features/onboarding/tasker/tasker_rules_screen.dart';
 import '../../features/onboarding/tasker/tasker_welcome_screen.dart';
 import '../../features/worker/worker_home_shell.dart';
 import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/worker/wallet/wallet_screen.dart';
+import '../../features/safety/emergency_contacts_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
 import '../../features/auth/audio/auth_audio_nav_observer.dart';
 import '../data/demo_data.dart';
@@ -50,12 +49,10 @@ class Routes {
   static const String onboardingBasicInfo = '/onboarding/basic-info';
   static const String clientPersonal = '/onboarding/client/personal';
   static const String clientPhone = '/onboarding/client/phone';
-  static const String clientRules = '/onboarding/client/rules';
   static const String clientWelcome = '/onboarding/client/welcome';
   static const String taskerPersonal = '/onboarding/tasker/personal';
   static const String taskerPhone = '/onboarding/tasker/phone';
   static const String taskerSkills = '/onboarding/tasker/skills';
-  static const String taskerRules = '/onboarding/tasker/rules';
   static const String taskerWelcome = '/onboarding/tasker/welcome';
 
   // ── customer ────────────────────────────────────────────────────────────
@@ -80,6 +77,7 @@ class Routes {
   static const String taskerProfileScreen = '/worker/profile'; // own profile
   static const String taskExecution = '/worker/task-execution'; // + /:id
   static const String workerWallet = '/worker/wallet'; // earnings + withdraw
+  static const String emergencyContacts = '/worker/safety/contacts'; // SOS contacts
 
   // ── chatbot ─────────────────────────────────────────────────────────────
   static const String chatbot = '/chatbot';
@@ -159,10 +157,6 @@ final List<RouteBase> _onboardingRoutes = [
     builder: (context, state) => const ClientPhoneVerificationScreen(),
   ),
   GoRoute(
-    path: Routes.clientRules,
-    builder: (context, state) => const ClientRulesScreen(),
-  ),
-  GoRoute(
     path: Routes.clientWelcome,
     builder: (context, state) => const ClientWelcomeScreen(),
   ),
@@ -177,10 +171,6 @@ final List<RouteBase> _onboardingRoutes = [
   GoRoute(
     path: Routes.taskerSkills,
     builder: (context, state) => const TaskerSkillsScreen(),
-  ),
-  GoRoute(
-    path: Routes.taskerRules,
-    builder: (context, state) => const TaskerRulesScreen(),
   ),
   GoRoute(
     path: Routes.taskerWelcome,
@@ -295,6 +285,10 @@ final List<RouteBase> _workerRoutes = [
   GoRoute(
     path: Routes.workerWallet,
     builder: (context, state) => const WalletScreen(),
+  ),
+  GoRoute(
+    path: Routes.emergencyContacts,
+    builder: (context, state) => const EmergencyContactsScreen(),
   ),
 ];
 
