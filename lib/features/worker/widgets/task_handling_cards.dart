@@ -9,7 +9,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/ai_service.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
 
 /// Builds the task payload the Task-Handling functions expect, from a [Booking].
 Map<String, dynamic> bookingTaskMap(Booking b) => {
@@ -62,8 +61,6 @@ class _TaskerBriefCardState extends ConsumerState<TaskerBriefCard> {
       return _ThinkingRow(message: TaskPostingStrings.briefThinking);
     }
     final brief = _brief!;
-    final readAloud =
-        '${brief.summary}. ${brief.suggestions.join('. ')}';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -84,7 +81,6 @@ class _TaskerBriefCardState extends ConsumerState<TaskerBriefCard> {
                     style: theme.textTheme.titleMedium
                         ?.copyWith(color: AppColors.indigo700)),
               ),
-              ReadAloudButton(textToRead: readAloud, compact: true),
             ],
           ),
           const SizedBox(height: AppSpacing.md),
@@ -241,7 +237,6 @@ class _CompletionSummaryCardState extends ConsumerState<CompletionSummaryCard> {
     }
     final s = _summary!;
     final chip = _tierChip(s.suggestedTierDelta);
-    final readAloud = '${s.summary}. ${s.rationale}';
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -261,7 +256,6 @@ class _CompletionSummaryCardState extends ConsumerState<CompletionSummaryCard> {
                 child: Text(TaskPostingStrings.completionTitle,
                     style: theme.textTheme.titleMedium),
               ),
-              ReadAloudButton(textToRead: readAloud, compact: true),
             ],
           ),
           const SizedBox(height: AppSpacing.md),

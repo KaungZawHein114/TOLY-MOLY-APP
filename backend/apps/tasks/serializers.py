@@ -30,9 +30,19 @@ class TaskSerializer(serializers.ModelSerializer):
 PUBLISH_REQUIRED_FIELDS = ["category", "title", "date", "time", "budget_tier", "budget_mmk"]
 
 
+class AnalyzeTaskTurnSerializer(serializers.Serializer):
+    """One prior turn. `role` is deliberately restricted to user/assistant —
+    never accept "system" from the client (this endpoint is unauthenticated),
+    or a crafted history entry could inject a second system message into the
+    OpenAI call."""
+
+    role = serializers.ChoiceField(choices=["user", "assistant"])
+    content = serializers.CharField(allow_blank=True)
+
+
 class AnalyzeTaskSerializer(serializers.Serializer):
-    message = serializers.CharField()
-    history = serializers.ListField(child=serializers.DictField(), required=False, default=list)
+    message = serializers.CharField(allow_blank=False, trim_whitespace=True)
+    history = AnalyzeTaskTurnSerializer(many=True, required=False, default=list)
     known_fields = serializers.DictField(required=False, default=dict)
 
 

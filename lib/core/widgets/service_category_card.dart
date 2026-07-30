@@ -3,20 +3,15 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import 'onboarding/read_aloud_button.dart';
 
-/// A category card for the customer Home screen's "browse services" grid:
-/// icon, name, and a compact listen button — borderless fill + soft shadow,
-/// matching the look already established by SkillTile/OnboardingSelectionCard.
+/// A category card for the task-posting category picker: icon + name,
+/// borderless fill + soft shadow, matching the look already established by
+/// SkillTile/OnboardingSelectionCard.
 class ServiceCategoryCard extends StatelessWidget {
   final String emoji;
   final String label;
   final VoidCallback onTap;
   final bool selected;
-  // Per-card read-aloud button. On by default (the Home grid uses it); the
-  // task-posting category picker turns it off so its grid has a single voice
-  // control beside "Choose Category" instead of one button per card.
-  final bool showListen;
 
   const ServiceCategoryCard({
     super.key,
@@ -24,7 +19,6 @@ class ServiceCategoryCard extends StatelessWidget {
     required this.label,
     required this.onTap,
     this.selected = false,
-    this.showListen = true,
   });
 
   @override
@@ -55,8 +49,7 @@ class ServiceCategoryCard extends StatelessWidget {
           padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm, horizontal: AppSpacing.xs),
           // FittedBox is a safety net (mirrors SkillTile/OnboardingSelectionCard):
           // if a grid cell is ever shorter than the content (small phones,
-          // big fonts, the added listen button), the card scales down instead
-          // of overflowing.
+          // big fonts), the card scales down instead of overflowing.
           child: FittedBox(
             fit: BoxFit.scaleDown,
             child: Column(
@@ -71,10 +64,6 @@ class ServiceCategoryCard extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w700),
                 ),
-                if (showListen) ...[
-                  const SizedBox(height: AppSpacing.xxs),
-                  ReadAloudButton(textToRead: label, compact: true),
-                ],
                 if (selected) ...[
                   const SizedBox(height: AppSpacing.xxs),
                   const Icon(Icons.check_circle, color: AppColors.purple700, size: AppSizes.iconSm + 2),

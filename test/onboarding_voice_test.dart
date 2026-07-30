@@ -1,18 +1,21 @@
-// Onboarding voice mode (spec §4.1/§4.6) — verifies the OFFLINE extractor:
+// Onboarding voice mode — verifies the offline extractor helper:
 //   • pulls age/gender/phone/skills from a spoken sentence (Arabic or Burmese
 //     numerals), never inventing a field it can't read;
-//   • constrains skills to taskers only;
-//   • AiService.extractOnboarding falls back to it (no Firebase, no hang).
+//   • constrains skills to taskers only.
+//
+// NOTE: this extractor is no longer called by anything in the app —
+// the onboarding voice-auth flow (voice_onboarding_sheet.dart) was rewritten
+// to a fixed demo idle→listening→processing→verified sequence in an earlier
+// session, and AiService.extractOnboarding (the Firebase-calling wrapper
+// around this function) was deleted outright during the Firebase-removal
+// refactor since it had zero remaining callers. extractOnboardingMock itself
+// stays — it's a plain, useful offline text-extraction utility — but these
+// tests now exercise it directly rather than through AiService.
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:toly_moly/core/utils/ai_mock.dart';
-import 'package:toly_moly/core/utils/ai_service.dart';
-import 'package:toly_moly/features/onboarding/onboarding_models.dart';
 
 void main() {
-  setUp(() => AiConfig.useLiveAi = false);
-  tearDown(() => AiConfig.useLiveAi = true);
-
   group('extractOnboardingMock', () {
     test('reads age, gender, phone, and tasker skills', () {
       final r = extractOnboardingMock(
@@ -54,30 +57,6 @@ void main() {
       expect(r.phone, '');
       expect(r.skillIds, isEmpty);
       expect(r.name, '');
-    });
-  });
-
-  group('AiService.extractOnboarding (offline fallback)', () {
-    test('maps primitives to enums and marks the source', () async {
-      final e = await AiService.extractOnboarding(
-        transcript: 'အသက် 40 ၊ ကျားပါ။ ဖုန်း 09112223334။ လျှပ်စစ် လုပ်တတ်တယ်။',
-        role: UserRole.tasker,
-      );
-      expect(e.source, AiSource.mock);
-      expect(e.age, 40);
-      expect(e.gender, Gender.male);
-      expect(e.phone, '09112223334');
-      expect(e.skills, contains(TaskerSkill.electrical));
-      expect(e.hasAnything, isTrue);
-    });
-
-    test('client role drops skills even if skill words were spoken', () async {
-      final e = await AiService.extractOnboarding(
-        transcript: 'ပိုက်ပြင်တာ လုပ်တတ်တယ်။ အသက် 22။',
-        role: UserRole.client,
-      );
-      expect(e.skills, isEmpty);
-      expect(e.age, 22);
     });
   });
 }

@@ -1,6 +1,7 @@
-// Tasker-Finding shortlist (spec §4.3) — verifies the OFFLINE path:
-//   • AiService.matchTaskers falls back to the deterministic mock when live AI
-//     is disabled, and never hangs (no Firebase needed).
+// Tasker-Finding shortlist (spec §4.3) — verifies the deterministic, fully
+// offline path:
+//   • AiService.matchTaskers is a thin wrapper around the local mock — no
+//     network, no backend, ever.
 //   • The result NEVER invents a tasker: every id is one of the candidates.
 //   • The shortlist is ≤3, skill-matched first, and reproducible.
 import 'package:flutter_test/flutter_test.dart';
@@ -10,10 +11,6 @@ import 'package:toly_moly/core/utils/ai_mock.dart';
 import 'package:toly_moly/core/utils/ai_service.dart';
 
 void main() {
-  // Force the offline path so these tests are deterministic and Firebase-free.
-  setUp(() => AiConfig.useLiveAi = false);
-  tearDown(() => AiConfig.useLiveAi = true);
-
   group('matchTaskersMock', () {
     test('returns at most 3, all ids from the candidate set', () {
       final result = matchTaskersMock({'category': 'Plumber'}, workers);
@@ -44,8 +41,8 @@ void main() {
     });
   });
 
-  group('AiService.matchTaskers (offline fallback)', () {
-    test('falls back to the deterministic mock and marks the source', () async {
+  group('AiService.matchTaskers (local, deterministic)', () {
+    test('returns the mock result and marks the source', () async {
       final matches = await AiService.matchTaskers(
         task: {'category': 'Cleaner'},
         candidates: workers,
@@ -53,7 +50,7 @@ void main() {
       expect(matches, isNotEmpty);
       expect(matches.length, lessThanOrEqualTo(3));
       for (final m in matches) {
-        expect(m.source, AiSource.mock);
+        expect(m.source, AiSource.demo);
         expect(m.reason.trim(), isNotEmpty);
         // Never invents: id must be a real candidate.
         expect(workers.any((w) => w.id == m.workerId), isTrue);

@@ -4,15 +4,15 @@ import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 import '../theme/app_colors.dart';
 
-/// Large, on-device speech-to-text button, shared by the tasker shortlist sheet
-/// and the onboarding voice sheet.
+/// Large, on-device speech-to-text button, used by the tasker shortlist sheet.
 ///
 /// Defaults to ENGLISH for the current testing phase, but the locale is a
 /// parameter, so switching a caller to Burmese later is a one-line change at
 /// the call site — no rewrite here.
 ///
-/// Note this is REAL recognition. The task-posting voice flow is a scripted
-/// demo and deliberately uses its own mock mic instead.
+/// Note this is REAL recognition. The task-posting voice flow and the
+/// onboarding voice-auth sheet are both scripted demos that deliberately use
+/// their own fake mic instead (no microphone, no speech-to-text).
 ///
 /// Recognized words stream back live via [onPartialResult] as the user speaks,
 /// and the final transcript via [onFinalResult] once they stop.

@@ -10,20 +10,20 @@ import '../../../core/utils/ai_mock.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../onboarding/onboarding_models.dart';
 import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Manual step 3 of 3: Tasker Level. Only the trust tier is chosen here —
+/// Manual step 4 of 5: Tasker Level. Only the trust tier is chosen here —
 /// clients needing more than one worker create more tasks. Cards show friendly
 /// labels; the literal "Tier N" mapping lives in the info sheet.
 ///
 /// The level also sets the price: the budget is no longer typed by the client,
 /// it is estimated by the AI from the category, the chosen level and urgency
 /// (see [estimateTaskBudgetMmk]). Each card carries its own estimate so the
-/// trade-off between level and price is visible before choosing.
+/// trade-off between level and price is visible before choosing. Continuing
+/// moves on to the Description step, next in the manual flow.
 class TaskerLevelScreen extends ConsumerStatefulWidget {
   const TaskerLevelScreen({super.key});
 
@@ -140,7 +140,7 @@ class _TaskerLevelScreenState extends ConsumerState<TaskerLevelScreen> {
     if (_editMode) {
       context.pop();
     } else {
-      context.push(Routes.postTaskReview);
+      context.push(Routes.postTaskDescription);
     }
   }
 
@@ -150,7 +150,7 @@ class _TaskerLevelScreenState extends ConsumerState<TaskerLevelScreen> {
     final draft = ref.watch(taskDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 3, totalSteps: 4),
+      progress: const OnboardingProgress(step: 4, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: TaskPostingStrings.workersTierTitle,
       title: TaskPostingStrings.workersTierTitle,
@@ -166,9 +166,6 @@ class _TaskerLevelScreenState extends ConsumerState<TaskerLevelScreen> {
                 child: Text(TaskPostingStrings.workerTierSectionTitle,
                     style: theme.textTheme.titleMedium),
               ),
-              ReadAloudButton(
-                  textToRead: TaskPostingStrings.workerTierSectionTitle),
-              const SizedBox(width: AppSpacing.xs),
               Semantics(
                 label: TaskPostingStrings.workerTierInfoButton,
                 button: true,
@@ -264,11 +261,6 @@ class _EstimatedBudgetCard extends StatelessWidget {
                 child: Text(TaskPostingStrings.estimatedBudgetTitle,
                     style: theme.textTheme.titleSmall
                         ?.copyWith(color: AppColors.indigo700)),
-              ),
-              ReadAloudButton(
-                textToRead: amount == null
-                    ? TaskPostingStrings.estimatedBudgetPlaceholder
-                    : "${TaskPostingStrings.estimatedBudgetTitle} ${formatBudgetMmk(amount)}",
               ),
             ],
           ),

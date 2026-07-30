@@ -132,8 +132,6 @@ class OnboardingStrings {
   static const String customSkillLabel = "အခြား ကျွမ်းကျင်မှု ထည့်မည်";
   static const String skillsRequiredError = "ကျွမ်းကျင်မှု အနည်းဆုံး တစ်ခု ရွေးပေးပါနော်";
 
-  static const String readAloudButton = "ဖတ်ပြမည်";
-
   // ── Rules (both flows) ────────────────────────────────────────────────
   static const String rulesTitle = "စည်းမျဉ်းစည်းကမ်းများ";
   static const String rulesAgreeClientLabel =
@@ -160,47 +158,27 @@ class OnboardingStrings {
   static const String completionContinueButton = "Profile ဆက်ဖြည့်မည်";
   static const String completionUseNowButton = "ယခုအသုံးပြုမည်";
 
-  // ── Onboarding voice mode (Slice 2, spec §4.1/§4.6) ──────────────────────
-  // Pho Wa Yoke greets, shows a sample script, listens, extracts the fields,
-  // and shows them PRE-FILLED for confirmation. Never submits blind; manual
-  // entry stays available.
+  // ── Onboarding voice mode ─────────────────────────────────────────────────
+  // COMPETITION DEMO ONLY (rebuilt 2026-07-29): a fully scripted, offline
+  // idle → listening → processing → verified sequence — no microphone, no
+  // speech-to-text, no AI call of any kind. See VoiceOnboardingSheet.
   static const String voiceFillCta = "အသံနဲ့ ဖြည့်မယ်";
   static const String voiceFillCtaSubtitle =
       "ဖိုးဝရုပ်ကို ကိုယ့်အကြောင်း ပြောပြလိုက်ရုံပါပဲ။";
-  static const String voiceOnboardingTitle = "အသံဖြင့် အချက်အလက် ဖြည့်ခြင်း";
-  static const String voiceOnboardingGreeting =
-      "မင်္ဂလာပါ။ ကိုယ့်အကြောင်း ပြောပြပေးပါနော် — ကျွန်တော်ဖြည့်ပေးပါမယ်။";
-  static const String voiceOnboardingScriptLabel = "ဒီလို ပြောနိုင်ပါတယ် —";
-  static const String voiceScriptClient =
-      "\"ကျွန်တော် အောင်အောင်ပါ။ အသက် ၂၅ နှစ်၊ ကျားပါ။ ဖုန်းက ၀၉၇၈၉၁၂၃၄၅၆ ပါ။\"";
-  static const String voiceScriptTasker =
-      "\"ကျွန်တော် အောင်အောင်ပါ။ အသက် ၂၅ နှစ်၊ ကျားပါ။ ဖုန်းက ၀၉၇၈၉၁၂၃၄၅၆ ပါ။ "
-      "သန့်ရှင်းရေးနဲ့ ပိုက်ပြင်တာ လုပ်တတ်ပါတယ်။\"";
-  static const String voiceListeningHint = "မိုက်ကို နှိပ်ပြီး ပြောပါ";
-  // Live transcript field + mic status (testing phase uses English STT).
-  static const String voiceTranscriptLabel = "သင်ပြောသည်များ (ပြင်ဆင်နိုင်သည်)";
-  static const String voiceTranscriptHint =
-      "မိုက်ကို နှိပ်ပြီး ပြောပါ — သို့မဟုတ် ဒီမှာ ရိုက်ထည့်ပါ";
-  static const String voiceListeningNow = "နားထောင်နေသည်…";
-  static const String voiceContinueButton = "ဆက်သွားမည်";
-  static const String voiceSttErrorPrefix = "အသံ အခြေအနေ - ";
-  static const String voiceNeedTextFirst = "အရင် ပြောပါ သို့မဟုတ် ရိုက်ထည့်ပါ";
-  static const String voiceExtracting = "အချက်အလက်တွေ ဖတ်နေပါတယ်…";
-  static const String voiceReviewPrompt =
-      "ကြားရတာတွေ ဒီမှာပါ။ မှန်ရင် အတည်ပြုပါ၊ မှားရင် ပြန်ပြောနိုင်ပါတယ်။";
-  static const String voiceNothingHeard =
-      "ကောင်းကောင်း မကြားလိုက်ပါ။ ထပ်ပြောကြည့်ပါ သို့မဟုတ် ကိုယ်တိုင် ဖြည့်ပါ။";
-  static const String voiceNotGiven = "မပြောရသေးပါ";
-  static const String voiceConfirmButton = "မှန်ပါတယ်၊ ဆက်သွားမည်";
-  static const String voiceRetryButton = "ပြန်ပြောမည်";
-  static const String voiceManualButton = "ကိုယ်တိုင် ဖြည့်မည်";
-  static const String voiceFieldName = "အမည်";
-  static const String voiceFieldGender = "လိင်";
-  static const String voiceFieldAge = "အသက်";
-  static const String voiceFieldPhone = "ဖုန်းနံပါတ်";
-  static const String voiceFieldSkills = "ကျွမ်းကျင်မှုများ";
   static const String voiceAppliedMessage = "🎙️ အသံဖြင့် ဖြည့်ပြီးပါပြီ — စစ်ဆေးပြီး ဆက်သွားပါ";
-  static const String voiceOfflineNote = "အော့ဖ်လိုင်း — ကြားနိုင်သမျှ ဖြည့်ထားပါသည်";
+  static const String voiceManualButton = "ကိုယ်တိုင် ဖြည့်မည်";
+
+  // Idle: mic button, not yet tapped.
+  static const String voiceAuthTitle = "AI အသံဖြင့် အတည်ပြုခြင်း";
+  static const String voiceAuthIdleHint = "အတည်ပြုမှု စတင်ရန် မိုက်ခလုတ်ကို နှိပ်ပါ";
+  // Listening: ~2-3s scripted pause.
+  static const String voiceAuthListening = "နားထောင်နေပါသည်…";
+  // Processing: ~2-3s scripted pause.
+  static const String voiceAuthProcessing = "အသံကို လုပ်ဆောင်နေပါသည်…";
+  // Verified: final state, then auto-continues.
+  static const String voiceAuthVerifiedTitle = "အသံဖြင့် အတည်ပြုမှု ပြီးစီးပါပြီ";
+  static const String voiceAuthVerifiedMessage =
+      "သင့်အထောက်အထားကို အောင်မြင်စွာ အတည်ပြုပြီးပါပြီ။";
 
   // ── Generic ───────────────────────────────────────────────────────────
   static const String backButtonSemantic = "နောက်သို့";

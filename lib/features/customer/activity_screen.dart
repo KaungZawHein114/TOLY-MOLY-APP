@@ -208,7 +208,7 @@ class ActivityMessagesView extends ConsumerWidget {
     };
     final chat1Snippet = switch (phase) {
       TaskPhase.discussing =>
-        'မင်္ဂလာပါ။ သင့်အလုပ်ကို စိတ်ဝင်စားလို့ ဆက်သွယ်လိုက်တာပါ။',
+        'မင်္ဂလာပါ။ ဒီအလုပ်ကို ကျွန်တော် စိတ်ဝင်စားပါတယ်။',
       TaskPhase.confirmed =>
         'နှစ်ဦးသဘောတူပြီးပါပြီ။ Escrow ဖြင့် ဆက်လက်ဆောင်ရွက်ပါ။',
       TaskPhase.marked => 'အလုပ် လက်ခံပြီးပါပြီ။ အခြေအနေ အပ်ဒိတ်ကို စောင့်ပါ။',
@@ -240,7 +240,7 @@ class ActivityMessagesView extends ConsumerWidget {
         _ChatTile(
           name: kProgressTaskerName,
           emoji: kTaskerEmoji,
-          statusLabel: 'အလုပ်ဆောင်ရွက်ဆဲ',
+          statusLabel: 'ငွေပေးပြီး · လာရန် စောင့်ဆဲ',
           statusColor: AppColors.tealDark,
           snippet:
               'အလုပ် အတည်ဖြစ်ပြီးပါပြီ။ ထွက်ခွာချိန် ရောက်ရင် အသိပေးပါမယ်။',

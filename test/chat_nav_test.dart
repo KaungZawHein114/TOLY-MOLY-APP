@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'package:toly_moly/core/routing/app_router.dart';
 import 'package:toly_moly/core/utils/ai_mock.dart';
+import 'package:toly_moly/core/utils/ai_service.dart';
 import 'package:toly_moly/features/chatbot/chat_nav.dart';
 
 void main() {
@@ -74,9 +75,44 @@ void main() {
           Routes.taskerProfileScreen);
     });
 
+    test('view_activity -> activity', () {
+      final t = chatNavTargetFor('view_activity', 'client')!;
+      expect(t.route, Routes.activity);
+    });
+
+    test('verification -> profile (no dedicated page), role-aware', () {
+      expect(chatNavTargetFor('verification', 'client')!.route,
+          Routes.clientProfileScreen);
+      expect(chatNavTargetFor('verification', 'tasker')!.route,
+          Routes.taskerProfileScreen);
+    });
+
     test('general / unknown -> no button', () {
       expect(chatNavTargetFor('general', 'client'), isNull);
       expect(chatNavTargetFor(null, 'client'), isNull);
+    });
+  });
+
+  group('AiService.chatAssistant', () {
+    // No backend is reachable in the test environment, so a client-role call
+    // must fall through to the same local mock a tasker-role call uses —
+    // this is exactly the "seamless, no error state" fallback the App
+    // Assistant backend is designed around.
+    test('client role falls back to the local mock when the backend is unreachable',
+        () async {
+      final reply = await AiService.chatAssistant(
+          message: 'I need to fix my sink', role: 'client');
+      expect(reply.message, isNotEmpty);
+      expect(reply.source, AiSource.demo);
+      expect(reply.action, 'post_task');
+    });
+
+    test('tasker role never attempts the backend, stays on the local mock',
+        () async {
+      final reply = await AiService.chatAssistant(
+          message: 'find plumbing jobs', role: 'tasker');
+      expect(reply.source, AiSource.demo);
+      expect(reply.action, 'find_task');
     });
   });
 }

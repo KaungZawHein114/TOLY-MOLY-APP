@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../../features/auth/audio/auth_audio_button.dart';
 import '../../../features/onboarding/onboarding_models.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
@@ -8,7 +7,6 @@ import '../app_logo_header.dart';
 import '../mascot/mascot_message_card.dart';
 import '../mascot/mascot_state.dart';
 import 'onboarding_progress_header.dart';
-import 'read_aloud_button.dart';
 import 'staggered_entrance.dart';
 
 /// Distinguishes celebratory/greeting screens (Welcome, completion) from
@@ -29,13 +27,6 @@ class OnboardingScaffold extends StatelessWidget {
   final Widget body;
   final Widget bottomBar;
   final VoidCallback? onBack;
-  final String? readAloudText;
-
-  /// AUTH-ONLY: when set, the header's read-aloud control plays this
-  /// pre-recorded clip (a key from `AuthAudioKeys`) instead of speaking
-  /// [readAloudText] via TTS. Takes precedence over [readAloudText]. Non-auth
-  /// screens (e.g. task posting) leave this null and keep the TTS button.
-  final String? readAloudAudioKey;
   final OnboardingLayoutMode layout;
 
   const OnboardingScaffold({
@@ -48,8 +39,6 @@ class OnboardingScaffold extends StatelessWidget {
     this.progress,
     this.subtitle,
     this.onBack,
-    this.readAloudText,
-    this.readAloudAudioKey,
     this.layout = OnboardingLayoutMode.form,
   });
 
@@ -121,42 +110,16 @@ class OnboardingScaffold extends StatelessWidget {
                                 centered: layout == OnboardingLayoutMode.moment,
                               ),
                               const SizedBox(height: AppSpacing.lg),
-                              if (title != null ||
-                                  readAloudText != null ||
-                                  readAloudAudioKey != null) ...[
-                                Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    if (title != null)
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(title!, style: theme.textTheme.headlineSmall),
-                                            if (subtitle != null) ...[
-                                              const SizedBox(height: AppSpacing.xs),
-                                              Text(
-                                                subtitle!,
-                                                style: theme.textTheme.bodyMedium
-                                                    ?.copyWith(color: AppColors.textSecondary),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      )
-                                    else
-                                      const Spacer(),
-                                    // AUTH: pre-recorded clip; otherwise the TTS
-                                    // read-aloud button (unchanged for non-auth).
-                                    if (readAloudAudioKey != null)
-                                      AuthAudioButton(
-                                        audioKey: readAloudAudioKey!,
-                                        semanticLabel: title,
-                                      )
-                                    else if (readAloudText != null)
-                                      ReadAloudButton(textToRead: readAloudText!),
-                                  ],
-                                ),
+                              if (title != null) ...[
+                                Text(title!, style: theme.textTheme.headlineSmall),
+                                if (subtitle != null) ...[
+                                  const SizedBox(height: AppSpacing.xs),
+                                  Text(
+                                    subtitle!,
+                                    style: theme.textTheme.bodyMedium
+                                        ?.copyWith(color: AppColors.textSecondary),
+                                  ),
+                                ],
                                 const SizedBox(height: AppSpacing.lg),
                               ],
                               body,

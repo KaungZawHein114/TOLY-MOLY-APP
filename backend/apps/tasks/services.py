@@ -22,7 +22,61 @@ CANONICAL_CATEGORIES = [
     "Delivery",
 ]
 
-REQUIRED_FIELDS = ["category", "title", "date", "time", "urgency"]
+# Always-required fields for every task, any category (design doc §5/§7).
+REQUIRED_FIELDS = ["category", "title", "description", "township", "date", "time", "urgency"]
+
+# Category-specific required info (design doc §7) — passed into the prompt
+# per-request based on the resolved category, not baked into the system
+# prompt text, so tuning one category's checklist never means editing the
+# prompt itself. Values are freeform strings the model reads as guidance for
+# what to ask about; there is no fixed key schema for category_fields.
+CATEGORY_REQUIRED_FIELDS = {
+    "Plumber": [
+        "what's broken or leaking (fixture: sink, toilet, pipe, water heater...)",
+        "how severe (dripping vs. actively flooding)",
+    ],
+    "Electrician": [
+        "what needs fixing or installing (device/wiring/outlet/breaker)",
+        "is the power currently on or off at that point",
+    ],
+    "Cleaner": [
+        "approximate home size (number of rooms, or sqft if given)",
+        "type of clean (regular tidy vs. deep-clean/move-out)",
+    ],
+    "AC Technician": [
+        "number of units affected",
+        "the symptom (not cooling, leaking water, making noise, won't turn on)",
+    ],
+    "Carpenter": [
+        "type of work (repair existing / build new / install purchased item)",
+        "rough size or material if mentioned",
+    ],
+    "Tutor": [
+        "subject",
+        "student's grade/level",
+        "one-time session or recurring",
+        "online or in-person",
+    ],
+    "Delivery": [
+        "BOTH pickup location and drop-off location (a single location isn't enough)",
+        "what's being delivered",
+        "whether it's fragile or oversized",
+    ],
+    "Gardener": [
+        "yard/area size (rough)",
+        "task type (mowing, trimming, planting, general cleanup)",
+        "one-time or recurring",
+    ],
+    "Handyman": [
+        "a specific description of what needs doing — push a little harder here "
+        "than other categories to avoid a vague listing, since this is the "
+        "fallback category (also covers moving/installation/beauty/event-shaped "
+        "requests: for a move ask pickup+destination, size, floor/elevator "
+        "access; for an installation ask what's being installed and whether "
+        "it's already on-site; for beauty/event requests ask service type, "
+        "headcount, and push on the date early for events)",
+    ],
+}
 
 CATEGORY_BASE_MMK = {
     "Plumber": 15000,
@@ -66,64 +120,147 @@ def transcribe_audio(file_bytes, filename="audio.m4a", content_type="audio/m4a")
     return transcript.text
 
 
+def _analyze_task_system_prompt(category_hint):
+    category_fields_hint = (
+        CATEGORY_REQUIRED_FIELDS.get(category_hint) if category_hint else None
+    )
+    category_section = (
+        f"Category-specific required info for {category_hint}, ask about "
+        f"whichever of these are still missing (whatever order feels most "
+        f"natural given what the client already said): "
+        f"{'; '.join(category_fields_hint)}."
+        if category_fields_hint
+        else "The category isn't resolved yet — that's your first priority. "
+        "Once you know it, category-specific required info will be provided "
+        "on the next turn."
+    )
+    return (
+        "You are TOLY MOLY's Task Assistant — not a general chatbot. Your "
+        "ONLY job is to help a client describe a task well enough to post it "
+        "on TOLY MOLY, a Myanmar on-demand service marketplace.\n\n"
+        "Respond in the SAME language the client is using. If they write in "
+        "English, reply in English. If Burmese, reply in Burmese. If they "
+        "mix both in one message, mix naturally the way a bilingual Yangon "
+        "speaker would — never force a switch and never comment on "
+        "language.\n\n"
+        "Rules:\n"
+        "- Ask ONE question at a time. Never ask about more than one "
+        "missing field in a single message.\n"
+        "- Never repeat a question about information you already have.\n"
+        "- Never ask about anything that belongs to a LATER step in the app "
+        "(budget, tasker level/trust tier, and photos/videos are handled "
+        "after this conversation — never ask about them).\n"
+        "- Never make small talk, answer general questions, explain what "
+        "you are, or discuss anything unrelated to the task. If the client "
+        "goes off-topic, redirect in one short line back to the task and "
+        "re-ask your last question.\n"
+        "- Be concise, warm, and practical — never sound like a generic AI "
+        "assistant. No filler (\"Great question!\", \"As an AI...\"), no "
+        "over-explaining.\n"
+        "- Every message must move the task toward being postable. If you "
+        "already have enough to build a complete, useful task listing, stop "
+        "asking questions — do not manufacture extra questions to seem "
+        "thorough.\n\n"
+        f"Valid categories (pick the closest match; if truly unclear, ask "
+        f"the client to describe the job in their own words rather than "
+        f"guessing): {', '.join(CANONICAL_CATEGORIES)}.\n\n"
+        "Always-required fields (every task, any category): category, title "
+        "(a short 3-8 word summary), description (1-2 sentences, using only "
+        "what the client actually said), township (a Yangon township), date "
+        "(YYYY-MM-DD or \"flexible\"), time (HH:MM 24h or \"flexible\"), "
+        "urgency (\"NORMAL\" or \"URGENT\").\n\n"
+        f"{category_section}\n\n"
+        "Merge new information into known_fields — never discard a known "
+        "value unless the client's new message clearly changes it. Resolve "
+        "relative dates (\"tomorrow\", \"မနက်ဖြန်\", \"this weekend\") "
+        f"against today's date, {timezone.localdate().isoformat()}. Never "
+        "invent a value the client didn't state or clearly imply.\n\n"
+        "Once EVERY always-required field and EVERY category-specific "
+        "required field is filled (or the client has explicitly said one "
+        "doesn't apply), set ready to true and, instead of a question, "
+        "write a short natural-language recap of the task and ask the "
+        "client to confirm it's correct.\n\n"
+        "Respond with ONLY a JSON object of this exact shape:\n"
+        '{"category": string|null, "title": string|null, "description": '
+        'string|null, "township": string|null, "address": string|null, '
+        '"date": string|null, "time": string|null, "urgency": '
+        '"NORMAL"|"URGENT"|null, "category_fields": {"<any keys you have '
+        'collected for the category-specific info above>": "<value>"}, '
+        '"reply": string, "ready": boolean}'
+    )
+
+
 def analyze_task(message, history, known_fields):
-    """GPT task-info extraction — one conversational turn.
+    """GPT task-info extraction — one conversational turn of the AI Task
+    Assistant conversation (Task Posting's "AI Assistant" method). A
+    SEPARATE agent from apps.assistant's App Assistant — different prompt,
+    different job (building one structured task, not answering product
+    questions), never sharing code with that app.
 
     history: list of {"role": "user"|"assistant", "content": str} from
         earlier turns (does not include `message`, the newest one).
-    known_fields: dict, a subset of REQUIRED_FIELDS already collected.
+    known_fields: dict — a subset of REQUIRED_FIELDS plus an optional
+        "category_fields" dict, already collected.
 
-    Returns {"fields": dict, "question": str | None, "ready": bool}.
-    `ready` is True once every required field is present — the caller
-    moves on to budget recommendation at that point and stops asking.
+    Returns {"fields": dict, "reply": str, "ready": bool}. `fields` is the
+    merged known_fields (always-required flat keys + "category_fields").
+    `reply` is either the next question or (once `ready`) a confirmation
+    recap — the caller doesn't need to distinguish them structurally, just
+    render `reply` and switch its own input affordance based on `ready`.
+    `ready` is only ever True once every always-required field the backend
+    itself can verify is present; the model additionally judges
+    category-specific completeness (an open field set the backend can't
+    schema-check), so a `ready: true` from the model is trusted for that
+    part but always re-checked against the flat required fields here.
     """
     client = _client()
-    system_prompt = (
-        "You are a task-extraction assistant for TOLY MOLY, a Myanmar "
-        "on-demand service marketplace. Extract structured task "
-        "information from the client's message(s) — they may write in "
-        "Burmese or English.\n\n"
-        f"Valid categories (pick the closest match, or null if truly "
-        f"unclear): {', '.join(CANONICAL_CATEGORIES)}.\n\n"
-        "Required fields: category, title (a short task summary), "
-        "date (YYYY-MM-DD), time (HH:MM in 24h), urgency (\"NORMAL\" or "
-        "\"URGENT\").\n\n"
-        "Respond with ONLY a JSON object of this exact shape:\n"
-        '{"category": string|null, "title": string|null, "date": '
-        'string|null, "time": string|null, "urgency": string|null, '
-        '"question": string|null}\n\n'
-        f"Known fields so far: {json.dumps(known_fields)}\n"
-        "Merge new information into the known fields — never discard a "
-        "known field unless the user's new message clearly changes it.\n"
-        "Resolve relative dates (\"tomorrow\", \"မနက်ဖြန်\") against "
-        f"today's date, {timezone.localdate().isoformat()}.\n"
-        "If any required field is still missing after merging, set "
-        '"question" to one short, friendly Burmese question asking for '
-        "exactly one missing field (the most important one) — never ask "
-        "for more than one field at a time. If nothing is missing, set "
-        '"question" to null.'
-    )
-    messages = [{"role": "system", "content": system_prompt}, *history, {"role": "user", "content": message}]
+    category_hint = known_fields.get("category")
+    system_prompt = _analyze_task_system_prompt(category_hint)
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "system", "content": f"known_fields so far: {json.dumps(known_fields)}"},
+        *history,
+        {"role": "user", "content": message},
+    ]
 
     try:
         response = client.chat.completions.create(
             model="gpt-4o-mini",
             messages=messages,
             response_format={"type": "json_object"},
-            temperature=0.2,
+            temperature=0.3,
         )
         data = json.loads(response.choices[0].message.content)
-    except Exception as exc:  # noqa: BLE001
+    except Exception as exc:  # noqa: BLE001 — surface any SDK/network failure uniformly
         raise AIServiceUnavailable(f"Task analysis failed: {exc}") from exc
 
-    extracted = {field: data.get(field) for field in REQUIRED_FIELDS if data.get(field)}
+    reply = data.get("reply")
+    if not isinstance(reply, str) or not reply.strip():
+        # No usable text back is as good as no response — the caller treats
+        # this exactly like a network failure and falls back locally.
+        raise AIServiceUnavailable("Task assistant returned an empty reply.")
+
+    flat_fields = {"category", "title", "description", "township", "address", "date", "time", "urgency"}
+    extracted = {field: data.get(field) for field in flat_fields if data.get(field)}
     merged_fields = {**known_fields, **extracted}
-    missing = [field for field in REQUIRED_FIELDS if not merged_fields.get(field)]
+
+    incoming_category_fields = data.get("category_fields")
+    if isinstance(incoming_category_fields, dict):
+        merged_category_fields = {
+            **known_fields.get("category_fields", {}),
+            **{k: v for k, v in incoming_category_fields.items() if v not in (None, "")},
+        }
+    else:
+        merged_category_fields = known_fields.get("category_fields", {})
+    merged_fields["category_fields"] = merged_category_fields
+
+    missing_required = [field for field in REQUIRED_FIELDS if not merged_fields.get(field)]
+    ready = bool(data.get("ready")) and not missing_required
 
     return {
         "fields": merged_fields,
-        "question": data.get("question") if missing else None,
-        "ready": not missing,
+        "reply": reply.strip(),
+        "ready": ready,
     }
 
 

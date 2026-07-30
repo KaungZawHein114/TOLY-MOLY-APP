@@ -1,6 +1,6 @@
 from rest_framework import status
 from rest_framework.parsers import FormParser, MultiPartParser
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
@@ -52,7 +52,13 @@ class TranscribeAudioView(APIView):
 
 
 class AnalyzeTaskView(APIView):
-    permission_classes = [IsAuthenticated, IsClient]
+    """POST /api/tasks/ai/analyze — the AI Task Assistant conversation
+    (Task Posting's "AI Assistant" method). No auth for now, matching the
+    App Assistant's endpoint: this is a product decision, not an oversight.
+    TODO(security): re-add IsAuthenticated, IsClient before real launch.
+    """
+
+    permission_classes = [AllowAny]
 
     def post(self, request):
         serializer = AnalyzeTaskSerializer(data=request.data)

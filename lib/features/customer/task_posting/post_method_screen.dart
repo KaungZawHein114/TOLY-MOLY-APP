@@ -37,7 +37,6 @@ class PostMethodScreen extends ConsumerWidget {
       mascotState: PhoWaYokeState.happy,
       mascotMessage: TaskPostingStrings.methodMascotMessage,
       title: TaskPostingStrings.methodTitle,
-      readAloudText: TaskPostingStrings.methodMascotMessage,
       onBack: () => context.pop(),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

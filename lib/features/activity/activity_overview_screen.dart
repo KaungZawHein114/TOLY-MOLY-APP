@@ -99,8 +99,7 @@ class ActivityOverviewScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor:
-                            AppColors.lightSurface.withValues(alpha: 0),
+                        dividerColor: AppColors.lightSurface.withValues(alpha: 0),
                         labelColor: AppColors.purple700,
                         unselectedLabelColor: AppColors.onBrandMuted,
                         labelStyle: theme.textTheme.labelMedium?.copyWith(

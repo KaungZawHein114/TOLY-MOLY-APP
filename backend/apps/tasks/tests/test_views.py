@@ -29,18 +29,31 @@ class TaskApiTestBase(APITestCase):
 
 
 class AnalyzeTaskEndpointTests(TaskApiTestBase):
+    """The AI Task Assistant conversation endpoint — deliberately no-auth for
+    now (see AnalyzeTaskView's docstring / TODO(security)), matching the App
+    Assistant's endpoint. Unauthenticated and tasker-role requests are both
+    expected to succeed at the permission layer; there's simply no
+    client-only gate on this endpoint yet."""
+
     def setUp(self):
         super().setUp()
         self.url = reverse("task-ai-analyze")
 
-    def test_requires_authentication(self):
+    @override_settings(OPENAI_API_KEY="")
+    def test_no_auth_required_but_still_gets_a_real_response(self):
+        # No credentials at all — should reach the view (not 401/403) and
+        # surface the AI-unavailable case cleanly, same as an authenticated
+        # caller would.
         response = self.client.post(self.url, {"message": "hi"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.assertEqual(response.data.get("code"), "ai_unavailable")
 
-    def test_tasker_cannot_analyze(self):
+    def test_tasker_role_can_also_reach_the_endpoint(self):
         self._as_tasker()
-        response = self.client.post(self.url, {"message": "hi"}, format="json")
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        with patch("apps.tasks.views.analyze_task") as mock_analyze:
+            mock_analyze.return_value = {"fields": {}, "reply": "hi", "ready": False}
+            response = self.client.post(self.url, {"message": "hi"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     @override_settings(OPENAI_API_KEY="")
     def test_returns_503_when_ai_unavailable(self):
@@ -53,7 +66,7 @@ class AnalyzeTaskEndpointTests(TaskApiTestBase):
     def test_returns_analysis_result(self, mock_analyze):
         mock_analyze.return_value = {
             "fields": {"category": "Cleaner"},
-            "question": "What date?",
+            "reply": "What date works for you?",
             "ready": False,
         }
         self._as_client()

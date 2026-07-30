@@ -16,20 +16,34 @@ Future<void> _settle(WidgetTester tester) async {
   await tester.pump(const Duration(milliseconds: 400));
 }
 
-/// Advances past the voice flow's scripted "listening"/"thinking" pauses.
+/// Advances past the voice flow's scripted "listening" pause.
 Future<void> _settleVoice(WidgetTester tester) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 1600));
   await tester.pump(const Duration(milliseconds: 1600));
 }
 
+/// The AI Task Assistant conversation makes a REAL Dio call before falling
+/// back (no backend is reachable in tests, so every turn resolves to the
+/// local fallback engine) — that failure takes real wall-clock time to
+/// resolve, not just fake-clock animation time. Repeated short pumps give
+/// the actual async I/O repeated chances to progress between awaits, without
+/// using `pumpAndSettle` (which would hang forever on the perpetual typing-
+/// indicator animation while `_thinking` is true).
+Future<void> _settleTaskAssistantTurn(WidgetTester tester) async {
+  for (var i = 0; i < 40; i++) {
+    await tester.pump(const Duration(milliseconds: 200));
+  }
+}
+
 ProviderContainer _containerAt(WidgetTester tester, Finder finder) =>
     ProviderScope.containerOf(tester.element(finder));
 
-/// Walks the MANUAL method (method picker → title → when/where → level) to the
-/// summary through the real UI, leaving the whole stack in place WITHOUT
-/// publishing — the precondition for exercising the "Edit" links (which
-/// re-push routes already on the back stack).
+/// Walks the MANUAL method (method picker → title/category → media → when/
+/// where → level → description) to the summary through the real UI, leaving
+/// the whole stack in place WITHOUT publishing — the precondition for
+/// exercising the "Edit" links (which re-push routes already on the back
+/// stack).
 Future<void> _walkToSummary(WidgetTester tester) async {
   appRouter.go(Routes.postTask);
   await _settle(tester);
@@ -38,8 +52,7 @@ Future<void> _walkToSummary(WidgetTester tester) async {
   await tester.tap(find.text(TaskPostingStrings.methodManualLabel));
   await _settle(tester);
 
-  // Step 1: title + pick a category card (scroll it into view first — the AI
-  // "Suggest Category" button sits above the grid).
+  // Step 1: title + pick a category card manually (no AI suggestion).
   await tester.enterText(find.byType(TextField).first, "အိမ် သန့်ရှင်းရေး");
   await tester.ensureVisible(find.text("အိမ်သန့်ရှင်းရေး"));
   await _settle(tester);
@@ -48,7 +61,11 @@ Future<void> _walkToSummary(WidgetTester tester) async {
   await tester.tap(find.text(TaskPostingStrings.continueButton));
   await _settle(tester);
 
-  // Step 2: date/time via the provider (native pickers), on-site + township +
+  // Step 2: media attachments — entirely optional, so just Skip past it.
+  await tester.tap(find.text(TaskPostingStrings.mediaSkipButton));
+  await _settle(tester);
+
+  // Step 3: date/time via the provider (native pickers), on-site + township +
   // address, and the urgent switch — all one step now.
   final container = _containerAt(
       tester, find.text(TaskPostingStrings.whenWhereTitle).first);
@@ -68,10 +85,15 @@ Future<void> _walkToSummary(WidgetTester tester) async {
   await _settle(tester);
   await tester.enterText(find.byType(TextField).first, "အမှတ် ၁၂");
   await _settle(tester);
-  // The urgent card sits at the bottom of this now-longer step, so scroll the
-  // step's own scroll view rather than relying on ensureVisible's minimal
-  // alignment (which can leave the switch under the pinned header).
-  await tester.drag(find.byType(Scrollable).first, const Offset(0, -600));
+  // The urgent card sits at the bottom of this now-longer step. Centre the
+  // switch in the viewport (alignment 0.5) instead of dragging by a fixed
+  // amount — a fixed drag overshoots as the card grows and scrolls the switch
+  // clean off the top, where the tap silently lands on the header instead.
+  await Scrollable.ensureVisible(
+    tester.element(find.byType(Switch)),
+    alignment: 0.5,
+    duration: Duration.zero,
+  );
   await _settle(tester);
   await tester.tap(find.byType(Switch));
   await _settle(tester);
@@ -85,13 +107,20 @@ Future<void> _walkToSummary(WidgetTester tester) async {
   await _settle(tester);
   await tester.tap(find.text(TaskPostingStrings.continueButton));
   await _settle(tester);
+
+  // Step 4: description — required before the flow reaches Summary.
+  await tester.enterText(
+      find.byType(TextField).first, "ရေပိုက် ယိုနေလို့ ပြင်ချင်ပါတယ်");
+  await _settle(tester);
+  await tester.tap(find.text(TaskPostingStrings.continueButton));
+  await _settle(tester);
 }
 
 void main() {
   setUp(() {
-    // Force the offline mock path so tests are instant and deterministic with
-    // no Firebase dependency. The real app leaves this true (live + fallback).
-    AiConfig.useLiveAi = false;
+    // Drop the scripted "thinking" beat so tests stay instant and leave no
+    // pending timers; the real app keeps the 700ms pause for demo polish.
+    AiConfig.demoThinkingDelay = Duration.zero;
     appRouter.go(Routes.onboardingWelcome);
   });
 
@@ -159,8 +188,9 @@ void main() {
     expect(container.read(taskDraftProvider).category, "Cleaner");
   });
 
-  testWidgets('Voice method: the scripted conversation fills the same draft '
-      'and lands on the same summary screen', (tester) async {
+  testWidgets(
+      'Voice method (AI Task Assistant): local fallback conversation fills '
+      'the same draft and lands on the same summary screen', (tester) async {
     tester.view.physicalSize = const Size(1080, 2400);
     tester.view.devicePixelRatio = 3.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -172,45 +202,79 @@ void main() {
 
     await tester.tap(find.text(TaskPostingStrings.methodVoiceLabel));
     await _settle(tester);
-    expect(find.text(taskVoiceScript.first.question), findsOneWidget);
+    expect(find.text(TaskPostingStrings.taskAssistantGreeting), findsOneWidget);
 
-    final container =
-        _containerAt(tester, find.text(taskVoiceScript.first.question));
+    final container = _containerAt(
+        tester, find.text(TaskPostingStrings.taskAssistantGreeting));
 
-    // Answer every scripted question by tapping its first quick reply.
-    for (var i = 0; i < taskVoiceScript.length; i++) {
-      await tester.tap(find.byType(ActionChip).first);
-      await _settleVoice(tester);
+    // No backend is reachable in tests, so every turn falls straight to the
+    // local fallback engine (AiService.taskAssistant catches the failed Dio
+    // call automatically) — same adaptive rules, deterministic extraction.
+    Future<void> sendMessage(String text) async {
+      await tester.enterText(find.byType(TextField).first, text);
+      await tester.tap(find.byIcon(Icons.send_rounded));
+      await _settleTaskAssistantTurn(tester);
     }
-    await _settleVoice(tester);
+
+    await sendMessage("ရေပိုက် ယိုနေတယ်"); // need -> category/title/description
+    await sendMessage("လှိုင်"); // place -> township
+    await sendMessage("မနက်ဖြန် မနက်ပိုင်း"); // schedule -> date/time
+    await sendMessage("မဟုတ်ပါဘူး"); // urgency -> NORMAL
+    await sendMessage("ပိုက်ပေါက်ကြီး ဖြစ်နေတယ်"); // category-specific detail
+
+    // Every always-required field is now filled, so the fallback engine
+    // must have reached the confirmation stage automatically.
+    expect(find.text(TaskPostingStrings.taskAssistantConfirmYes), findsOneWidget);
+    await tester.tap(find.text(TaskPostingStrings.taskAssistantConfirmYes));
+    await _settle(tester);
+
+    // Media step — skip it, same shared TaskMediaPicker the manual flow uses.
+    expect(find.text(TaskPostingStrings.mediaSkipButton), findsOneWidget);
+    await tester.tap(find.text(TaskPostingStrings.mediaSkipButton));
+    await _settleVoice(tester); // covers the wrap-up Timer before the push
 
     // Same summary screen the manual flow reaches — no duplicate.
     expect(find.text(TaskPostingStrings.reviewTitle), findsWidgets);
 
-    // Every field the summary shows was filled by the conversation.
+    // Every field the conversation is responsible for was filled. Tasker
+    // level/budget are deliberately NOT set by this flow (locked design:
+    // that stays a separate step after the conversation, same as it already
+    // is for Manual) — Summary shows "-" for those until the client edits
+    // them, exactly like any other incomplete draft.
     final draft = container.read(taskDraftProvider);
     expect(draft.category, isNotNull);
     expect(draft.title, isNotEmpty);
     expect(draft.township, "လှိုင်");
     expect(draft.date, isNotNull);
     expect(draft.timeSlot, isNotNull);
-    expect(draft.workerTier, isNotNull);
-    expect(draft.budgetMmk, isNotNull);
   });
 
-  testWidgets('Title step "Suggest Category": tapping detects Plumber '
-      '(mock path)', (tester) async {
+  testWidgets(
+      'Title step has no AI category suggestion — category is chosen by '
+      'tapping a card, and the grid renders instantly with no loading state',
+      (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.postTaskTitle);
     await _settle(tester);
+    await _settle(tester); // let the entrance animation fully settle
 
-    await tester.enterText(find.byType(TextField).first, "ရေယိုနေတယ်");
-    await _settle(tester);
-    await tester.tap(find.text(TaskPostingStrings.suggestCategoryButton));
-    await _settle(tester);
+    expect(find.textContaining("AI"), findsNothing);
 
-    expect(categorizeJob("ရေယိုနေတယ်"), "Plumber");
-    expect(find.textContaining("Plumber"), findsOneWidget);
+    await tester.enterText(find.byType(TextField).first, "အိမ် သန့်ရှင်းရေး");
+    await _settle(tester);
+    // The title field's own focus-follow autoscroll can still be settling;
+    // dismiss it before scrolling to the category grid so the two scrolls
+    // don't race and leave the tap coordinate stale.
+    FocusManager.instance.primaryFocus?.unfocus();
+    await _settle(tester);
+    await tester.ensureVisible(find.text("အိမ်သန့်ရှင်းရေး"));
+    await _settle(tester);
+    await tester.tap(find.text("အိမ်သန့်ရှင်းရေး"));
+    await _settle(tester);
+    expect(
+      _containerAt(tester, find.text("အိမ်သန့်ရှင်းရေး")).read(taskDraftProvider).category,
+      "Cleaner",
+    );
   });
 
   test('The AI budget estimate scales with the tasker level', () {
@@ -251,20 +315,9 @@ void main() {
     expect(formatBudgetMmk(500), "၅၀၀ ${TaskPostingStrings.budgetCurrency}");
   });
 
-  test('PriceRange.statusFor classifies amount against the AI band', () {
-    const range = PriceRange(low: 10000, high: 15000, source: AiSource.mock);
-    expect(range.statusFor(5000), PriceStatus.low);
-    expect(range.statusFor(12000), PriceStatus.ok);
-    expect(range.statusFor(20000), PriceStatus.high);
-  });
-
-  test('AiService falls back to the offline mock when live AI is disabled',
-      () async {
-    AiConfig.useLiveAi = false;
-    final category = await AiService.suggestCategory(
-        "ရေယိုနေတယ်", const ["Plumber", "Cleaner"]);
-    expect(category, "Plumber");
-    final eval = await AiService.evaluateTask({
+  test('Task-posting AI (the attractiveness score) is demo-only: no live '
+      'call, deterministic result, and no "offline" tag', () async {
+    const task = {
       'category': 'Plumber',
       'location': 'လှိုင် အမှတ် ၁၂',
       'date': '2026-06-26',
@@ -273,9 +326,16 @@ void main() {
       'description': 'အိမ်တွင် ရေပိုက်ယိုနေပါသည်။ ပြင်ဆင်ပေးရန် လိုအပ်ပါသည်။',
       'budget': 12000,
       'urgent': true,
-    });
-    expect(eval.source, AiSource.mock);
+    };
+    final eval = await AiService.evaluateTask(task);
     expect(eval.score, greaterThan(0));
+    // demo, NOT mock: the summary card must not show the "offline" badge for
+    // what is the intended local implementation.
+    expect(eval.source, AiSource.demo);
+
+    // Deterministic — the same task always scores the same.
+    final again = await AiService.evaluateTask(task);
+    expect(again.score, eval.score);
   });
 
   testWidgets(

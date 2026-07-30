@@ -16,7 +16,7 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Manual step 2 of 3: When & Where — date, time, place and the urgent option
+/// Manual step 3 of 5: When & Where — date, time, place and the urgent option
 /// in one step. On-site shows a township dropdown, an address field and a map
 /// picker (current vs. different location); remote shows work method /
 /// completion / deliverable choices instead.
@@ -204,7 +204,7 @@ class _WhenWhereScreenState extends ConsumerState<WhenWhereScreen> {
     final draft = ref.watch(taskDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 2, totalSteps: 4),
+      progress: const OnboardingProgress(step: 3, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: TaskPostingStrings.whenWhereTitle,
       title: TaskPostingStrings.whenWhereTitle,

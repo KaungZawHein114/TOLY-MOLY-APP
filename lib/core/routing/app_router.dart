@@ -6,6 +6,7 @@ import '../../features/customer/customer_home_shell.dart';
 import '../../features/customer/task_posting/post_method_screen.dart';
 import '../../features/customer/task_posting/review_publish_screen.dart';
 import '../../features/customer/task_posting/task_description_screen.dart';
+import '../../features/customer/task_posting/task_media_screen.dart';
 import '../../features/customer/task_posting/task_title_screen.dart';
 import '../../features/customer/task_posting/tasker_level_screen.dart';
 import '../../features/customer/task_posting/voice_task_chat_screen.dart';
@@ -33,7 +34,6 @@ import '../../features/worker/tasker_profile_screen.dart';
 import '../../features/worker/task_execution_screen.dart';
 import '../../features/worker/wallet/wallet_screen.dart';
 import '../../features/chatbot/chatbot_screen.dart';
-import '../../features/auth/audio/auth_audio_nav_observer.dart';
 import '../data/demo_data.dart';
 import '../theme/app_spacing.dart';
 import '../../features/customer/activity_screen.dart';
@@ -61,10 +61,11 @@ class Routes {
   // ── customer ────────────────────────────────────────────────────────────
   static const String customerHome = '/customer/home';
   // Task posting: [postTask] is the method picker; from there either the voice
-  // conversation or the three manual steps, both ending on [postTaskReview].
+  // conversation or the five manual steps, both ending on [postTaskReview].
   static const String postTask = '/customer/post-task';
   static const String postTaskVoice = '/customer/post-task/voice';
   static const String postTaskTitle = '/customer/post-task/title';
+  static const String postTaskMedia = '/customer/post-task/media';
   static const String postTaskWhenWhere = '/customer/post-task/when-where';
   static const String postTaskTaskerLevel = '/customer/post-task/tasker-level';
   static const String postTaskDescription = '/customer/post-task/description';
@@ -219,6 +220,13 @@ final List<RouteBase> _customerRoutes = [
     ),
   ),
   GoRoute(
+    path: Routes.postTaskMedia,
+    pageBuilder: (context, state) => _onboardingTransitionPage(
+      key: state.pageKey,
+      child: const TaskMediaScreen(),
+    ),
+  ),
+  GoRoute(
     path: Routes.postTaskWhenWhere,
     pageBuilder: (context, state) => _onboardingTransitionPage(
       key: state.pageKey,
@@ -324,10 +332,6 @@ final GoRouter appRouter = GoRouter(
       const _RootBackHandler(child: WelcomeScreen()),
   routes: [
     ShellRoute(
-      // Stops any playing auth voice clip the moment the user navigates
-      // between screens (push/pop/reset). Idle — and therefore a no-op —
-      // everywhere outside the auth flow, so nothing else is affected.
-      observers: [AuthAudioNavObserver()],
       builder: (context, state, child) => _RootBackHandler(child: child),
       routes: [
         ..._onboardingRoutes,

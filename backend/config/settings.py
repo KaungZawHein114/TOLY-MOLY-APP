@@ -28,6 +28,7 @@ INSTALLED_APPS = [
     "apps.verification",
     "apps.taskers",
     "apps.tasks",
+    "apps.assistant",
 ]
 
 MIDDLEWARE = [

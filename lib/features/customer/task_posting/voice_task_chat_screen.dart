@@ -9,23 +9,31 @@ import '../../../core/constants/task_posting_strings.dart';
 import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/utils/ai_mock.dart';
+import '../../../core/utils/ai_service.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
+import 'task_media_picker.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Voice posting — the conversational half of the flow. Pho Wa Yoke walks the
-/// scripted questions in [taskVoiceScript]; the client answers by speaking
-/// (mock mic), tapping a quick reply, or typing. Every answer lands in the same
-/// [taskDraftProvider] the manual steps write to, so the summary screen at the
-/// end is the identical screen either flow arrives at.
+/// AI Task Assistant — the conversational half of the posting flow. A real,
+/// multi-turn AI conversation (`AiService.taskAssistant`, backed by
+/// `backend/apps/tasks`' `POST /api/tasks/ai/analyze`), with a local
+/// fallback engine that takes over seamlessly if the backend is ever
+/// unreachable — see `ai_mock.dart`'s `taskAssistantFallbackTurn`. This is a
+/// SEPARATE agent from the floating App Assistant; it never shares a prompt,
+/// endpoint, or client with it.
 ///
-/// DEMO ONLY: there is no speech engine and no model here. The mic is a timed
-/// animation that hands back the current question's canned transcript, and the
-/// "thinking" pauses are [Timer]s — see `ai_mock.dart` for the script and the
-/// keyword extraction behind it.
+/// Stages: Collecting (one question at a time) → Confirming (Yes/No chips
+/// on a natural-language recap) → Media (optional, existing
+/// [TaskMediaPicker]) → hand off to the existing, unmodified Summary screen.
+/// Every collected field lands in the same [taskDraftProvider] the manual
+/// steps write to, so Summary is the identical screen either method reaches.
+///
+/// The mic is demo-only by design (not a placeholder for later real speech
+/// input): tapping it always hands back one fixed canned line, which then
+/// flows into the exact same pipeline as typed text — text is the one real,
+/// dynamic input surface here.
 class VoiceTaskChatScreen extends ConsumerStatefulWidget {
   const VoiceTaskChatScreen({super.key});
 
@@ -42,9 +50,10 @@ class _Turn {
   const _Turn.user(this.text) : fromAi = false;
 }
 
+enum _Stage { collecting, confirming, media, handoff }
+
 // Demo pacing — long enough to read as deliberate, short enough not to stall.
 const _kListeningDuration = Duration(milliseconds: 1400);
-const _kThinkingDuration = Duration(milliseconds: 900);
 const _kWrapUpDuration = Duration(milliseconds: 1300);
 
 class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
@@ -53,18 +62,33 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
   final ScrollController _scroll = ScrollController();
   final List<Timer> _timers = [];
 
-  /// Index into [taskVoiceScript]; equal to its length once every question has
-  /// been answered.
-  int _step = 0;
+  _Stage _stage = _Stage.collecting;
   bool _listening = false;
   bool _thinking = false;
-  bool _finished = false;
+  bool _handoffStarted = false;
+
+  /// The running merged-fields map — same shape the backend/fallback both
+  /// use: {category, title, description, township, address, date, time,
+  /// urgency, category_fields}.
+  Map<String, dynamic> _fields = {};
+
+  /// Turns already sent to the backend/fallback, oldest first — NOT
+  /// including the opening greeting (a fixed UI line, not something either
+  /// side needs echoed back for context).
+  final List<Map<String, String>> _history = [];
+
+  int _questionsAsked = 0;
+
+  /// Sticky once the backend fails once — no per-turn retries for the rest
+  /// of this conversation (design doc §10: flapping between live and
+  /// fallback mid-conversation would read as inconsistent, worse than just
+  /// staying local).
+  bool _usingFallback = false;
 
   @override
   void initState() {
     super.initState();
-    // Open with the first question so the screen is never an empty chat.
-    _turns.add(_Turn.ai(taskVoiceScript.first.question));
+    _turns.add(const _Turn.ai(TaskPostingStrings.taskAssistantGreeting));
   }
 
   @override
@@ -97,27 +121,23 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
     });
   }
 
-  bool get _busy => _listening || _thinking || _finished;
+  bool get _busy => _listening || _thinking || _handoffStarted;
 
-  VoiceTaskQuestion? get _current =>
-      _step < taskVoiceScript.length ? taskVoiceScript[_step] : null;
-
-  /// Mock mic: pulse for a beat, then "hear" this question's canned transcript.
+  /// Mock mic: pulse for a beat, then "hear" the one fixed demo line —
+  /// see the class doc comment for why this is deliberately not real STT.
   void _startListening() {
-    final question = _current;
-    if (_busy || question == null) return;
+    if (_busy || _stage != _Stage.collecting) return;
     HapticFeedback.mediumImpact();
     setState(() => _listening = true);
     _after(_kListeningDuration, () {
       setState(() => _listening = false);
-      _submit(question.micTranscript);
+      _submit(TaskPostingStrings.taskAssistantMicTranscript);
     });
   }
 
-  void _submit(String answer) {
+  Future<void> _submit(String answer) async {
     final text = answer.trim();
-    final question = _current;
-    if (text.isEmpty || question == null || _thinking || _finished) return;
+    if (text.isEmpty || _busy || _stage != _Stage.collecting) return;
 
     _input.clear();
     setState(() {
@@ -126,67 +146,114 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
     });
     _scrollToBottom();
 
-    _apply(question.field, text);
+    final questionNumber = _questionsAsked;
+    _questionsAsked++;
 
-    // A short "thinking" beat, then either the next question or the hand-off.
-    _after(_kThinkingDuration, () {
-      final next = _step + 1;
-      setState(() {
-        _thinking = false;
-        _step = next;
-        if (next < taskVoiceScript.length) {
-          _turns.add(_Turn.ai(taskVoiceScript[next].question));
-        } else {
-          _finished = true;
-          _turns.add(const _Turn.ai(voiceTaskWrapUpMessage));
-        }
-      });
-      _scrollToBottom();
-      if (_finished) {
-        _after(_kWrapUpDuration, () => context.push(Routes.postTaskReview));
-      }
+    final reply = _usingFallback
+        ? await AiService.taskAssistantOffline(
+            message: text,
+            knownFields: _fields,
+            questionsAsked: questionNumber,
+          )
+        : await AiService.taskAssistant(
+            message: text,
+            history: _history,
+            knownFields: _fields,
+            questionsAsked: questionNumber,
+          );
+    if (!mounted) return;
+
+    if (!_usingFallback && reply.source == AiSource.demo) {
+      _usingFallback = true; // sticky — see class field doc comment
+    }
+    _history
+      ..add({'role': 'user', 'content': text})
+      ..add({'role': 'assistant', 'content': reply.reply});
+    _fields = reply.fields;
+    _applyFieldsToDraft(_fields);
+
+    setState(() {
+      _thinking = false;
+      _turns.add(_Turn.ai(reply.reply));
+      _stage = reply.ready ? _Stage.confirming : _Stage.collecting;
     });
+    _scrollToBottom();
   }
 
-  /// Folds one answer into the shared draft. Extraction lives in `ai_mock.dart`
-  /// — this only maps the primitives it returns onto [TaskDraft].
-  void _apply(VoiceTaskField field, String answer) {
+  /// Maps the assistant's merged fields onto the shared [TaskDraft]. Budget
+  /// and tasker level are deliberately never touched here — those stay a
+  /// separate step after this conversation, same as the locked design.
+  void _applyFieldsToDraft(Map<String, dynamic> fields) {
     final notifier = ref.read(taskDraftProvider.notifier);
     final draft = ref.read(taskDraftProvider);
-    switch (field) {
-      case VoiceTaskField.need:
-        final need = voiceTaskNeed(answer);
-        notifier.state = draft.copyWith(
-          category: need.category,
-          title: need.title,
-          description: need.description,
-        );
-      case VoiceTaskField.place:
-        final place = voiceTaskPlace(answer);
-        notifier.state = draft.copyWith(
-          taskType: TaskType.onSite,
-          township: place.township,
-          address: place.address,
-        );
-      case VoiceTaskField.schedule:
-        final when = voiceTaskSchedule(answer);
-        notifier.state =
-            draft.copyWith(date: when.date, timeSlot: when.timeSlot);
-      case VoiceTaskField.urgency:
-        notifier.state = draft.copyWith(urgent: voiceTaskUrgent(answer));
-      case VoiceTaskField.tier:
-        final tierNumber = voiceTaskTierNumber(answer);
-        final updated = draft.copyWith(
-          workerTier: WorkerTier.values[tierNumber - 1],
-        );
-        notifier.state = updated.copyWith(
-          budgetMmk: estimateTaskBudgetMmk(
-            category: updated.effectiveCategory,
-            tierNumber: tierNumber,
-            urgent: updated.urgent,
-          ),
-        );
+
+    DateTime? date;
+    final rawDate = fields['date'] as String?;
+    if (rawDate != null && rawDate != 'flexible') {
+      date = DateTime.tryParse(rawDate);
     }
+    final rawTime = fields['time'] as String?;
+
+    final categoryFields =
+        (fields['category_fields'] as Map?)?.cast<String, dynamic>() ??
+            const {};
+    final detail = categoryFields['detail'] as String?;
+    var description = fields['description'] as String?;
+    if (detail != null &&
+        detail.trim().isNotEmpty &&
+        (description == null || !description.contains(detail))) {
+      description = (description == null || description.isEmpty)
+          ? detail
+          : '$description $detail';
+    }
+
+    notifier.state = draft.copyWith(
+      category: fields['category'] as String?,
+      title: fields['title'] as String?,
+      description: description,
+      taskType: TaskType.onSite,
+      township: fields['township'] as String?,
+      address: fields['address'] as String?,
+      date: date,
+      timeSlot: rawTime,
+      urgent: fields['urgency'] == 'URGENT'
+          ? true
+          : (fields['urgency'] == 'NORMAL' ? false : null),
+    );
+  }
+
+  /// "Yes, that's right" — move on to the optional media step.
+  void _confirmYes() {
+    if (_busy || _stage != _Stage.confirming) return;
+    setState(() {
+      _turns.add(const _Turn.ai(TaskPostingStrings.taskAssistantMediaPrompt));
+      _stage = _Stage.media;
+    });
+    _scrollToBottom();
+  }
+
+  /// "No, let me change something" — drop back into Collecting; the user's
+  /// next message is sent as a correction through the same pipeline.
+  void _confirmNo() {
+    if (_busy || _stage != _Stage.confirming) return;
+    setState(() {
+      _turns.add(const _Turn.user(TaskPostingStrings.taskAssistantConfirmNo));
+      _turns.add(const _Turn.ai(TaskPostingStrings.taskAssistantConfirmNoPrompt));
+      _stage = _Stage.collecting;
+    });
+    _scrollToBottom();
+  }
+
+  /// Media step done (Skip or Continue both call this) — hand off to Summary.
+  void _finishMedia() {
+    if (_handoffStarted) return;
+    setState(() {
+      _handoffStarted = true;
+      _turns.add(const _Turn.ai(TaskPostingStrings.taskAssistantWrapUpMessage));
+      _stage = _Stage.handoff;
+    });
+    _scrollToBottom();
+    _after(_kWrapUpDuration, () => context.push(Routes.postTaskReview));
   }
 
   /// Start the conversation over — the draft is rebuilt from scratch, so a
@@ -201,27 +268,28 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
     setState(() {
       _turns
         ..clear()
-        ..add(_Turn.ai(taskVoiceScript.first.question));
-      _step = 0;
+        ..add(const _Turn.ai(TaskPostingStrings.taskAssistantGreeting));
+      _fields = {};
+      _history.clear();
+      _questionsAsked = 0;
+      _usingFallback = false;
+      _stage = _Stage.collecting;
       _listening = false;
       _thinking = false;
-      _finished = false;
+      _handoffStarted = false;
     });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final question = _current;
-    final lastAiLine =
-        _turns.lastWhere((t) => t.fromAi, orElse: () => const _Turn.ai("")).text;
+    final media = ref.watch(taskDraftProvider.select((d) => d.media));
 
     return Scaffold(
       backgroundColor: AppColors.lightBg,
       appBar: AppBar(
         title: const Text(TaskPostingStrings.voiceChatTitle),
         actions: [
-          ReadAloudButton(textToRead: lastAiLine),
           IconButton(
             onPressed: _restart,
             tooltip: TaskPostingStrings.voiceChatRestart,
@@ -245,20 +313,45 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
               ),
             ),
             if (_listening) const _ListeningBanner(),
-            // Quick replies keep the demo keyboard-free and give low-literacy
-            // users recognition instead of recall.
-            if (question != null && !_busy)
+            if (_stage == _Stage.confirming && !_busy)
               _QuickReplies(
-                replies: question.quickReplies,
-                onTap: _submit,
+                replies: const [
+                  TaskPostingStrings.taskAssistantConfirmYes,
+                  TaskPostingStrings.taskAssistantConfirmNo,
+                ],
+                onTap: (reply) => reply == TaskPostingStrings.taskAssistantConfirmYes
+                    ? _confirmYes()
+                    : _confirmNo(),
               ),
-            _InputBar(
-              controller: _input,
-              enabled: !_busy,
-              listening: _listening,
-              onMic: _startListening,
-              onSend: () => _submit(_input.text),
-            ),
+            if (_stage == _Stage.media) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.sm),
+                child: TaskMediaPicker(
+                  items: media,
+                  onChanged: (next) => ref.read(taskDraftProvider.notifier).state =
+                      ref.read(taskDraftProvider).copyWith(media: next),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.md),
+                child: FilledButton(
+                  onPressed: _busy ? null : _finishMedia,
+                  child: Text(media.isEmpty
+                      ? TaskPostingStrings.mediaSkipButton
+                      : TaskPostingStrings.taskAssistantMediaContinue),
+                ),
+              ),
+            ],
+            if (_stage == _Stage.collecting)
+              _InputBar(
+                controller: _input,
+                enabled: !_busy,
+                listening: _listening,
+                onMic: _startListening,
+                onSend: () => _submit(_input.text),
+              ),
             Padding(
               padding: const EdgeInsets.only(bottom: AppSpacing.sm),
               child: Text(

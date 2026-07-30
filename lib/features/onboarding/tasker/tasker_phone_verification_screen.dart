@@ -8,7 +8,6 @@ import '../../../core/widgets/app_buttons.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/phone_otp_form.dart';
-import '../../auth/audio/auth_audio_map.dart';
 import '../../auth/data/auth_failure.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../onboarding_models.dart';
@@ -26,15 +25,12 @@ class TaskerPhoneVerificationScreen extends ConsumerWidget {
       mascotState: draft.otpVerified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.phoneVerificationTitle,
       title: OnboardingStrings.phoneVerificationTitle,
-      readAloudAudioKey: AuthAudioKeys.phoneVerification,
       onBack: () => context.pop(),
       body: PhoneOtpForm(
         initialPhone: draft.phone,
         initiallyVerified: draft.otpVerified,
         alreadySent: draft.otpSent,
         initialDevCode: draft.lastDevOtpCode,
-        phoneAudioKey: AuthAudioKeys.phone,
-        otpAudioKey: AuthAudioKeys.otp,
         // "ပြင်မည်" pops back to the Account step, where the phone lives.
         onEditPhone: () => context.pop(),
         onPhoneChanged: (v) {

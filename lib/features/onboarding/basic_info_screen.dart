@@ -9,7 +9,6 @@ import '../../core/widgets/app_buttons.dart';
 import '../../core/widgets/app_text_field.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
 import '../../core/widgets/onboarding/onboarding_scaffold.dart';
-import '../auth/audio/auth_audio_map.dart';
 import '../auth/data/auth_failure.dart';
 import '../auth/providers/auth_provider.dart';
 import 'onboarding_models.dart';
@@ -139,7 +138,6 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
         children: [
           AppTextField(
             label: OnboardingStrings.phoneLabel,
-            audioKey: AuthAudioKeys.phone,
             mockTranscript: "09123456789",
             onSpeechResult: (v) => setState(
                 () => _phoneError = _phoneFormatError(v.trim())),
@@ -154,7 +152,6 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: OnboardingStrings.passwordLabel,
-            audioKey: AuthAudioKeys.password,
             controller: _passwordController,
             obscureText: true,
             leadingIcon: Icons.lock_outline,

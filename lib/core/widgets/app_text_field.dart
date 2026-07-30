@@ -4,11 +4,10 @@ import 'package:flutter/services.dart';
 import '../constants/onboarding_strings.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
-import 'onboarding/field_label_with_voice.dart';
 
-/// The design system's canonical text field: label row (with optional
-/// per-field listen/speak controls), leading icon, comfortable 56dp height,
-/// rounded filled surface with a clear focus ring, and inline validation.
+/// The design system's canonical text field: label row, leading icon,
+/// comfortable 56dp height, rounded filled surface with a clear focus ring,
+/// and inline validation.
 ///
 /// Every text input in the app should be this widget instead of a hand-rolled
 /// `TextField` + `InputDecoration`, so focus/error/disabled states look and
@@ -25,19 +24,15 @@ import 'onboarding/field_label_with_voice.dart';
 /// )
 /// ```
 ///
-/// Voice accessibility: pass [audioKey] (pre-recorded clip) or rely on the
-/// default TTS listen button for the label; pass [mockTranscript] +
-/// [onSpeechResult] to get a microphone INSIDE the field (Messenger/Viber
-/// pattern — voice is part of the input, never a separate step). Tapping the
-/// mic shows a live "listening" state, then fills the field. Password fields
-/// ([obscureText]) get a built-in show/hide toggle and intentionally never
-/// show a mic.
+/// Voice input: pass [mockTranscript] + [onSpeechResult] to get a microphone
+/// INSIDE the field (Messenger/Viber pattern — voice is part of the input,
+/// never a separate step). Tapping the mic shows a live "listening" state,
+/// then fills the field. Password fields ([obscureText]) get a built-in
+/// show/hide toggle and intentionally never show a mic.
 class AppTextField extends StatefulWidget {
   /// Burmese-first field label rendered above the input. Null hides the row.
   final String? label;
 
-  /// Listen-button behavior for the label row — see [FieldLabelWithVoice].
-  final String? audioKey;
   final String? mockTranscript;
   final ValueChanged<String>? onSpeechResult;
 
@@ -69,7 +64,6 @@ class AppTextField extends StatefulWidget {
   const AppTextField({
     super.key,
     this.label,
-    this.audioKey,
     this.mockTranscript,
     this.onSpeechResult,
     this.controller,
@@ -152,13 +146,7 @@ class _AppTextFieldState extends State<AppTextField> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         if (widget.label != null) ...[
-          // Label row keeps only the LISTEN control — the speak (mic) control
-          // now lives inside the field itself, chat-app style.
-          FieldLabelWithVoice(
-            label: widget.label!,
-            readAloudText: widget.label!,
-            audioKey: widget.audioKey,
-          ),
+          Text(widget.label!, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
         ],
         TextField(

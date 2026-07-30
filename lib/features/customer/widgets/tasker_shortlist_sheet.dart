@@ -11,7 +11,6 @@ import '../../../core/widgets/demo_card.dart' show TrustBadgePill;
 import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../../core/widgets/voice_input_button.dart';
 
 /// Tasker-Finding mode surface (spec §4.3). A modal bottom sheet that shows
@@ -84,17 +83,6 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
     );
   }
 
-  String get _readAloudSummary {
-    if (_matches.isEmpty) return TaskPostingStrings.matchEmptyMessage;
-    final buffer = StringBuffer('${TaskPostingStrings.matchReadyMessage} ');
-    for (var i = 0; i < _matches.length; i++) {
-      final w = _byId[_matches[i].workerId];
-      if (w == null) continue;
-      buffer.write('${i + 1}။ ${w.name}၊ ${_matches[i].reason} ');
-    }
-    return buffer.toString();
-  }
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -134,9 +122,6 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
                     style: theme.textTheme.titleLarge,
                   ),
                 ),
-                // Read-aloud control — speaks the whole shortlist + reasons.
-                ReadAloudButton(textToRead: _readAloudSummary, compact: true),
-                const SizedBox(width: AppSpacing.xs),
                 Semantics(
                   label: TaskPostingStrings.matchSpeakServicePrompt,
                   button: true,
@@ -353,26 +338,17 @@ class _ShortlistCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          // Spoken "why I picked them" — reason bubble + its own read-aloud.
+          // Spoken "why I picked them" reason bubble.
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
               color: AppColors.indigo100,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Expanded(
-                  child: Text(
-                    reason,
-                    style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.indigo700),
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                ReadAloudButton(textToRead: '${worker.name}။ $reason', compact: true),
-              ],
+            child: Text(
+              reason,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.indigo700),
             ),
           ),
           const SizedBox(height: AppSpacing.md),

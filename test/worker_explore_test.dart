@@ -47,6 +47,6 @@ void main() {
 
     // Category + tier are auto-filled from the chosen worker, so the flow
     // jumps straight to the Location step.
-    expect(find.text(TaskPostingStrings.typeLocationTitle), findsWidgets);
+    expect(find.text(TaskPostingStrings.whenWhereTitle), findsWidgets);
   });
 }

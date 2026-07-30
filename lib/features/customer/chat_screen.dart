@@ -80,7 +80,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     };
     final chat1Snippet = switch (phase) {
       TaskPhase.discussing =>
-        'မင်္ဂလာပါ။ သင့်အလုပ်ကို စိတ်ဝင်စားလို့ ဆက်သွယ်လိုက်တာပါ။',
+        'မင်္ဂလာပါ။ ဒီအလုပ်ကို ကျွန်တော် စိတ်ဝင်စားပါတယ်။',
       TaskPhase.confirmed =>
         'နှစ်ဦးသဘောတူပြီးပါပြီ။ Escrow ဖြင့် ဆက်လက်ဆောင်ရွက်ပါ။',
       TaskPhase.marked =>
@@ -91,7 +91,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       _Convo(
         name: kDiscussionTaskerName,
         emoji: kTaskerEmoji,
-        jobCategory: 'လျှပ်စစ်ပြုပြင်ခြင်း',
+        jobCategory: 'ရေမော်တာ ပြုပြင်ခြင်း',
         snippet: chat1Snippet,
         time: 'ယခု',
         statusLabel: chat1Status,
@@ -112,7 +112,7 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         jobCategory: 'ရေပိုက်ပြုပြင်ခြင်း',
         snippet: 'အလုပ် အတည်ဖြစ်ပြီးပါပြီ။ ထွက်ခွာချိန် ရောက်ရင် အသိပေးပါမယ်။',
         time: 'မနက်က',
-        statusLabel: 'အလုပ်ဆောင်ရွက်ဆဲ',
+        statusLabel: 'ငွေပေးပြီး · လာရန် စောင့်ဆဲ',
         statusColor: AppColors.tealDark,
         isUnread: false,
         isOnline: false,

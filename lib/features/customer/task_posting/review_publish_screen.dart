@@ -48,8 +48,8 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
     _loadEvaluation();
   }
 
-  /// Live AI (Firebase → OpenAI) scores the task's attractiveness to workers,
-  /// falling back to the offline completeness heuristic on any failure.
+  /// Scores the task's attractiveness to workers — a fully local, deterministic
+  /// completeness heuristic (see AiService.evaluateTask). No network call.
   Future<void> _loadEvaluation() async {
     final draft = ref.read(taskDraftProvider);
     final eval = await AiService.evaluateTask({
@@ -114,6 +114,7 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
       budgetMmk: draft.budgetMmk ?? 0,
       notes: draft.notes,
       createdAt: DateTime.now(),
+      media: draft.media,
     );
     ref.read(postedTasksProvider.notifier).state = [
       ...ref.read(postedTasksProvider),
@@ -133,7 +134,7 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
     final isRemote = draft.taskType == TaskType.remote;
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 4, totalSteps: 4),
+      progress: const OnboardingProgress(step: 5, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: TaskPostingStrings.reviewTitle,
       title: TaskPostingStrings.reviewTitle,
@@ -210,6 +211,13 @@ class _ReviewPublishScreenState extends ConsumerState<ReviewPublishScreen> {
                   label: TaskPostingStrings.reviewDescriptionLabel,
                   value: draft.description.isEmpty ? "-" : draft.description,
                   onEdit: () => _editAt(Routes.postTaskDescription),
+                ),
+                _SummaryRow(
+                  label: TaskPostingStrings.reviewMediaLabel,
+                  value: draft.media.isEmpty
+                      ? TaskPostingStrings.reviewMediaNone
+                      : TaskPostingStrings.reviewMediaCount(draft.media.length),
+                  onEdit: () => _editAt(Routes.postTaskMedia),
                   isLast: true,
                 ),
               ],

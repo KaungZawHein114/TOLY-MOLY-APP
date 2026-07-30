@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Required by image_picker for camera capture on Android: it hands the
+     camera app a content:// URI backed by this FileProvider so the photo/
+     video can be written back into our app's cache. Without this file and
+     the matching <provider> in AndroidManifest.xml, tapping "Take Photo" (or
+     "Record Video") crashes with IllegalArgumentException: Failed to find
+     configured root. -->
+<paths xmlns:android="http://schemas.android.com/apk/res-auto">
+    <cache-path name="camera_pics" path="." />
+    <external-cache-path name="camera_pics_external" path="." />
+</paths>

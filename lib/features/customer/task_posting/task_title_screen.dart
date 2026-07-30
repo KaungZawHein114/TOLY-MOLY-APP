@@ -8,12 +8,8 @@ import '../../../core/routing/app_router.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/ai_mock.dart';
-import '../../../core/utils/ai_service.dart';
-import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
-import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
 import '../../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../../../core/widgets/service_category_card.dart';
 import '../../onboarding/onboarding_models.dart';
@@ -21,9 +17,11 @@ import 'task_posting_bottom_bar.dart';
 import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Manual step 1 of 3: Task Title. The user names the task in the title field
-/// (free text — AI detects a category from it) or picks a category card
-/// directly. "Other" reveals a free-text "specify category" box.
+/// Manual step 1 of 5: Task Title + Category. The user names the task in the
+/// title field (free text) and picks a category card directly, or speaks it
+/// (the voice quick-pick maps to a category through the same offline keyword
+/// matcher the rest of the app uses — no AI suggestion step, no loading
+/// state). "Other" reveals a free-text "specify category" box.
 ///
 /// Also serves as the summary screen's "Title"/"Category" edit target, for
 /// tasks that came from either posting method.
@@ -37,8 +35,6 @@ class TaskTitleScreen extends ConsumerStatefulWidget {
 class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
   late final TextEditingController _titleController;
   late final TextEditingController _customCategoryController;
-  String? _aiSuggestion;
-  bool _suggesting = false;
   String? _categoryError;
   String? _customCategoryError;
 
@@ -60,40 +56,6 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
 
   bool get _editMode =>
       GoRouterState.of(context).uri.queryParameters['edit'] == '1';
-
-  void _onTitleChanged(String _) {
-    // A new title invalidates any previous suggestion.
-    if (_aiSuggestion != null) setState(() => _aiSuggestion = null);
-  }
-
-  /// Live AI (Firebase → OpenAI) suggests a category from the title, falling
-  /// back to the offline keyword mock automatically. The suggestion is never
-  /// auto-applied — the user taps the card to confirm it.
-  Future<void> _suggestCategory() async {
-    final title = _titleController.text.trim();
-    if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text(TaskPostingStrings.suggestCategoryNeedTitle)),
-      );
-      return;
-    }
-    setState(() => _suggesting = true);
-    final skills =
-        categoryToSkills.values.expand((s) => s).toSet().toList();
-    final suggestion = await AiService.suggestCategory(title, skills);
-    if (!mounted) return;
-    setState(() {
-      _aiSuggestion = suggestion;
-      _suggesting = false;
-    });
-  }
-
-  void _confirmAiSuggestion() {
-    if (_aiSuggestion == null) return;
-    ref.read(taskDraftProvider.notifier).state =
-        ref.read(taskDraftProvider).copyWith(category: _aiSuggestion);
-    setState(() => _categoryError = null);
-  }
 
   void _selectCategory(String skill) {
     ref.read(taskDraftProvider.notifier).state =
@@ -168,7 +130,7 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
     if (_editMode) {
       context.pop();
     } else {
-      context.push(Routes.postTaskWhenWhere);
+      context.push(Routes.postTaskMedia);
     }
   }
 
@@ -180,7 +142,7 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
     final isOther = category == kOtherCategory;
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 1, totalSteps: 4),
+      progress: const OnboardingProgress(step: 1, totalSteps: 5),
       mascotState: PhoWaYokeState.thinking,
       mascotMessage: TaskPostingStrings.categoryTitle,
       title: TaskPostingStrings.categoryTitle,
@@ -189,22 +151,14 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // ── Task title ──────────────────────────────────────────────────
-          Row(
-            children: [
-              Expanded(
-                child: Text(TaskPostingStrings.taskTitleLabel,
-                    style: theme.textTheme.titleMedium),
-              ),
-              ReadAloudButton(textToRead: TaskPostingStrings.taskTitleLabel),
-            ],
-          ),
+          Text(TaskPostingStrings.taskTitleLabel,
+              style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
               Expanded(
                 child: TextField(
                   controller: _titleController,
-                  onChanged: _onTitleChanged,
                   textInputAction: TextInputAction.done,
                   style: theme.textTheme.bodyLarge,
                   decoration: InputDecoration(
@@ -222,58 +176,18 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
               SpeechToTextButton(
                 semanticPrompt: TaskPostingStrings.taskTitleHint,
                 mockTranscript: "ပန်ကာ တပ်ဆင်ရန်",
-                onResult: (v) {
-                  _titleController.text = v;
-                  _onTitleChanged(v);
-                },
+                onResult: (v) => _titleController.text = v,
               ),
             ],
           ),
-          const SizedBox(height: AppSpacing.md),
-          LargeButton(
-            label: _suggesting
-                ? TaskPostingStrings.aiThinking
-                : TaskPostingStrings.suggestCategoryButton,
-            icon: Icons.auto_awesome,
-            filled: false,
-            outlineColor: AppColors.indigo700,
-            onTap: _suggesting ? () {} : _suggestCategory,
-          ),
-          if (_aiSuggestion != null) ...[
-            const SizedBox(height: AppSpacing.lg),
-            OnboardingSelectionCard(
-              emoji: "🤖",
-              label: "${TaskPostingStrings.aiSuggestionPrefix}$_aiSuggestion",
-              selected: category == _aiSuggestion,
-              semanticLabel:
-                  "${TaskPostingStrings.aiSuggestionPrefix}$_aiSuggestion",
-              onTap: _confirmAiSuggestion,
-            ),
-          ],
           const SizedBox(height: AppSpacing.xl),
-          Row(
-            children: [
-              const Expanded(child: Divider(color: AppColors.onboardingDivider)),
-              Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: AppSpacing.md),
-                child: Text(TaskPostingStrings.orDivider,
-                    style: theme.textTheme.bodySmall
-                        ?.copyWith(color: AppColors.textSecondary)),
-              ),
-              const Expanded(child: Divider(color: AppColors.onboardingDivider)),
-            ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          // ── Choose category: ONE voice control + one read-aloud control ──
+          // ── Choose category: label + voice control ──────────────────────
           Row(
             children: [
               Expanded(
                 child: Text(TaskPostingStrings.manualCategoryPrompt,
                     style: theme.textTheme.titleMedium),
               ),
-              ReadAloudButton(textToRead: TaskPostingStrings.manualCategoryPrompt),
-              const SizedBox(width: AppSpacing.xs),
               SpeechToTextButton(
                 semanticPrompt: TaskPostingStrings.categoryVoicePrompt,
                 mockTranscript: "သန့်ရှင်းရေး",
@@ -297,7 +211,6 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
                 return ServiceCategoryCard(
                   emoji: "➕",
                   label: TaskPostingStrings.otherCategoryLabel,
-                  showListen: false,
                   selected: isOther,
                   onTap: _selectOther,
                 );
@@ -308,7 +221,6 @@ class _TaskTitleScreenState extends ConsumerState<TaskTitleScreen> {
               return ServiceCategoryCard(
                 emoji: c.icon,
                 label: c.burmese,
-                showListen: false,
                 selected: skill != null && category == skill,
                 onTap: skill == null ? () {} : () => _selectCategory(skill),
               );

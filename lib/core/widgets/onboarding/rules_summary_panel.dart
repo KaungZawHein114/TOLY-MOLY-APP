@@ -1,28 +1,21 @@
 import 'package:flutter/material.dart';
 
-import '../../../features/auth/audio/auth_audio_button.dart';
 import '../../constants/onboarding_strings.dart';
 import '../../theme/app_colors.dart';
 import '../../theme/app_spacing.dart';
 
 /// The redesigned Terms step: rules as five icon + one-line rows that can be
-/// recognized at a glance (recognition over recall), a listen control, and
-/// the full legal text tucked behind "အပြည့်အစုံ ဖတ်မည်" (progressive
-/// disclosure). Agreement itself is the screen's single big CTA, owned by
-/// the caller — this panel only presents.
+/// recognized at a glance (recognition over recall), and the full legal text
+/// tucked behind "အပြည့်အစုံ ဖတ်မည်" (progressive disclosure). Agreement
+/// itself is the screen's single big CTA, owned by the caller — this panel
+/// only presents.
 class RulesSummaryPanel extends StatefulWidget {
-  /// Full rules text, shown when the user expands and read by the TTS/audio
-  /// listen control.
+  /// Full rules text, shown when the user expands.
   final String fullRulesText;
-
-  /// AUTH-ONLY pre-recorded clip key; null falls back to nothing (auth
-  /// screens never use TTS).
-  final String? audioKey;
 
   const RulesSummaryPanel({
     super.key,
     required this.fullRulesText,
-    this.audioKey,
   });
 
   @override
@@ -46,20 +39,8 @@ class _RulesSummaryPanelState extends State<RulesSummaryPanel> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            Expanded(
-              child: Text(OnboardingStrings.rulesSummaryIntro,
-                  style: theme.textTheme.titleMedium),
-            ),
-            if (widget.audioKey != null)
-              AuthAudioButton(
-                audioKey: widget.audioKey!,
-                semanticLabel: OnboardingStrings.rulesTitle,
-                compact: true,
-              ),
-          ],
-        ),
+        Text(OnboardingStrings.rulesSummaryIntro,
+            style: theme.textTheme.titleMedium),
         const SizedBox(height: AppSpacing.md),
         Container(
           decoration: BoxDecoration(

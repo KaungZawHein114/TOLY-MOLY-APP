@@ -1,30 +1,31 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/onboarding_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/utils/ai_service.dart';
-import '../../../core/widgets/large_button.dart';
+import '../../../core/utils/ai_service.dart' show OnboardingExtraction, AiSource;
 import '../../../core/widgets/mascot/mascot_message_card.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
-import '../../../core/widgets/voice_input_button.dart';
 import '../onboarding_models.dart';
 
-/// Onboarding voice mode surface (spec §4.1/§4.6). Pho Wa Yoke greets, shows a
-/// sample script, and listens: the recognized words stream into an EDITABLE
-/// transcript field so the user can see (and fix) what was heard, then taps
-/// Continue to extract the signup fields, shown PRE-FILLED for confirmation with
-/// a read-back and a redo. It NEVER submits: on confirm it just returns the
-/// [OnboardingExtraction] to the caller, which pre-fills the real, editable
-/// form. Manual entry stays one tap away.
+/// COMPETITION DEMO ONLY — rebuilt 2026-07-29.
 ///
-/// STT locale is ENGLISH during the current testing phase (see
-/// [_VoiceOnboardingSheetState._localeCandidates]); switch to Burmese later.
+/// The old sheet drove a REAL on-device speech recognizer (`VoiceInputButton`,
+/// package:speech_to_text) and a live/mock AI extraction call. Both are gone:
+/// this is now a fully scripted, offline state machine —
+/// `idle → listening → processing → verified` — timed with plain [Timer]s.
+/// No microphone is ever opened, no permission is ever requested, and no AI
+/// call of any kind is made. On reaching `verified` it auto-pops with a fixed
+/// canned [OnboardingExtraction] (tagged [AiSource.demo]) that the caller
+/// pre-fills into the real, editable form — nothing is ever submitted here.
 ///
-/// Opens via [showVoiceOnboarding]; pops with the confirmed extraction or null.
+/// Applies identically to the Client and Tasker sign-up flows: both reach
+/// this sheet through the same [VoiceFillBanner] on their "About You" step.
 class VoiceOnboardingSheet extends ConsumerStatefulWidget {
   final UserRole role;
   const VoiceOnboardingSheet({super.key, required this.role});
@@ -34,81 +35,77 @@ class VoiceOnboardingSheet extends ConsumerStatefulWidget {
       _VoiceOnboardingSheetState();
 }
 
-class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
-  // The live transcript is shown in an EDITABLE field so the user can SEE their
-  // words appear as they speak (and fix them / type instead). Testing phase uses
-  // English (see [_localeCandidates]); switch to Burmese once tested.
-  final TextEditingController _transcriptController = TextEditingController();
-  bool _loading = false;
-  bool _listening = false;
-  String? _sttStatus; // last mic status/error, surfaced for debugging visibility
-  OnboardingExtraction? _extraction;
+enum _AuthPhase { idle, listening, processing, verified }
 
-  // English-first for the current testing phase, per request. The first locale
-  // the phone actually has installed wins; null falls back to the device default.
-  static const List<String> _localeCandidates = [
-    'en_US',
-    'en-US',
-    'en_GB',
-    'en-GB',
-    'en',
-  ];
+// Demo pacing — "around 2-3 seconds" per the spec; long enough to read as
+// real analysis, short enough not to stall the demo.
+const _kListeningDuration = Duration(milliseconds: 2400);
+const _kProcessingDuration = Duration(milliseconds: 2400);
+const _kVerifiedHoldDuration = Duration(milliseconds: 1100);
+
+class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet>
+    with SingleTickerProviderStateMixin {
+  _AuthPhase _phase = _AuthPhase.idle;
+  final List<Timer> _timers = [];
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat();
 
   bool get _isTasker => widget.role == UserRole.tasker;
 
   @override
   void dispose() {
-    _transcriptController.dispose();
+    for (final t in _timers) {
+      t.cancel();
+    }
+    _pulse.dispose();
     super.dispose();
   }
 
-  // Live recognized words -> the field (caret kept at the end). Voice is primary,
-  // so an incoming result overwrites the field; manual edits flow via onChanged.
-  void _setTranscript(String v) {
-    _transcriptController.value = TextEditingValue(
-      text: v,
-      selection: TextSelection.collapsed(offset: v.length),
+  void _after(Duration delay, VoidCallback action) {
+    late Timer timer;
+    timer = Timer(delay, () {
+      _timers.remove(timer);
+      if (mounted) action();
+    });
+    _timers.add(timer);
+  }
+
+  /// Click Mic → Listening → Processing → Verified → auto-continue. Nothing
+  /// here can be interrupted or fail — that's the point of a demo flow.
+  void _start() {
+    if (_phase != _AuthPhase.idle) return;
+    HapticFeedback.mediumImpact();
+    setState(() => _phase = _AuthPhase.listening);
+    _after(_kListeningDuration, () {
+      HapticFeedback.selectionClick();
+      setState(() => _phase = _AuthPhase.processing);
+      _after(_kProcessingDuration, () {
+        HapticFeedback.mediumImpact();
+        setState(() => _phase = _AuthPhase.verified);
+        _after(_kVerifiedHoldDuration, () {
+          if (mounted) Navigator.of(context).pop(_cannedExtraction());
+        });
+      });
+    });
+  }
+
+  /// A fixed, believable demo profile — deliberately not derived from any
+  /// real input. Same name/age/phone the app's onboarding script already
+  /// shows as a spoken-example sentence elsewhere; taskers additionally get
+  /// two sample skills so their profile reads as complete.
+  OnboardingExtraction _cannedExtraction() {
+    return OnboardingExtraction(
+      name: "အောင်အောင်",
+      gender: Gender.male,
+      age: 25,
+      phone: "09789123456",
+      skills: _isTasker
+          ? const [TaskerSkill.cleaning, TaskerSkill.plumbing]
+          : const [],
+      source: AiSource.demo,
     );
-  }
-
-  Future<void> _extract(String text) async {
-    final t = text.trim();
-    if (t.isEmpty) {
-      setState(() => _sttStatus = OnboardingStrings.voiceNeedTextFirst);
-      return;
-    }
-    setState(() => _loading = true);
-    final result =
-        await AiService.extractOnboarding(transcript: t, role: widget.role);
-    if (!mounted) return;
-    setState(() {
-      _extraction = result;
-      _loading = false;
-    });
-  }
-
-  void _retry() {
-    _transcriptController.clear();
-    setState(() {
-      _extraction = null;
-      _sttStatus = null;
-    });
-  }
-
-  String _readBackSummary(OnboardingExtraction e) {
-    final parts = <String>[
-      if (e.name.isNotEmpty) '${OnboardingStrings.voiceFieldName} ${e.name}',
-      if (e.gender != null)
-        '${OnboardingStrings.voiceFieldGender} ${e.gender!.label}',
-      if (e.age != null)
-        '${OnboardingStrings.voiceFieldAge} ${toBurmeseDigits(e.age!)}',
-      if (e.phone.isNotEmpty)
-        '${OnboardingStrings.voiceFieldPhone} ${e.phone}',
-      if (_isTasker && e.skills.isNotEmpty)
-        '${OnboardingStrings.voiceFieldSkills} ${e.skills.map((s) => s.label).join('၊ ')}',
-    ];
-    if (parts.isEmpty) return OnboardingStrings.voiceNothingHeard;
-    return '${OnboardingStrings.voiceReviewPrompt} ${parts.join('။ ')}';
   }
 
   @override
@@ -116,12 +113,8 @@ class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: EdgeInsets.only(
-          left: AppSpacing.lg,
-          right: AppSpacing.lg,
-          top: AppSpacing.md,
-          bottom: MediaQuery.of(context).viewInsets.bottom + AppSpacing.lg,
-        ),
+        padding: const EdgeInsets.fromLTRB(
+            AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.xl),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -130,294 +123,83 @@ class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
               child: Container(
                 width: 40,
                 height: 4,
-                margin: const EdgeInsets.only(bottom: AppSpacing.md),
+                margin: const EdgeInsets.only(bottom: AppSpacing.lg),
                 decoration: BoxDecoration(
                   color: AppColors.onboardingDivider,
                   borderRadius: BorderRadius.circular(AppRadius.pill),
                 ),
               ),
             ),
-            Flexible(
-              child: SingleChildScrollView(
-                child: _loading
-                    ? _extractingView()
-                    : (_extraction == null
-                        ? _introView()
-                        : _reviewView(_extraction!)),
+            switch (_phase) {
+              _AuthPhase.idle => _IdleView(onTap: _start, pulse: _pulse),
+              _AuthPhase.listening => _ListeningView(pulse: _pulse),
+              _AuthPhase.processing => const _ProcessingView(),
+              _AuthPhase.verified => const _VerifiedView(),
+            },
+            if (_phase == _AuthPhase.idle) ...[
+              const SizedBox(height: AppSpacing.lg),
+              Center(
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  child: const Text(OnboardingStrings.voiceManualButton),
+                ),
               ),
-            ),
+            ],
           ],
         ),
       ),
     );
   }
+}
 
-  Widget _introView() {
+class _IdleView extends StatelessWidget {
+  final VoidCallback onTap;
+  final AnimationController pulse;
+  const _IdleView({required this.onTap, required this.pulse});
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final script = _isTasker
-        ? OnboardingStrings.voiceScriptTasker
-        : OnboardingStrings.voiceScriptClient;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         const MascotMessageCard(
           state: PhoWaYokeState.happy,
-          message: OnboardingStrings.voiceOnboardingGreeting,
+          message: OnboardingStrings.voiceAuthTitle,
         ),
-        const SizedBox(height: AppSpacing.lg),
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.blue100,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(OnboardingStrings.voiceOnboardingScriptLabel,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textSecondary)),
-                  ),
-                  ReadAloudButton(textToRead: script, compact: true),
-                ],
-              ),
-              const SizedBox(height: AppSpacing.sm),
-              Text(script,
-                  style: theme.textTheme.bodyLarge
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        // Live transcript — the words appear here as the user speaks, and stay
-        // editable so they can fix a mis-hear or type instead.
-        Row(
-          children: [
-            Expanded(
-              child: Text(OnboardingStrings.voiceTranscriptLabel,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary)),
-            ),
-            if (_listening)
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Container(
-                    width: 8,
-                    height: 8,
-                    decoration: const BoxDecoration(
-                        color: AppColors.error, shape: BoxShape.circle),
-                  ),
-                  const SizedBox(width: AppSpacing.xs),
-                  Text(OnboardingStrings.voiceListeningNow,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: AppColors.error)),
-                ],
-              ),
-          ],
-        ),
-        const SizedBox(height: AppSpacing.xs),
-        TextField(
-          controller: _transcriptController,
-          minLines: 2,
-          maxLines: 4,
-          textInputAction: TextInputAction.done,
-          onChanged: (_) => setState(() {}), // refresh Continue button state
-          decoration: InputDecoration(
-            hintText: OnboardingStrings.voiceTranscriptHint,
-            filled: true,
-            fillColor: theme.cardColor,
-            contentPadding: const EdgeInsets.all(AppSpacing.md),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide: const BorderSide(color: AppColors.onboardingDivider),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide: const BorderSide(color: AppColors.onboardingDivider),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(AppRadius.md),
-              borderSide: const BorderSide(color: AppColors.purple700, width: 2),
-            ),
-          ),
-        ),
-        if (_sttStatus != null) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text('${OnboardingStrings.voiceSttErrorPrefix}$_sttStatus',
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.warning)),
-        ],
-        const SizedBox(height: AppSpacing.lg),
+        const SizedBox(height: AppSpacing.xl),
         Center(
-          child: VoiceInputButton(
-            localeCandidates: _localeCandidates,
-            onPartialResult: _setTranscript,
-            onFinalResult: _setTranscript,
-            onListeningChanged: (v) => setState(() {
-              _listening = v;
-              if (v) _sttStatus = null; // clear stale error when we start again
-            }),
-            onStatusMessage: (m) => setState(() => _sttStatus = m),
-          ),
+          child: _MicButton(active: false, pulse: pulse, onTap: onTap),
         ),
-        const SizedBox(height: AppSpacing.sm),
-        Text(OnboardingStrings.voiceListeningHint,
-            textAlign: TextAlign.center,
-            style: theme.textTheme.bodySmall
-                ?.copyWith(color: AppColors.textSecondary)),
         const SizedBox(height: AppSpacing.lg),
-        LargeButton(
-          label: OnboardingStrings.voiceContinueButton,
-          icon: Icons.arrow_forward,
-          gradient: AppColors.purpleGradient,
-          onTap: () => _extract(_transcriptController.text),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Center(
-          child: TextButton(
-            onPressed: () => Navigator.of(context).pop(),
-            child: const Text(OnboardingStrings.voiceManualButton),
-          ),
+        Text(
+          OnboardingStrings.voiceAuthIdleHint,
+          textAlign: TextAlign.center,
+          style: theme.textTheme.bodyLarge,
         ),
       ],
     );
   }
+}
 
-  Widget _extractingView() {
+class _ListeningView extends StatelessWidget {
+  final AnimationController pulse;
+  const _ListeningView({required this.pulse});
+
+  @override
+  Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
       child: Column(
         children: [
-          const PhoWaYoke(state: PhoWaYokeState.thinking, size: 96),
-          const SizedBox(height: AppSpacing.md),
+          _MicButton(active: true, pulse: pulse, onTap: null),
+          const SizedBox(height: AppSpacing.lg),
           Semantics(
             liveRegion: true,
-            child: Text(OnboardingStrings.voiceExtracting,
-                style: theme.textTheme.titleMedium),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _reviewView(OnboardingExtraction e) {
-    final theme = Theme.of(context);
-    if (!e.hasAnything) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-        child: Column(
-          children: [
-            const PhoWaYoke(state: PhoWaYokeState.pointing, size: 88),
-            const SizedBox(height: AppSpacing.md),
-            Text(OnboardingStrings.voiceNothingHeard,
-                textAlign: TextAlign.center, style: theme.textTheme.titleMedium),
-            const SizedBox(height: AppSpacing.lg),
-            LargeButton(
-              label: OnboardingStrings.voiceRetryButton,
-              icon: Icons.mic_rounded,
-              gradient: AppColors.purpleGradient,
-              onTap: _retry,
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text(OnboardingStrings.voiceManualButton),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Row(
-          children: [
-            const PhoWaYoke(state: PhoWaYokeState.success, size: 56),
-            const SizedBox(width: AppSpacing.sm),
-            Expanded(
-              child: Text(OnboardingStrings.voiceReviewPrompt,
-                  style: theme.textTheme.bodyMedium
-                      ?.copyWith(fontWeight: FontWeight.w600)),
-            ),
-            ReadAloudButton(textToRead: _readBackSummary(e), compact: true),
-          ],
-        ),
-        if (e.source == AiSource.mock) ...[
-          const SizedBox(height: AppSpacing.xs),
-          Text(OnboardingStrings.voiceOfflineNote,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.textSecondary)),
-        ],
-        const SizedBox(height: AppSpacing.md),
-        Container(
-          padding: const EdgeInsets.all(AppSpacing.lg),
-          decoration: BoxDecoration(
-            color: AppColors.blue100,
-            borderRadius: BorderRadius.circular(AppRadius.lg),
-          ),
-          child: Column(
-            children: [
-              _row(OnboardingStrings.voiceFieldName, e.name),
-              _row(OnboardingStrings.voiceFieldGender, e.gender?.label ?? ''),
-              _row(OnboardingStrings.voiceFieldAge,
-                  e.age == null ? '' : toBurmeseDigits(e.age!)),
-              _row(OnboardingStrings.voiceFieldPhone, e.phone),
-              if (_isTasker)
-                _row(OnboardingStrings.voiceFieldSkills,
-                    e.skills.map((s) => s.label).join('၊ '),
-                    isLast: true),
-            ],
-          ),
-        ),
-        const SizedBox(height: AppSpacing.lg),
-        LargeButton(
-          label: OnboardingStrings.voiceConfirmButton,
-          icon: Icons.check_circle,
-          gradient: AppColors.purpleGradient,
-          onTap: () => Navigator.of(context).pop(e),
-        ),
-        const SizedBox(height: AppSpacing.sm),
-        Center(
-          child: TextButton.icon(
-            onPressed: _retry,
-            icon: const Icon(Icons.mic_rounded, size: AppSizes.iconSm),
-            label: const Text(OnboardingStrings.voiceRetryButton),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _row(String label, String value, {bool isLast = false}) {
-    final theme = Theme.of(context);
-    final hasValue = value.trim().isNotEmpty;
-    return Padding(
-      padding: EdgeInsets.only(bottom: isLast ? 0 : AppSpacing.md),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 96,
-            child: Text(label,
-                style: theme.textTheme.bodySmall
-                    ?.copyWith(color: AppColors.textSecondary)),
-          ),
-          const SizedBox(width: AppSpacing.sm),
-          Expanded(
-            child: Text(
-              hasValue ? value : OnboardingStrings.voiceNotGiven,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: hasValue ? AppColors.textPrimary : AppColors.warning,
-                fontStyle: hasValue ? FontStyle.normal : FontStyle.italic,
-              ),
-            ),
+            child: Text("🎤 ${OnboardingStrings.voiceAuthListening}",
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: AppColors.purple700)),
           ),
         ],
       ),
@@ -425,8 +207,139 @@ class _VoiceOnboardingSheetState extends ConsumerState<VoiceOnboardingSheet> {
   }
 }
 
-/// Opens the onboarding voice sheet for [role]. Returns the confirmed
-/// [OnboardingExtraction], or null if the user chose manual entry / dismissed.
+class _ProcessingView extends StatelessWidget {
+  const _ProcessingView();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+      child: Column(
+        children: [
+          const PhoWaYoke(state: PhoWaYokeState.thinking, size: 96),
+          const SizedBox(height: AppSpacing.lg),
+          const SizedBox(
+            width: 28,
+            height: 28,
+            child: CircularProgressIndicator(strokeWidth: 3),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Semantics(
+            liveRegion: true,
+            child: Text("⚙️ ${OnboardingStrings.voiceAuthProcessing}",
+                style: theme.textTheme.titleMedium),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _VerifiedView extends StatelessWidget {
+  const _VerifiedView();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.lg),
+      child: Column(
+        children: [
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 450),
+            curve: Curves.elasticOut,
+            builder: (context, value, child) =>
+                Transform.scale(scale: value, child: child),
+            child: const PhoWaYoke(state: PhoWaYokeState.success, size: 96),
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          Semantics(
+            liveRegion: true,
+            child: Text("✓ ${OnboardingStrings.voiceAuthVerifiedTitle}",
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: AppColors.success, fontWeight: FontWeight.w700)),
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Text(OnboardingStrings.voiceAuthVerifiedMessage,
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium
+                  ?.copyWith(color: AppColors.textSecondary)),
+        ],
+      ),
+    );
+  }
+}
+
+/// Purely decorative mic control — tap only matters in the idle phase
+/// ([onTap] is null everywhere else). The pulsing ring runs continuously in
+/// [pulse]; only [active] decides whether it's visible, so the same
+/// controller drives both the idle glow and the listening animation.
+class _MicButton extends StatelessWidget {
+  final bool active;
+  final VoidCallback? onTap;
+  final AnimationController pulse;
+  const _MicButton({required this.active, required this.onTap, required this.pulse});
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      label: OnboardingStrings.voiceAuthTitle,
+      button: onTap != null,
+      child: SizedBox(
+        width: 120,
+        height: 120,
+        child: Stack(
+          alignment: Alignment.center,
+          children: [
+            if (active)
+              AnimatedBuilder(
+                animation: pulse,
+                builder: (context, _) => Container(
+                  width: 96 + 24 * pulse.value,
+                  height: 96 + 24 * pulse.value,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.error
+                        .withValues(alpha: 0.25 * (1 - pulse.value)),
+                  ),
+                ),
+              ),
+            Material(
+              color: Colors.transparent,
+              shape: const CircleBorder(),
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: onTap,
+                child: Container(
+                  width: 96,
+                  height: 96,
+                  decoration: BoxDecoration(
+                    gradient: active ? null : AppColors.purpleGradient,
+                    color: active ? AppColors.error : null,
+                    shape: BoxShape.circle,
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(
+                    active ? Icons.graphic_eq : Icons.mic_rounded,
+                    color: AppColors.onBrand,
+                    size: 44,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Opens the onboarding voice sheet for [role]. Returns the canned
+/// [OnboardingExtraction] once the demo verification completes, or null if
+/// the user chose manual entry / dismissed the sheet before tapping the mic.
 Future<OnboardingExtraction?> showVoiceOnboarding(
   BuildContext context, {
   required UserRole role,
@@ -434,6 +347,8 @@ Future<OnboardingExtraction?> showVoiceOnboarding(
   return showModalBottomSheet<OnboardingExtraction>(
     context: context,
     isScrollControlled: true,
+    isDismissible: false,
+    enableDrag: false,
     backgroundColor: Theme.of(context).scaffoldBackgroundColor,
     shape: const RoundedRectangleBorder(
       borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),

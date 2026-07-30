@@ -190,12 +190,12 @@ class _MessagesView extends ConsumerWidget {
       _ConvoData(
         name: _discussionClientName,
         emoji: _clientEmoji,
-        jobCategory: 'လျှပ်စစ်ပြုပြင်ခြင်း',
+        jobCategory: 'ရေမော်တာ ပြုပြင်ခြင်း',
         statusLabel: discussionEnded ? 'ဆွေးနွေးပြီးဆုံး' : 'ဆွေးနွေးဆဲ',
         statusColor: discussionEnded ? AppColors.success : AppColors.indigo500,
         snippet: discussionEnded
             ? 'ဆွေးနွေးမှု ပြီးဆုံးပါပြီ။ အလုပ်ရှင်က Escrow ဆောင်ရွက်နေပါသည်။'
-            : 'မင်္ဂလာပါ။ ကျွန်တော့်အလုပ်ကို စိတ်ဝင်စားပေးလို့ ကျေးဇူးတင်ပါတယ်။',
+            : 'မေးခွန်း ၃ ခု ပို့ထားပြီး အလုပ်ရှင်ရဲ့ အဖြေကို စောင့်နေပါသည်။',
         time: 'ယခု',
         isUnread: !discussionEnded,
         isOnline: true,

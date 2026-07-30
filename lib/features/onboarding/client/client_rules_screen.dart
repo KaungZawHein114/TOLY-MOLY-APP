@@ -9,7 +9,6 @@ import '../../../core/widgets/app_error_message.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/rules_summary_panel.dart';
-import '../../auth/audio/auth_audio_map.dart';
 import '../../auth/data/auth_failure.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../onboarding_models.dart';
@@ -76,7 +75,6 @@ class _ClientRulesScreenState extends ConsumerState<ClientRulesScreen> {
         children: [
           const RulesSummaryPanel(
             fullRulesText: OnboardingStrings.rulesBodyText,
-            audioKey: AuthAudioKeys.rules,
           ),
           AppErrorMessage(message: _error),
         ],

@@ -9,9 +9,6 @@ import 'package:toly_moly/core/utils/ai_mock.dart';
 import 'package:toly_moly/core/utils/ai_service.dart';
 
 void main() {
-  setUp(() => AiConfig.useLiveAi = false);
-  tearDown(() => AiConfig.useLiveAi = true);
-
   const task = {
     'category': 'Plumber',
     'township': 'လှိုင်',
@@ -64,23 +61,23 @@ void main() {
     });
   });
 
-  group('AiService task-handling (offline fallback, marks source=mock)', () {
+  group('AiService task-handling (local, deterministic, marks source=demo)', () {
     test('suggestTaskFixes', () async {
       final r = await AiService.suggestTaskFixes(task: task, ageHours: 14);
-      expect(r.source, AiSource.mock);
+      expect(r.source, AiSource.demo);
       expect(r.tips, isNotEmpty);
     });
 
     test('summarizeCompletion clamps + marks source', () async {
       final r = await AiService.summarizeCompletion(
           task: task, timing: const {'onTime': true});
-      expect(r.source, AiSource.mock);
+      expect(r.source, AiSource.demo);
       expect(r.suggestedTierDelta, inInclusiveRange(-1, 1));
     });
 
     test('briefTasker', () async {
       final r = await AiService.briefTasker(task: task);
-      expect(r.source, AiSource.mock);
+      expect(r.source, AiSource.demo);
       expect(r.summary.trim(), isNotEmpty);
     });
   });

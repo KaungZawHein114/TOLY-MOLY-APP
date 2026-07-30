@@ -10,7 +10,6 @@ import '../../../features/onboarding/onboarding_models.dart';
 import '../../../features/profile/models/profile_models.dart';
 import '../app_section_card.dart';
 import '../large_button.dart';
-import '../onboarding/read_aloud_button.dart';
 import '../onboarding/speech_to_text_button.dart';
 
 /// Thin, profile-flavored alias over the design system's [AppSectionCard] —
@@ -412,11 +411,6 @@ class VerificationStepCard extends StatelessWidget {
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(doc.label, style: theme.textTheme.titleMedium),
-              ),
-              const SizedBox(width: AppSpacing.xs),
-              ReadAloudButton(
-                textToRead: "${doc.label}။ ${_docDescription(doc)}",
-                compact: true,
               ),
               const SizedBox(width: AppSpacing.xs),
               _StatusBadge(status: status),

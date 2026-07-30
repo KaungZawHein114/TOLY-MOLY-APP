@@ -4,22 +4,20 @@ import 'package:go_router/go_router.dart';
 
 import '../../../core/constants/task_posting_strings.dart';
 import '../../../core/routing/app_router.dart';
-import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/utils/ai_service.dart';
-import '../../../core/widgets/large_button.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../../onboarding/onboarding_models.dart';
 import 'task_posting_bottom_bar.dart';
-import 'task_posting_models.dart';
 import 'task_posting_state.dart';
 
-/// Task Description — no longer a step in either posting flow (voice fills it
-/// from the conversation, manual leaves it optional), but still the summary
-/// screen's edit target for the description row. "AI က ရေးပေးမည်" replaces the
-/// field's content with a generated description; the result stays editable.
+/// Manual step 5 of 5: Description — the last step before the shared Summary.
+/// The client types it, or speaks it via the same demo voice input used
+/// everywhere else in this flow (fake listening state, simulated transcript,
+/// no speech API). There is no AI rewrite here — whatever the client provides
+/// is exactly what is saved. Also the summary screen's edit target for the
+/// description row for tasks that came from either posting method.
 class TaskDescriptionScreen extends ConsumerStatefulWidget {
   const TaskDescriptionScreen({super.key});
 
@@ -30,7 +28,6 @@ class TaskDescriptionScreen extends ConsumerStatefulWidget {
 class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
   late final TextEditingController _controller;
   String? _error;
-  bool _writing = false;
 
   @override
   void initState() {
@@ -46,29 +43,6 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
 
   bool get _editMode =>
       GoRouterState.of(context).uri.queryParameters['edit'] == '1';
-
-  /// Live AI (Firebase → OpenAI) rewrites the description from every prior
-  /// step's input, falling back to the offline template mock on any failure.
-  Future<void> _generateWithAi() async {
-    final draft = ref.read(taskDraftProvider);
-    final location = draft.taskType == TaskType.remote
-        ? TaskPostingStrings.remoteLocationValue
-        : "${draft.township} ${draft.address}".trim();
-    setState(() => _writing = true);
-    final generated = await AiService.rewriteDescription(
-      title: draft.title,
-      category: draft.effectiveCategory,
-      location: location,
-      urgent: draft.urgent,
-      currentText: _controller.text,
-    );
-    if (!mounted) return;
-    setState(() {
-      _controller.text = generated;
-      _writing = false;
-      _error = null;
-    });
-  }
 
   void _continue() {
     final description = _controller.text.trim();
@@ -90,7 +64,7 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
     final theme = Theme.of(context);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 4, totalSteps: 4),
+      progress: const OnboardingProgress(step: 5, totalSteps: 5),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: TaskPostingStrings.descriptionTitle,
       title: TaskPostingStrings.descriptionTitle,
@@ -124,16 +98,6 @@ class _TaskDescriptionScreenState extends ConsumerState<TaskDescriptionScreen> {
                 onResult: (v) => setState(() => _controller.text = v),
               ),
             ],
-          ),
-          const SizedBox(height: AppSpacing.lg),
-          LargeButton(
-            label: _writing
-                ? TaskPostingStrings.aiThinking
-                : TaskPostingStrings.aiWriteButton,
-            icon: Icons.auto_awesome,
-            filled: false,
-            outlineColor: AppColors.indigo700,
-            onTap: _writing ? () {} : _generateWithAi,
           ),
         ],
       ),

@@ -64,6 +64,23 @@ ChatNavTarget? chatNavTargetFor(String? action, String role) {
         label: AppStrings.chatbotEditProfileCta,
         icon: Icons.person_outline,
       );
+    case 'view_activity':
+      return const ChatNavTarget(
+        route: Routes.activity,
+        label: AppStrings.chatbotViewActivityCta,
+        icon: Icons.event_note_outlined,
+      );
+    case 'verification':
+      // Verification isn't its own screen — it's a section inside the
+      // client's own Profile screen. Same route as edit_profile, distinct
+      // label/icon so the suggestion still reads as "go get verified".
+      return ChatNavTarget(
+        route: role == 'tasker'
+            ? Routes.taskerProfileScreen
+            : Routes.clientProfileScreen,
+        label: AppStrings.chatbotVerificationCta,
+        icon: Icons.verified_user_outlined,
+      );
     default:
       return null;
   }

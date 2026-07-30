@@ -120,6 +120,9 @@ class TaskPost {
   final int budgetMmk;
   final String notes;
   final DateTime createdAt;
+  // Photos/videos the client attached, local file paths only (Phase 1: no
+  // upload/backend). Optional — most demo tasks below simply omit it.
+  final List<TaskMediaItem> media;
 
   const TaskPost({
     required this.id,
@@ -136,6 +139,7 @@ class TaskPost {
     required this.budgetMmk,
     this.notes = "",
     required this.createdAt,
+    this.media = const [],
   });
 }
 
@@ -254,6 +258,11 @@ class Job {
   final String description;
   final DateTime createdAt;
   final String status; // "pending" | "Interest Received"
+  // How many photos/videos the client attached when posting, 0 if none. This
+  // demo list has no real files to show (no network images, per Phase 1), so
+  // the card renders a small placeholder count instead of an actual photo —
+  // see [MediaCountStrip] in job_card.dart.
+  final int photoCount;
 
   const Job({
     required this.id,
@@ -267,6 +276,7 @@ class Job {
     required this.description,
     required this.createdAt,
     this.status = "pending",
+    this.photoCount = 0,
   });
 
   Job copyWith({String? status}) => Job(
@@ -281,6 +291,7 @@ class Job {
         description: description,
         createdAt: createdAt,
         status: status ?? this.status,
+        photoCount: photoCount,
       );
 }
 
@@ -582,6 +593,7 @@ final List<Job> jobs = [
     dateTime: DateTime.now().add(const Duration(hours: 2)),
     description: "မီးဖိုချောင် ရေချိုးကန်ပိုက်ပေါက်ပြီး ကြမ်းပေါ်ရေယိုနေသည်။",
     createdAt: DateTime.now().subtract(const Duration(hours: 1)),
+    photoCount: 2,
   ),
   Job(
     id: 2,
@@ -618,6 +630,7 @@ final List<Job> jobs = [
     dateTime: DateTime.now().add(const Duration(hours: 4)),
     description: "စီးပွားရေးအဆောက်အအုံ ပိုက်လိုင်းအားလုံး ပြောင်းရန်၊ လိုင်စင်ရ အဖွဲ့ လိုအပ်သည်။",
     createdAt: DateTime.now().subtract(const Duration(minutes: 30)),
+    photoCount: 1,
   ),
   Job(
     id: 5,
@@ -642,6 +655,7 @@ final List<Job> jobs = [
     dateTime: DateTime.now().add(const Duration(days: 1)),
     description: "အိပ်ခန်းသုံးခန်းအတွက် အလွှာပန်ကာ ဝိုင်ယာကြိုးတပ်ဆင်ရန်။",
     createdAt: DateTime.now().subtract(const Duration(hours: 8)),
+    photoCount: 3,
   ),
   Job(
     id: 7,

@@ -268,12 +268,19 @@ String generateTaskDescription(String category, String userInput) {
 // ----------------------------------------------------------------------------
 // Onboarding voice mode (Slice 2, spec §4.1/§4.6) — synchronous OFFLINE extract.
 // ----------------------------------------------------------------------------
-// Best-effort keyword/regex extraction from a spoken self-introduction, the
-// offline fallback for AiService.extractOnboarding. It NEVER invents: a field it
-// can't confidently read is left blank/null so the user fills it manually. Names
-// are hard to parse reliably offline, so `name` is intentionally left empty
-// (the user types it). Returns primitives; the service maps them to enums,
-// mirroring how matchTaskersMock's records become TaskerMatch.
+// Best-effort keyword/regex extraction from a spoken self-introduction. It
+// NEVER invents: a field it can't confidently read is left blank/null so the
+// user fills it manually. Names are hard to parse reliably offline, so `name`
+// is intentionally left empty (the user types it).
+//
+// NOTE: no production code calls this anymore — the onboarding voice-auth
+// screen (voice_onboarding_sheet.dart) was rewritten to a fixed demo sequence
+// with a hardcoded canned profile in an earlier session, and AiService's
+// Firebase-calling wrapper around this function was deleted outright during
+// the Firebase-removal refactor. Left in place as a plain, tested utility in
+// case a real free-text extraction path is wanted again later; not currently
+// dead-code-removed since it isn't Firebase-specific and removing it wasn't
+// explicitly requested.
 
 /// Skill keywords for offline extraction, keyed by [TaskerSkill.name].
 const Map<TaskerSkill, List<String>> _taskerSkillKeywords = {
@@ -366,7 +373,52 @@ List<String> taskFixTipsMock(Map<String, dynamic> task, int ageHours) {
   return tips.take(4).toList();
 }
 
-/// Tasker per-task brief (§4.8): a short "what the client wants" + prep/tools.
+// Category-specific prep/tools, keyed the same way generateTaskDescription's
+// template map is — so two different categories' briefs actually read
+// differently instead of every tasker seeing the same 3 generic bullets.
+// Every list ends with the same "confirm before starting" close.
+const Map<String, List<String>> _categoryPrepTips = {
+  "Plumber": [
+    "ပိုက်ဘောင်ကီ၊ ဆီးလ်တိပ်နှင့် အရန်ဂက်စကတ် ယူဆောင်ပါ။",
+    "အလုပ်မစတင်မီ ရေပိုက်ချိတ်ချက် ပိတ်ထားပေးပါ။",
+  ],
+  "Electrician": [
+    "Multimeter နှင့် အခြေခံ လက်နက်ကိရိယာများ ယူဆောင်ပါ။",
+    "အလုပ်မစတင်မီ ဒီဂျစ်တယ် ဘရိကာ ခလုတ် ပိတ်ထားပေးပါ။",
+  ],
+  "AC Technician": [
+    "ဂက်စ်ဆေးဂျ် နှင့် အခြေခံ ချိန်ညှိကိရိယာများ ယူဆောင်ပါ။",
+    "စစ်ဆေးရန် ယူနစ်ကို လှမ်းမီနိုင်သော လမ်းကြောင်းရှိမရှိ ကြိုစစ်ပါ။",
+  ],
+  "Cleaner": [
+    "ကိုယ်ပိုင် သန့်ရှင်းရေး ပစ္စည်းများ ယူဆောင်ပါ (ဖောက်သည်က မတောင်းထားလျှင်)။",
+    "မည်သည့်နေရာများကို အထူးဂရုစိုက်ရမည်ကို အရင်မေးပါ။",
+  ],
+  "Carpenter": [
+    "လိုအပ်မည့် သစ်သားနှင့် အခြေခံ လက်နက်ကိရိယာများ ယူဆောင်ပါ။",
+    "တိုင်းတာမှုများကို လက်ရှိတွင် ထပ်စစ်ပါ။",
+  ],
+  "Tutor": [
+    "သင်ခန်းစာ ပစ္စည်းနှင့် လေ့ကျင့်ခန်း နမူနာများ ပြင်ဆင်ထားပါ။",
+    "ကျောင်းသား၏ လက်ရှိ အားနည်းချက်များကို ဖောက်သည်နှင့် ကြိုမေးပါ။",
+  ],
+  "Gardener": [
+    "ခုတ်ကိရိယာနှင့် အခြေခံ ဥယျာဉ်ပစ္စည်းများ ယူဆောင်ပါ။",
+    "ပယ်ရှားမည့် အပင်/အမှိုက်များကို ဘယ်လို စွန့်ပစ်ရမည်ကို ကြိုမေးပါ။",
+  ],
+  "Delivery": [
+    "ပစ္စည်း၏ အရွယ်အစားနှင့် အလေးချိန်ကို ကြိုသိထားပါ။",
+    "ပို့ရမည့်နေရာ၏ တိကျသော လိပ်စာနှင့် ဆက်သွယ်ရန် ဖုန်းနံပါတ်ကို အတည်ပြုပါ။",
+  ],
+  "Handyman": [
+    "အလုပ်အမျိုးအစားအလိုက် လိုအပ်မည့် အခြေခံ လက်နက်ကိရိယာများ ယူဆောင်ပါ။",
+    "အသေးစိတ် မရှင်းလင်းသေးသော အချက်များကို ရောက်ချိန်တွင် ဖောက်သည်နှင့် ရှင်းလင်းပါ။",
+  ],
+};
+
+/// Tasker per-task brief (§4.8): a short "what the client wants" + prep/tools,
+/// tailored to the task's category so two different jobs don't read as the
+/// same generic checklist.
 ({String summary, List<String> suggestions}) taskerBriefMock(
   Map<String, dynamic> task,
 ) {
@@ -374,10 +426,11 @@ List<String> taskFixTipsMock(Map<String, dynamic> task, int ageHours) {
   final desc = (task['description'] ?? '').toString().trim();
   final summary =
       desc.isNotEmpty ? desc : generateTaskDescription(category, '');
+  final categoryTips = _categoryPrepTips[category];
   return (
     summary: summary,
     suggestions: <String>[
-      TaskPostingStrings.briefPrepGeneric,
+      ...(categoryTips ?? [TaskPostingStrings.briefPrepGeneric]),
       TaskPostingStrings.briefPrepArriveEarly,
       TaskPostingStrings.briefPrepConfirm,
     ],
@@ -396,6 +449,7 @@ List<String> taskFixTipsMock(Map<String, dynamic> task, int ageHours) {
       ? (review['rating'] as num).toDouble()
       : null;
   final onTime = timing['onTime'] == true;
+  final category = (task['category'] ?? task['skill'] ?? '').toString();
 
   int delta;
   String rationale;
@@ -410,10 +464,33 @@ List<String> taskFixTipsMock(Map<String, dynamic> task, int ageHours) {
     rationale = TaskPostingStrings.completionSummaryGeneric;
   }
   return (
-    summary: TaskPostingStrings.completionSummaryGeneric,
+    summary: _completionSummaryFor(category, onTime: onTime, rating: rating),
     suggestedTierDelta: delta,
     rationale: rationale,
   );
+}
+
+/// Builds a one-line completion summary that actually reflects THIS task —
+/// category plus the same on-time/rating signal [completionSummaryMock]
+/// already computes — instead of one fixed sentence reused for every task
+/// regardless of category or outcome.
+String _completionSummaryFor(
+  String category, {
+  required bool onTime,
+  double? rating,
+}) {
+  final label = category.isNotEmpty ? category : "အလုပ်";
+  if (rating != null && rating < 3) {
+    return "$label အလုပ် ပြီးစီးခဲ့သော်လည်း ဖောက်သည်၏ အဆင့်သတ်မှတ်ချက် နိမ့်ကျပါသည်။";
+  }
+  if (onTime && (rating == null || rating >= 4.5)) {
+    return "$label အလုပ်ကို သတ်မှတ်ချိန်အတွင်း အရည်အသွေးရှိစွာ ပြီးစီးခဲ့ပါသည်။ "
+        "ဖောက်သည်၏ တုံ့ပြန်ချက်လည်း ကောင်းမွန်ပါသည်။";
+  }
+  if (onTime) {
+    return "$label အလုပ်ကို သတ်မှတ်ချိန်အတွင်း ပြီးစီးခဲ့ပါသည်။";
+  }
+  return "$label အလုပ် ပြီးစီးခဲ့ပါသည်၊ သတ်မှတ်ချိန်ထက် အနည်းငယ် ကြာခဲ့ပါသည်။";
 }
 
 // ----------------------------------------------------------------------------
@@ -490,73 +567,14 @@ List<({int workerId, String reason})> matchTaskersMock(
 }
 
 // ----------------------------------------------------------------------------
-// Voice task posting (demo) — scripted conversation + synchronous extraction.
+// AI Task Assistant conversation — shared answer-extraction helpers.
 // ----------------------------------------------------------------------------
-// The voice posting flow is a DEMO: there is no speech engine and no model
-// behind it. Pho Wa Yoke walks a fixed question script, and each answer (typed,
-// tapped as a quick reply, or handed over by the mock mic) is read here with
-// the same keyword matching the rest of this file uses. Nothing is invented:
-// a field that can't be read falls back to an obvious, sensible default so the
-// summary screen is never blank.
-
-/// The fields the scripted conversation collects, in the order it asks for them.
-enum VoiceTaskField { need, place, schedule, urgency, tier }
-
-/// One scripted turn: what Pho Wa Yoke asks, the canned transcript the mock mic
-/// "hears" for that turn, and tappable quick replies for keyboard-free demos.
-typedef VoiceTaskQuestion = ({
-  VoiceTaskField field,
-  String question,
-  String micTranscript,
-  List<String> quickReplies,
-});
-
-/// The whole demo conversation, start to finish. Five short questions is enough
-/// to fill every field the summary screen shows.
-const List<VoiceTaskQuestion> taskVoiceScript = [
-  (
-    field: VoiceTaskField.need,
-    question: "မင်္ဂလာပါ။ ကျွန်တော် ဖိုးဝရုပ်ပါ။ ဘာအကူအညီ လိုအပ်လဲ ပြောပြပါနော်။",
-    micTranscript: "မီးဖိုချောင်က ရေပိုက် ယိုနေလို့ ပြင်ချင်ပါတယ်",
-    quickReplies: [
-      "ရေပိုက် ယိုနေတယ်",
-      "အိမ် သန့်ရှင်းရေး လုပ်ချင်တယ်",
-      "ပန်ကာ တပ်ချင်တယ်",
-    ],
-  ),
-  (
-    field: VoiceTaskField.place,
-    question: "ရပါပြီ။ ဘယ်မြို့နယ်မှာလဲ ပြောပေးပါ။",
-    micTranscript: "လှိုင် မြို့နယ်မှာ ပါ",
-    quickReplies: ["လှိုင်", "ကမာရွတ်", "မရမ်းကုန်း"],
-  ),
-  (
-    field: VoiceTaskField.schedule,
-    question: "ဘယ်အချိန် လိုအပ်ပါသလဲ။",
-    micTranscript: "မနက်ဖြန် မနက်ပိုင်း ရောက်ပေးပါ",
-    quickReplies: ["ဒီနေ့ ညနေ", "မနက်ဖြန် မနက်", "နောက်တစ်ပတ်"],
-  ),
-  (
-    field: VoiceTaskField.urgency,
-    question: "ဒါက အရေးပေါ် အလုပ်လား။",
-    micTranscript: "မဟုတ်ပါဘူး၊ ပုံမှန်ပါ",
-    quickReplies: ["ဟုတ်ကဲ့၊ အရေးပေါ်", "မဟုတ်ပါ"],
-  ),
-  (
-    field: VoiceTaskField.tier,
-    question: "ဘယ်လို အလုပ်သမား အဆင့် လိုချင်ပါသလဲ။",
-    micTranscript: "အတည်ပြုပြီးသား လုပ်သား ဖြစ်ရင် ကောင်းမယ်",
-    quickReplies: [
-      TaskPostingStrings.tier1Label,
-      TaskPostingStrings.tier3Label,
-      TaskPostingStrings.tier5Label,
-    ],
-  ),
-];
-
-/// Pho Wa Yoke's closing line, spoken just before the summary screen opens.
-const String voiceTaskWrapUpMessage =
-    "ကျေးဇူးတင်ပါတယ်။ အချက်အလက်တွေ စုစည်းပြီးပါပြီ — အနှစ်ချုပ်ကို ပြပါမယ်နော်။";
+// Used by BOTH the local fallback engine below (taskAssistantFallbackTurn)
+// and formerly by a fixed 5-question script that has since been replaced by
+// a real multi-turn AI conversation — see voice_task_chat_screen.dart. These
+// functions read one free-text answer into a structured field with the same
+// keyword matching the rest of this file uses. Nothing is invented: a field
+// that can't be read falls back to an obvious, sensible default.
 
 /// Reads the "what do you need?" answer into a category, a short title and a
 /// templated description. [answer] doubles as the title so the client's own
@@ -645,6 +663,140 @@ int voiceTaskTierNumber(String answer) {
   if (_hasAny(lower, const ["ကျွမ်းကျင်", "အဆင့်မြင့်", "expert", "pro"])) return 5;
   if (_hasAny(lower, const ["အသစ်", "စတင်", "သက်သာ", "cheap", "new"])) return 1;
   return 3;
+}
+
+// ----------------------------------------------------------------------------
+// AI Task Assistant — local fallback engine (design doc §10).
+// ----------------------------------------------------------------------------
+// Takes over SEAMLESSLY when backend/apps/tasks' analyze_task is unreachable
+// — see AiService.taskAssistant. Deliberately NOT a replay of the old fixed
+// 5-question script: it follows the SAME rules the live prompt does (same
+// always-required fields, same one-question-at-a-time behaviour, same
+// 8-question ceiling), just via deterministic keyword extraction instead of
+// a real model. `knownFields` uses the identical shape the live backend
+// returns/accepts: {category, title, description, township, address, date,
+// time, urgency, category_fields}.
+
+/// The next always-required field still missing from [fields], in stopping-
+/// condition priority order (design doc §5) — null once nothing is missing.
+enum FallbackField { need, place, schedule, urgency, categoryDetail }
+
+FallbackField? _nextMissingFallbackField(Map<String, dynamic> fields) {
+  if ((fields['category'] as String?)?.isNotEmpty != true) {
+    return FallbackField.need;
+  }
+  if ((fields['township'] as String?)?.isNotEmpty != true) {
+    return FallbackField.place;
+  }
+  if (fields['date'] == null || fields['time'] == null) {
+    return FallbackField.schedule;
+  }
+  if (fields['urgency'] == null) return FallbackField.urgency;
+  final categoryFields =
+      (fields['category_fields'] as Map?)?.cast<String, dynamic>() ?? const {};
+  if (categoryFields['detail'] == null) return FallbackField.categoryDetail;
+  return null;
+}
+
+/// Applies [answer] as the response to whichever field was just asked about,
+/// merging into [fields] in place. Never overwrites an already-known value —
+/// matches the live prompt's "never discard unless clearly changed" rule
+/// (the fallback has no way to detect a deliberate correction, so it only
+/// ever fills gaps, same as the old scripted flow did per-slot).
+void _applyFallbackAnswer(
+  Map<String, dynamic> fields,
+  FallbackField field,
+  String answer,
+) {
+  switch (field) {
+    case FallbackField.need:
+      final need = voiceTaskNeed(answer);
+      fields['category'] ??= need.category;
+      fields['title'] ??= need.title;
+      fields['description'] ??= need.description;
+    case FallbackField.place:
+      final place = voiceTaskPlace(answer);
+      if (place.township.isNotEmpty) fields['township'] ??= place.township;
+      fields['address'] ??= place.address.isNotEmpty ? place.address : answer;
+    case FallbackField.schedule:
+      final schedule = voiceTaskSchedule(answer);
+      fields['date'] ??= schedule.date.toIso8601String().split('T').first;
+      fields['time'] ??= schedule.timeSlot;
+    case FallbackField.urgency:
+      fields['urgency'] ??= voiceTaskUrgent(answer) ? 'URGENT' : 'NORMAL';
+    case FallbackField.categoryDetail:
+      final categoryFields =
+          (fields['category_fields'] as Map?)?.cast<String, dynamic>() ?? {};
+      categoryFields['detail'] ??= answer.trim();
+      fields['category_fields'] = categoryFields;
+  }
+}
+
+String _fallbackQuestionFor(FallbackField field) {
+  switch (field) {
+    case FallbackField.need:
+      // Only reachable if the greeting's own answer was empty — the normal
+      // case fills category on the very first turn.
+      return TaskPostingStrings.taskAssistantGreeting;
+    case FallbackField.place:
+      return TaskPostingStrings.fallbackAskLocation;
+    case FallbackField.schedule:
+      return TaskPostingStrings.fallbackAskSchedule;
+    case FallbackField.urgency:
+      return TaskPostingStrings.fallbackAskUrgency;
+    case FallbackField.categoryDetail:
+      return TaskPostingStrings.fallbackAskDetail;
+  }
+}
+
+/// A short natural-language recap built ONLY from real, collected fields —
+/// never invents a value. Mirrors the live prompt's confirmation-turn shape
+/// (design doc §4/§6.1) so live and fallback conversations end the same way.
+String fallbackConfirmationRecap(Map<String, dynamic> fields) {
+  final parts = <String>[];
+  final title = (fields['title'] as String?)?.trim();
+  if (title != null && title.isNotEmpty) parts.add(title);
+  final township = (fields['township'] as String?)?.trim();
+  if (township != null && township.isNotEmpty) parts.add(township);
+  final date = fields['date'] as String?;
+  final time = fields['time'] as String?;
+  if (date != null || time != null) {
+    parts.add([date, time].where((v) => v != null).join(' '));
+  }
+  final urgent = fields['urgency'] == 'URGENT';
+  parts.add(urgent
+      ? TaskPostingStrings.reviewUrgentYes
+      : TaskPostingStrings.reviewUrgentNo);
+  return '${TaskPostingStrings.taskAssistantConfirmPrefix}'
+      '${parts.join('၊ ')}'
+      '${TaskPostingStrings.taskAssistantConfirmSuffix}';
+}
+
+/// One turn of the local fallback engine. [questionsAsked] is how many
+/// assistant questions have already been asked this conversation (NOT
+/// counting the opening greeting) — once it hits the same 8-question
+/// ceiling the live prompt is instructed to respect, the engine wraps up
+/// regardless of what's still missing, exactly like the live side would.
+({Map<String, dynamic> fields, String reply, bool ready}) taskAssistantFallbackTurn({
+  required String message,
+  required Map<String, dynamic> knownFields,
+  required int questionsAsked,
+}) {
+  final fields = Map<String, dynamic>.from(knownFields);
+  fields['category_fields'] =
+      (fields['category_fields'] as Map?)?.cast<String, dynamic>() ?? {};
+
+  final fieldBeingAnswered =
+      _nextMissingFallbackField(fields) ?? FallbackField.need;
+  _applyFallbackAnswer(fields, fieldBeingAnswered, message);
+
+  final stillMissing = _nextMissingFallbackField(fields);
+  final ready = stillMissing == null || questionsAsked >= 8;
+  final reply = ready
+      ? fallbackConfirmationRecap(fields)
+      : _fallbackQuestionFor(stillMissing);
+
+  return (fields: fields, reply: reply, ready: ready);
 }
 
 // ----------------------------------------------------------------------------

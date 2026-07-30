@@ -23,11 +23,16 @@ class TaskPostingStrings {
   static const String methodVoiceLabel = "အသံဖြင့် ပြောမည်";
   static const String methodVoiceSubtitle = "ဖိုးဝရုပ်နှင့် ပြောရင်း တင်မည်";
   static const String methodManualLabel = "ကိုယ်တိုင် ဖြည့်မည်";
-  static const String methodManualSubtitle = "အဆင့် ၃ ဆင့် ဖြည့်မည်";
+  static const String methodManualSubtitle = "အဆင့် ၅ ဆင့် ဖြည့်မည်";
   static const String methodHelperNote =
       "နှစ်မျိုးလုံး နောက်ဆုံးမှာ အနှစ်ချုပ် စာမျက်နှာသို့ ရောက်ပါမည်။";
 
-  // ── Voice conversation (demo — scripted, offline) ────────────────────────
+  // ── AI Task Assistant conversation ───────────────────────────────────────
+  // Real multi-turn AI (backend/apps/tasks, POST /api/tasks/ai/analyze) with
+  // a local fallback engine that takes over seamlessly if the backend is
+  // ever unreachable — see AiService.taskAssistant + ai_mock.dart's
+  // taskAssistantFallbackTurn. The UI shell (bubbles, mic, quick replies) is
+  // unchanged from the old scripted demo.
   static const String voiceChatTitle = "ဖိုးဝရုပ်နှင့် ပြောဆိုပါ";
   static const String voiceChatMascotMessage =
       "မိုက်ကို နှိပ်ပြီး ပြောပါ။ စာရိုက်ချင်လည်း ရပါတယ်။";
@@ -39,13 +44,43 @@ class TaskPostingStrings {
   static const String voiceChatDemoNote =
       "ဒီမိုအတွက် ပြင်ဆင်ထားသော စကားဝိုင်း ဖြစ်ပါသည်။";
 
+  // Opening greeting — open-ended, no category picker shown yet.
+  static const String taskAssistantGreeting =
+      "မင်္ဂလာပါ။ ဘာအကူအညီ လိုအပ်လဲ ပြောပြပါနော်။";
+  // Mic tap (demo only — no real speech recognition) always hands back this
+  // one fixed line, per the locked design (§6.3): text is the only dynamic
+  // input surface, voice stays a fixed demo affordance.
+  static const String taskAssistantMicTranscript =
+      "ရေပိုက် ယိုနေလို့ ပြင်ချင်ပါတယ်";
+
+  // Local fallback engine's questions (mirrors the live prompt's rules, not
+  // a replay of the old fixed script — see ai_mock.dart).
+  static const String fallbackAskLocation = "ဘယ်မြို့နယ်မှာလဲ ပြောပေးပါ။";
+  static const String fallbackAskSchedule = "ဘယ်အချိန် လိုအပ်ပါသလဲ။";
+  static const String fallbackAskUrgency = "ဒါက အရေးပေါ် အလုပ်လား။";
+  static const String fallbackAskDetail =
+      "နောက်ထပ် အသေးစိတ် ပြောပြပေးပါ — ဥပမာ အရွယ်အစား၊ အခြေအနေ။";
+
+  // Confirmation stage — same UX for live and fallback conversations.
+  static const String taskAssistantConfirmPrefix = "ဒါဆို — ";
+  static const String taskAssistantConfirmSuffix = " — မှန်ကန်ပါသလား။";
+  static const String taskAssistantConfirmYes = "ဟုတ်ကဲ့၊ မှန်ပါတယ်";
+  static const String taskAssistantConfirmNo = "မမှန်ပါ၊ ပြင်ချင်ပါတယ်";
+  static const String taskAssistantConfirmNoPrompt =
+      "ဘယ်အချက်ကို ပြင်ချင်လဲ ပြောပြပါ။";
+
+  // Deterministic media turn, inserted client-side after "Yes" — never part
+  // of the model's own turn contract (see design doc §6.4).
+  static const String taskAssistantMediaPrompt =
+      "ဓာတ်ပုံ သို့မဟုတ် ဗီဒီယို ထည့်ချင်ပါသလား? ကျော်လို့လည်း ရပါတယ်။";
+  static const String taskAssistantMediaContinue = "ဆက်သွားမည်";
+  static const String taskAssistantWrapUpMessage =
+      "ကျေးဇူးတင်ပါတယ်။ အချက်အလက်တွေ စုစည်းပြီးပါပြီ — အနှစ်ချုပ်ကို ပြပါမယ်နော်။";
+
   // ── Screen 1: Task Title + Category Selection ───────────────────────────
   static const String categoryTitle = "ဘာအကူအညီ လိုအပ်ပါသလဲ";
   static const String taskTitleLabel = "အလုပ် ခေါင်းစဉ်";
   static const String taskTitleHint = "ဥပမာ - ပန်ကာ တပ်ဆင်ရန်";
-  static const String aiSuggestionPrefix = "AI က ထောက်ပြသည်: ";
-  static const String aiSuggestionConfirm = "အတည်ပြုမည်";
-  static const String orDivider = "သို့မဟုတ်";
   static const String manualCategoryPrompt = "ဝန်ဆောင်မှု အမျိုးအစား ရွေးချယ်ပါ";
   static const String categoryVoicePrompt = "အမျိုးအစားကို အသံဖြင့် ပြောပါ";
   static const String categoryRequiredError = "ဝန်ဆောင်မှု အမျိုးအစား ရွေးချယ်ပေးပါနော်";
@@ -54,11 +89,33 @@ class TaskPostingStrings {
   static const String specifyCategoryHint = "ဥပမာ - အိမ်ပြောင်းရွှေ့ခြင်း";
   static const String specifyCategoryRequiredError = "အမျိုးအစားကို ဖော်ပြပေးပါနော်";
 
+  // ── Media attachments (photo/video, both posting methods) ────────────────
+  // Manual: a skippable step between Category and When&Where. Voice: an
+  // attach control in the chat input bar. Files are local paths only — never
+  // uploaded, Phase 1 has no backend.
+  static const String mediaStepTitle = "ဓာတ်ပုံ (သို့) ဗီဒီယို ပူးတွဲမည်";
+  static const String mediaStepMascotMessage =
+      "ဓာတ်ပုံ ပူးတွဲပေးရင် အလုပ်သမားက ပိုနားလည်ပါလိမ့်မယ်။ မလိုချင်ရင် ကျော်လို့ရပါတယ်။";
+  static const String mediaHelperNote =
+      "အများဆုံး ၃ ခု ပူးတွဲနိုင်ပါသည် — ဓာတ်ပုံ သို့မဟုတ် ဗီဒီယို။";
+  static const String mediaMaxReachedNote = "အများဆုံး ၃ ခု ပူးတွဲပြီးပါပြီ။";
+  static const String mediaSheetTitle = "ဓာတ်ပုံ/ဗီဒီယို ထည့်နည်း";
+  static const String mediaTakePhoto = "ဓာတ်ပုံ ရိုက်မည်";
+  static const String mediaChoosePhoto = "ပြခန်းမှ ဓာတ်ပုံ ရွေးမည်";
+  static const String mediaRecordVideo = "ဗီဒီယို ရိုက်မည်";
+  static const String mediaChooseVideo = "ပြခန်းမှ ဗီဒီယို ရွေးမည်";
+  static const String mediaPickFailed = "ဓာတ်ပုံ/ဗီဒီယို ရွေးချယ်၍ မရပါ";
+  static const String mediaRemoveLabel = "ဖယ်ရှားမည်";
+  static const String mediaSkipButton = "ကျော်မည်";
+  static const String mediaAttachTooltip = "ဓာတ်ပုံ/ဗီဒီယို ပူးတွဲမည်";
+  static const String reviewMediaLabel = "ဓာတ်ပုံ/ဗီဒီယို";
+  static const String reviewMediaNone = "မပူးတွဲထားပါ";
+  static String reviewMediaCount(int count) => "$count ခု ပူးတွဲထားသည်";
+
   // ── Screen 2: When & Where (date, time, place, urgent) ───────────────────
   static const String whenWhereTitle = "ဘယ်အချိန် ဘယ်နေရာ လိုအပ်ပါသလဲ";
   static const String scheduleSectionTitle = "ရက်စွဲနှင့် အချိန်";
   static const String placeSectionTitle = "အလုပ်လုပ်မည့် နေရာ";
-  static const String typeLocationTitle = "အလုပ်နေရာ ရွေးချယ်ပါ";
   static const String taskTypeOnSiteLabel = "နေရာသို့ လာရမည်";
   static const String taskTypeRemoteLabel = "အဝေးမှ လုပ်နိုင်သည်";
   static const String townshipLabel = "မြို့နယ်";
@@ -97,7 +154,6 @@ class TaskPostingStrings {
   static const String remoteDeliverableOther = "အခြား";
 
   // ── Screen 3: Date, Time & Urgent Task ───────────────────────────────────
-  static const String dateTimeTitle = "ဘယ်အချိန် လိုအပ်ပါသလဲ";
   static const String pickDateButton = "ရက်စွဲ ရွေးမည်";
   static const String customTimeButton = "အချိန်ရွေးမည်";
   static const String dateRequiredError = "ရက်စွဲ ရွေးချယ်ပေးပါနော်";
@@ -153,7 +209,6 @@ class TaskPostingStrings {
   // ── Screen 5: Task Description ───────────────────────────────────────────
   static const String descriptionTitle = "အလုပ်အကြောင်း ဖော်ပြပါ";
   static const String descriptionPlaceholder = "ဥပမာ - ရေယိုနေတယ်";
-  static const String aiWriteButton = "AI က ရေးပေးမည်";
   static const String descriptionRequiredError = "အလုပ်အကြောင်း ဖော်ပြပေးပါနော်";
 
   static const String budgetCurrency = "ကျပ်";
@@ -185,15 +240,9 @@ class TaskPostingStrings {
   static const String successGoToActivity = "လုပ်ဆောင်ချက်များ သို့ သွားမည်";
   static const String successGoHome = "ပင်မသို့ ပြန်မည်";
 
-  // ── AI Task Scoper (live OpenAI via Firebase, offline-mock fallback) ─────
+  // ── AI Task Scoper (fully local demo simulation — no network) ────────────
   static const String aiOfflineBadge = "အော့ဖ်လိုင်း";
   static const String aiThinking = "AI စဉ်းစားနေသည်...";
-  // Screen 1
-  static const String suggestCategoryButton = "AI ဖြင့် အမျိုးအစား ရှာမည်";
-  static const String suggestCategoryNeedTitle = "အလုပ် ခေါင်းစဉ် အရင် ထည့်ပါနော်";
-  // Screen 6 — AI price band
-  static const String aiPriceRangeTitle = "AI အကြံပြု ဈေးနှုန်း";
-  static const String aiPriceRangeRetry = "ပြန်ကြိုးစားမည်";
   // Review — Task Attractiveness Score
   static const String attractivenessTitle = "အလုပ် ဆွဲဆောင်မှု ရမှတ်";
   static const String attractivenessScoreSuffix = "/၁၀၀";

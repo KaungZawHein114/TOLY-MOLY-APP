@@ -206,7 +206,11 @@ class AppStrings {
   // user taps — the assistant never auto-jumps.
   static const String chatbotFindTaskerCta = "အလုပ်သမား ရှာမည် (Browse Workers)";
   static const String chatbotEditProfileCta = "ပရိုဖိုင် ပြင်မည် (Edit Profile)";
+  static const String chatbotViewActivityCta = "Activity ကြည့်မည် (View Activity)";
+  static const String chatbotVerificationCta = "အတည်ပြုမှု စတင်မည် (Start Verification)";
   static const String chatbotOfflineHint = "အော့ဖ်လိုင်း"; // shown when reply came from mock
+  // In-field mic on the chat input bar — see ChatbotScreen._InputBar.
+  static const String chatbotMicSemanticLabel = "အသံဖြင့် ရိုက်ထည့်မည်";
 
   static const String currency = "MMK";
 }

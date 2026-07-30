@@ -7,6 +7,7 @@ import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/utils/ai_service.dart';
+import '../../core/widgets/onboarding/speech_to_text_button.dart';
 import '../../features/worker/dashboard_screen.dart' show jobSearchFocusNode;
 import '../../features/worker/worker_home_shell.dart' show workerTabIndexProvider;
 import 'chat_nav.dart';
@@ -22,7 +23,11 @@ final chatMessagesProvider = StateProvider<List<ChatMessage>>((ref) => const [
 /// surfacing the matching action button under the reply.
 ///
 /// [role] ("client" | "tasker") is passed from whichever dashboard opened it;
-/// it only biases intent detection — the message is the source of truth.
+/// it only biases intent detection — the message is the source of truth. For
+/// the CLIENT role this now talks to the real App Assistant backend (see
+/// [AiService.chatAssistant]), falling back to the same local mock taskers
+/// still use if the backend is unreachable — the user never sees a
+/// difference either way.
 class ChatbotScreen extends ConsumerStatefulWidget {
   final String role;
   const ChatbotScreen({super.key, this.role = 'client'});
@@ -42,6 +47,20 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
     "Find plumbing jobs",
     "How do I post a task?",
   ];
+
+  // Demo mic: no real speech-to-text is wired up yet, but the affordance and
+  // its plumbing are real — SpeechToTextButton hands back a canned line that
+  // feeds the SAME _send pipeline typed text uses, so swapping in a real
+  // recognizer later only means changing what produces the string, not how
+  // it's consumed. Cycles through _quickPrompts instead of repeating one
+  // line, so tapping it more than once in a demo doesn't look robotic.
+  int _micPromptIndex = 0;
+  String get _micTranscript =>
+      _quickPrompts[_micPromptIndex % _quickPrompts.length];
+  void _onMicResult(String transcript) {
+    _micPromptIndex++;
+    _send(transcript);
+  }
 
   @override
   void dispose() {
@@ -159,7 +178,12 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
             ),
           ),
           _QuickPrompts(prompts: _quickPrompts, onTap: _send),
-          _InputBar(controller: _controller, onSend: _send),
+          _InputBar(
+            controller: _controller,
+            onSend: _send,
+            micTranscript: _micTranscript,
+            onMicResult: _onMicResult,
+          ),
         ],
       ),
     );
@@ -329,7 +353,18 @@ class _QuickPrompts extends StatelessWidget {
 class _InputBar extends StatelessWidget {
   final TextEditingController controller;
   final ValueChanged<String> onSend;
-  const _InputBar({required this.controller, required this.onSend});
+
+  /// The line the mic hands back this tap (rotates — see
+  /// [_ChatbotScreenState._onMicResult]) and the callback to send it.
+  final String micTranscript;
+  final ValueChanged<String> onMicResult;
+
+  const _InputBar({
+    required this.controller,
+    required this.onSend,
+    required this.micTranscript,
+    required this.onMicResult,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -362,6 +397,12 @@ class _InputBar extends StatelessWidget {
                   ),
                 ),
               ),
+            ),
+            const SizedBox(width: AppSpacing.sm),
+            SpeechToTextButton(
+              semanticPrompt: AppStrings.chatbotMicSemanticLabel,
+              mockTranscript: micTranscript,
+              onResult: onMicResult,
             ),
             const SizedBox(width: AppSpacing.sm),
             Semantics(

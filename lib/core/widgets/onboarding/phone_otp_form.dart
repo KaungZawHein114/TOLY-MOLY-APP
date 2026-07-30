@@ -68,11 +68,6 @@ class PhoneOtpForm extends StatefulWidget {
   /// Pops back to the Account step so the phone can be corrected.
   final VoidCallback? onEditPhone;
 
-  /// AUTH-ONLY: pre-recorded clip keys (from `AuthAudioKeys`) for the phone
-  /// and OTP labels. (TTS is never used on auth screens.)
-  final String? phoneAudioKey;
-  final String? otpAudioKey;
-
   /// Returns the dev-mode OTP code on success, or throws with a user-facing
   /// message on failure.
   final Future<String?> Function(String phone) onSendOtp;
@@ -91,8 +86,6 @@ class PhoneOtpForm extends StatefulWidget {
     required this.onSendOtp,
     required this.onVerifyOtp,
     this.onEditPhone,
-    this.phoneAudioKey,
-    this.otpAudioKey,
   });
 
   @override

@@ -12,8 +12,7 @@ class SpeechToTextButton extends StatelessWidget {
   final String mockTranscript;
   final bool large;
 
-  // Smaller footprint to sit inline next to a single field's label, next to
-  // ReadAloudButton's matching `compact` size — see basic_info_screen.dart.
+  // Smaller footprint to sit inline next to a single field's label.
   final bool compact;
 
   const SpeechToTextButton({

@@ -117,6 +117,53 @@ class _MoneyLine extends StatelessWidget {
   }
 }
 
+/// Small placeholder tiles standing in for a job's attached photos/videos.
+/// This demo data has no real files to render (Phase 1: no network images),
+/// so each tile is just a soft, category-tinted icon box — enough to signal
+/// "this task has attachments" without pretending to show a real photo.
+/// Capped at 3 tiles even if [count] is higher.
+class MediaCountStrip extends StatelessWidget {
+  final int count;
+  final String category;
+  const MediaCountStrip({super.key, required this.count, required this.category});
+
+  @override
+  Widget build(BuildContext context) {
+    if (count <= 0) return const SizedBox.shrink();
+    final shown = count > 3 ? 3 : count;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: AppSpacing.sm + 2),
+      child: Row(
+        children: [
+          for (var i = 0; i < shown; i++)
+            Padding(
+              padding: EdgeInsets.only(right: i == shown - 1 ? 0 : AppSpacing.xs),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.purple100,
+                  borderRadius: BorderRadius.circular(AppRadius.sm),
+                ),
+                alignment: Alignment.center,
+                child: Icon(categoryIconFor(category),
+                    color: AppColors.purple700, size: AppSizes.iconSm),
+              ),
+            ),
+          if (count > 3) ...[
+            const SizedBox(width: AppSpacing.xs),
+            Text("+${count - 3}",
+                style: Theme.of(context)
+                    .textTheme
+                    .bodySmall
+                    ?.copyWith(color: AppColors.textSecondary)),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
 /// Small colored pill for a job's urgency status. Reused wherever the
 /// "Urgent" state needs to be flagged on a card.
 class StatusBadge extends StatelessWidget {
@@ -294,6 +341,7 @@ class JobCard extends StatelessWidget {
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodyMedium),
             const SizedBox(height: AppSpacing.sm + 2),
+            MediaCountStrip(count: job.photoCount, category: job.category),
             Row(
               children: [
                 Icon(Icons.location_on, size: 14, color: theme.hintColor),

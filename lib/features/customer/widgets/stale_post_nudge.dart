@@ -8,7 +8,6 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/ai_service.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
-import '../../../core/widgets/onboarding/read_aloud_button.dart';
 
 /// Gentle, dismissible "your post has waited a while" nudge (spec §4.4 Phase 1).
 /// A COMPACT banner (so it never starves the surrounding list); the AI tips load
@@ -187,9 +186,6 @@ class _StaleTipsSheetState extends ConsumerState<_StaleTipsSheet> {
                   child: Text(TaskPostingStrings.stalePostTipsTitle,
                       style: theme.textTheme.titleLarge),
                 ),
-                if (!_loading && _tips != null)
-                  ReadAloudButton(
-                      textToRead: _tips!.tips.join('. '), compact: true),
               ],
             ),
             const SizedBox(height: AppSpacing.md),

@@ -3,6 +3,10 @@
          package) for the conversational task posting flow. Location is
          demo-only (fixed coordinate), so no location permission needed. -->
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
+    <!-- Task media attachments: camera capture via image_picker. Gallery
+         picking uses the system photo picker on modern Android, which needs
+         no runtime permission. -->
+    <uses-permission android:name="android.permission.CAMERA" />
     <application
         android:label="Toly Moly"
         android:name="${applicationName}"
@@ -36,6 +40,18 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+        <!-- Required by image_picker for camera capture (see
+             res/xml/file_paths.xml) — without it, taking a photo/video for
+             a task's media attachments crashes instead of returning a file. -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.flutter.image_provider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

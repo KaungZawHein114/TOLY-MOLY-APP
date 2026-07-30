@@ -41,20 +41,6 @@ dependencies:
   # Declarative routing with fail-safe fallback to RoleSelection.
   go_router: ^14.6.2
 
-  # AI Task Scoper (Task Posting only) — live OpenAI proxied through Firebase
-  # Cloud Functions. The app stays fully usable offline: every AI call falls
-  # back to the synchronous mock in ai_mock.dart when Firebase is unreachable
-  # or not yet configured. No OpenAI key ever ships in the app.
-  firebase_core: ^3.6.0
-  cloud_functions: ^5.1.3
-  flutter_tts: ^4.2.5
-
-  # Pre-recorded audio playback. Used ONLY by the auth (onboarding) speaker
-  # buttons, which play clips from `recordings/auth/` instead of TTS. Every
-  # other screen keeps using flutter_tts above. See
-  # lib/features/auth/audio/ for the map, controller, and button.
-  audioplayers: ^6.1.0
-
   # Onboarding backend integration (Phase 2) — talks to the Django REST API
   # under backend/. dio for HTTP, flutter_secure_storage for JWT persistence.
   dio: ^5.7.0
@@ -65,6 +51,10 @@ dependencies:
   # uploading it to the backend's Whisper endpoint. Location is demo-only (a
   # fixed coordinate in ai_task_posting_screen.dart), so no GPS package.
   speech_to_text: ^7.0.0
+
+  # Task media attachments (photo/video) — on-device camera/gallery picker.
+  # Files stay local (path only, never uploaded) — Phase 1 has no backend.
+  image_picker: ^1.1.2
 
 dev_dependencies:
   flutter_test:
@@ -93,10 +83,6 @@ flutter:
     - assets/mascot/
     - assets/logo_circle.png
     - assets/img.png
-    # Pre-recorded auth voice clips (played by the onboarding speaker buttons
-    # via lib/features/auth/audio/). Kept outside assets/ on purpose; the
-    # AudioCache prefix is set to '' so these paths resolve as-is.
-    - recordings/auth/
 
   # To add individual assets to your application:
   #   - images/a_dot_burr.jpeg

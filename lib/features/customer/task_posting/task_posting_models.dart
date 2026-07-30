@@ -154,6 +154,18 @@ extension WorkerTierInfo on WorkerTier {
   }
 }
 
+/// Hard cap on photo/video attachments per task, enforced by the media picker.
+const int kMaxTaskMedia = 3;
+
+/// One attached photo or video. Holds a LOCAL file path only — nothing is
+/// uploaded anywhere; Phase 1 has no backend, so an attachment lives exactly
+/// as long as the device keeps that file.
+class TaskMediaItem {
+  final String path;
+  final bool isVideo;
+  const TaskMediaItem({required this.path, required this.isVideo});
+}
+
 /// Mutable-by-replacement draft for the task-posting flow. A single Riverpod
 /// StateProvider holds an instance; every screen calls copyWith to update it.
 class TaskDraft {
@@ -179,6 +191,9 @@ class TaskDraft {
   // worker's profile — [category]/[workerTier] are auto-filled from that
   // worker, and the flow skips the category-pick and tier-pick steps.
   final int? presetWorkerId;
+  // Photos/videos attached to the task, up to [kMaxTaskMedia]. Optional in
+  // both posting methods — an empty list is a perfectly valid, published task.
+  final List<TaskMediaItem> media;
 
   const TaskDraft({
     this.title = "",
@@ -198,6 +213,7 @@ class TaskDraft {
     this.budgetMmk,
     this.notes = "",
     this.presetWorkerId,
+    this.media = const [],
   });
 
   factory TaskDraft.empty() => const TaskDraft();
@@ -234,6 +250,7 @@ class TaskDraft {
     int? budgetMmk,
     String? notes,
     int? presetWorkerId,
+    List<TaskMediaItem>? media,
   }) {
     return TaskDraft(
       title: title ?? this.title,
@@ -253,6 +270,7 @@ class TaskDraft {
       budgetMmk: budgetMmk ?? this.budgetMmk,
       notes: notes ?? this.notes,
       presetWorkerId: presetWorkerId ?? this.presetWorkerId,
+      media: media ?? this.media,
     );
   }
 }

@@ -6,6 +6,7 @@ import 'package:toly_moly/main.dart';
 import 'package:toly_moly/core/constants/app_strings.dart';
 import 'package:toly_moly/core/constants/onboarding_strings.dart';
 import 'package:toly_moly/core/constants/profile_strings.dart';
+import 'package:toly_moly/core/constants/task_posting_strings.dart';
 import 'package:toly_moly/core/routing/app_router.dart';
 
 void main() {
@@ -63,7 +64,7 @@ void main() {
     expect(tester.widget<IndexedStack>(find.byType(IndexedStack)).index, 0);
   });
 
-  testWidgets('Post a task quick action navigates to the AI Task Assistant',
+  testWidgets('Post a task quick action navigates to the posting method picker',
       (tester) async {
     await tester.pumpWidget(const ProviderScope(child: TolyMolyApp()));
     appRouter.go(Routes.customerHome);
@@ -74,8 +75,11 @@ void main() {
     await tester.pump();
     await tester.pump(const Duration(milliseconds: 400));
 
-    // Post a task now opens the AI-driven task posting flow (its AppBar title).
-    expect(find.text('AI Task Assistant'), findsOneWidget);
+    // Post a task opens the method picker — the single entry point for both
+    // the voice conversation and the manual steps.
+    expect(find.text(TaskPostingStrings.methodTitle), findsWidgets);
+    expect(find.text(TaskPostingStrings.methodVoiceLabel), findsOneWidget);
+    expect(find.text(TaskPostingStrings.methodManualLabel), findsOneWidget);
   });
 
   testWidgets('Find a worker quick action navigates to WorkerListScreen',

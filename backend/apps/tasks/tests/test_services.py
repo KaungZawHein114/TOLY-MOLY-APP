@@ -90,8 +90,9 @@ class AnalyzeTaskTests(TestCase):
     def test_merges_extracted_fields_with_known_fields(self, mock_openai_cls):
         self._mock_response(
             mock_openai_cls,
-            '{"category": "Cleaner", "title": "House cleaning", "date": "2026-07-01", '
-            '"time": null, "urgency": null, "question": "What time should the worker arrive?"}',
+            '{"category": "Cleaner", "title": "House cleaning", "description": "Clean apartment", '
+            '"township": "Kamayut", "date": "2026-07-01", "time": null, "urgency": null, '
+            '"category_fields": {}, "reply": "What time should the worker arrive?", "ready": false}',
         )
 
         result = analyze_task("I need cleaning tomorrow", [], {"urgency": "NORMAL"})
@@ -99,26 +100,72 @@ class AnalyzeTaskTests(TestCase):
         self.assertEqual(result["fields"]["category"], "Cleaner")
         self.assertEqual(result["fields"]["urgency"], "NORMAL")  # preserved from known_fields
         self.assertFalse(result["ready"])
-        self.assertEqual(result["question"], "What time should the worker arrive?")
+        self.assertEqual(result["reply"], "What time should the worker arrive?")
 
     @patch("apps.tasks.services.OpenAI")
-    def test_ready_true_and_question_none_when_nothing_missing(self, mock_openai_cls):
+    def test_ready_true_only_when_every_required_field_present(self, mock_openai_cls):
         self._mock_response(
             mock_openai_cls,
-            '{"category": "Cleaner", "title": "House cleaning", "date": "2026-07-01", '
-            '"time": "09:00", "urgency": "NORMAL", "question": null}',
+            '{"category": "Cleaner", "title": "House cleaning", "description": "Clean apartment", '
+            '"township": "Kamayut", "date": "2026-07-01", "time": "09:00", "urgency": "NORMAL", '
+            '"category_fields": {"size": "2 bedrooms"}, "reply": "So: clean a 2-bedroom '
+            'apartment in Kamayut tomorrow at 9am — sound right?", "ready": true}',
         )
 
         result = analyze_task("ok", [], {})
 
         self.assertTrue(result["ready"])
-        self.assertIsNone(result["question"])
+        self.assertIn("sound right", result["reply"])
+        self.assertEqual(result["fields"]["category_fields"]["size"], "2 bedrooms")
+
+    @patch("apps.tasks.services.OpenAI")
+    def test_model_ready_true_overridden_when_a_required_field_is_still_missing(self, mock_openai_cls):
+        # The model can be wrong — the backend never trusts ready:true blindly
+        # if a flat required field it can actually verify is still empty.
+        self._mock_response(
+            mock_openai_cls,
+            '{"category": "Cleaner", "title": "House cleaning", "description": null, '
+            '"township": null, "date": null, "time": null, "urgency": null, '
+            '"category_fields": {}, "reply": "Sounds good!", "ready": true}',
+        )
+
+        result = analyze_task("ok", [], {})
+
+        self.assertFalse(result["ready"])
+
+    @patch("apps.tasks.services.OpenAI")
+    def test_category_fields_merge_without_discarding_prior_keys(self, mock_openai_cls):
+        self._mock_response(
+            mock_openai_cls,
+            '{"category": "Tutor", "title": "Math tutoring", "description": "Grade 9 math", '
+            '"township": "Bahan", "date": "flexible", "time": "flexible", "urgency": "NORMAL", '
+            '"category_fields": {"frequency": "twice a week"}, "reply": "In-person or online?", '
+            '"ready": false}',
+        )
+
+        result = analyze_task(
+            "twice a week please",
+            [],
+            {"category": "Tutor", "category_fields": {"subject": "Math", "grade": "9"}},
+        )
+
+        self.assertEqual(
+            result["fields"]["category_fields"],
+            {"subject": "Math", "grade": "9", "frequency": "twice a week"},
+        )
 
     @patch("apps.tasks.services.OpenAI")
     def test_wraps_sdk_errors(self, mock_openai_cls):
         mock_client = MagicMock()
         mock_client.chat.completions.create.side_effect = RuntimeError("rate limited")
         mock_openai_cls.return_value = mock_client
+
+        with self.assertRaises(AIServiceUnavailable):
+            analyze_task("hello", [], {})
+
+    @patch("apps.tasks.services.OpenAI")
+    def test_missing_reply_raises_unavailable(self, mock_openai_cls):
+        self._mock_response(mock_openai_cls, '{"category": "Cleaner", "ready": false}')
 
         with self.assertRaises(AIServiceUnavailable):
             analyze_task("hello", [], {})

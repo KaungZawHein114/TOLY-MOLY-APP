@@ -11,8 +11,6 @@ import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
-import '../../auth/audio/auth_audio_button.dart';
-import '../../auth/audio/auth_audio_map.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
 import '../widgets/voice_fill_banner.dart';
@@ -119,7 +117,6 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: OnboardingStrings.nameLabel,
-            audioKey: AuthAudioKeys.name,
             mockTranscript: "Aung Aung",
             onSpeechResult: (v) => setState(() => _nameController.text = v),
             controller: _nameController,
@@ -131,16 +128,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
             }),
           ),
           const SizedBox(height: AppSpacing.xl),
-          Row(
-            children: [
-              Expanded(child: Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium)),
-              const AuthAudioButton(
-                audioKey: AuthAudioKeys.gender,
-                semanticLabel: OnboardingStrings.genderLabel,
-                compact: true,
-              ),
-            ],
-          ),
+          Text(OnboardingStrings.genderLabel, style: theme.textTheme.titleMedium),
           const SizedBox(height: AppSpacing.md),
           // Two large pictorial cards only (no "other" option) — an
           // immediately recognizable visual choice, never a dropdown.
@@ -166,7 +154,6 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: OnboardingStrings.ageLabel,
-            audioKey: AuthAudioKeys.age,
             mockTranscript: "25",
             onSpeechResult: (v) => setState(() => _ageController.text = v),
             controller: _ageController,
