@@ -22,8 +22,13 @@ import 'task_posting_state.dart';
 /// The level also sets the price: the budget is no longer typed by the client,
 /// it is estimated by the AI from the category, the chosen level and urgency
 /// (see [estimateTaskBudgetMmk]). Each card carries its own estimate so the
-/// trade-off between level and price is visible before choosing. Continuing
-/// moves on to the Description step, next in the manual flow.
+/// trade-off between level and price is visible before choosing.
+///
+/// SHARED convergence point for both posting methods: Manual reaches this
+/// screen with no description yet and continues on to the Description step;
+/// the AI Task Assistant conversation reaches it with the description
+/// already collected, so continuing goes straight to Summary instead —
+/// asking again would just repeat what the client already said in the chat.
 class TaskerLevelScreen extends ConsumerStatefulWidget {
   const TaskerLevelScreen({super.key});
 
@@ -139,6 +144,12 @@ class _TaskerLevelScreenState extends ConsumerState<TaskerLevelScreen> {
         draft.copyWith(budgetMmk: _estimateFor(draft, tier));
     if (_editMode) {
       context.pop();
+    } else if (draft.description.trim().isNotEmpty) {
+      // Reached from the AI Task Assistant conversation, which already
+      // collected a description — asking again would repeat it. Manual
+      // never has one yet at this point, so it always takes the other
+      // branch below.
+      context.push(Routes.postTaskReview);
     } else {
       context.push(Routes.postTaskDescription);
     }

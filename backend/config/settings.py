@@ -29,6 +29,7 @@ INSTALLED_APPS = [
     "apps.taskers",
     "apps.tasks",
     "apps.assistant",
+    "apps.matching",
 ]
 
 MIDDLEWARE = [

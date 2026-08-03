@@ -86,27 +86,18 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
     ref.read(townshipFilterProvider.notifier).state = null;
   }
 
-  // Tasker-Finding mode (spec §4.3): hand the CURRENTLY filtered list to
-  // Pho Wa Yoke as candidates. The agent ranks + explains (LLM or offline
-  // fallback), the user picks one, and we open that tasker's profile — a
-  // prepare-and-confirm step, never an auto-selection.
+  // AI Tasker Finder (spec §4.3): Pho Wa Yoke asks what the problem is, the
+  // classifier backend names a service category, and the sheet searches that
+  // category LOCALLY. It gets the FULL tasker list, not this screen's filtered
+  // view — the AI picks the category itself, so a leftover filter must not
+  // silently narrow its answer. The user picks one and we open that tasker's
+  // profile — a prepare-and-confirm step, never an auto-selection.
   Future<void> _openAiShortlist(List<Worker> candidates) async {
     if (candidates.isEmpty) return;
     ref.read(agentModeProvider.notifier).state = AgentMode.taskerFinding;
     ref.read(agentSessionProvider.notifier).state = AgentSession.active;
 
-    final township = ref.read(townshipFilterProvider);
-    final task = <String, dynamic>{
-      'category': _skill ?? '',
-      if (township != null) 'township': township,
-      'urgent': false,
-    };
-
-    final pickedId = await showTaskerShortlist(
-      context,
-      task: task,
-      candidates: candidates,
-    );
+    final pickedId = await showTaskerShortlist(context, candidates: candidates);
     if (!mounted || pickedId == null) return;
     context.push('${Routes.workerProfile}/$pickedId');
   }
@@ -314,8 +305,9 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
             activeFilterChips: activeChips,
             onClearAll: activeChips.isEmpty ? null : _clearAllFilters,
           ),
-          if (list.isNotEmpty)
-            _AiMatchBanner(onTap: () => _openAiShortlist(list)),
+          // Always available — the finder searches the whole tasker list, so
+          // it stays useful even when the manual filters returned nothing.
+          _AiMatchBanner(onTap: () => _openAiShortlist(source)),
           Expanded(
             child: list.isEmpty
                 ? _EmptyState(onReset: _clearAllFilters)
@@ -336,9 +328,9 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
   }
 }
 
-/// Indigo (AI-accent) CTA that launches the Tasker-Finding shortlist. Sits
-/// above the manual list so both the manual browse and the AI shortcut are
-/// always one tap away.
+/// Indigo (AI-accent) CTA that launches the AI Tasker Finder. Sits above the
+/// manual list so both the manual browse and the AI shortcut are always one
+/// tap away.
 class _AiMatchBanner extends StatelessWidget {
   final VoidCallback onTap;
   const _AiMatchBanner({required this.onTap});

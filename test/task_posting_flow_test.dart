@@ -233,20 +233,31 @@ void main() {
     await tester.tap(find.text(TaskPostingStrings.mediaSkipButton));
     await _settleVoice(tester); // covers the wrap-up Timer before the push
 
-    // Same summary screen the manual flow reaches — no duplicate.
+    // Hands off to the SAME shared Tasker Level screen the manual flow
+    // uses — the AI conversation never asks about level/budget itself, but
+    // choosing one is still a required step both methods converge on.
+    expect(find.text(TaskPostingStrings.workersTierTitle), findsWidgets);
+    await tester.tap(find.text(TaskPostingStrings.tier1Label));
+    await _settle(tester);
+    await tester.tap(find.text(TaskPostingStrings.continueButton));
+    await _settle(tester);
+
+    // The description was already collected by the conversation, so
+    // continuing from Tasker Level goes straight to Summary — no redundant
+    // description re-ask (unlike Manual, which hasn't asked for one yet at
+    // this point and takes the Description step next).
     expect(find.text(TaskPostingStrings.reviewTitle), findsWidgets);
 
-    // Every field the conversation is responsible for was filled. Tasker
-    // level/budget are deliberately NOT set by this flow (locked design:
-    // that stays a separate step after the conversation, same as it already
-    // is for Manual) — Summary shows "-" for those until the client edits
-    // them, exactly like any other incomplete draft.
+    // Every field either the conversation or the shared Tasker Level step
+    // was responsible for is filled by the time Summary is reached.
     final draft = container.read(taskDraftProvider);
     expect(draft.category, isNotNull);
     expect(draft.title, isNotEmpty);
     expect(draft.township, "လှိုင်");
     expect(draft.date, isNotNull);
     expect(draft.timeSlot, isNotNull);
+    expect(draft.workerTier, isNotNull);
+    expect(draft.budgetMmk, isNotNull);
   });
 
   testWidgets(

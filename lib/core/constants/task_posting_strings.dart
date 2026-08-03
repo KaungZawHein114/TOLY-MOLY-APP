@@ -74,8 +74,10 @@ class TaskPostingStrings {
   static const String taskAssistantMediaPrompt =
       "ဓာတ်ပုံ သို့မဟုတ် ဗီဒီယို ထည့်ချင်ပါသလား? ကျော်လို့လည်း ရပါတယ်။";
   static const String taskAssistantMediaContinue = "ဆက်သွားမည်";
+  // Promises the NEXT screen (Tasker Level), not Summary — the conversation
+  // hands off to Tasker Level first, same convergence point Manual uses.
   static const String taskAssistantWrapUpMessage =
-      "ကျေးဇူးတင်ပါတယ်။ အချက်အလက်တွေ စုစည်းပြီးပါပြီ — အနှစ်ချုပ်ကို ပြပါမယ်နော်။";
+      "ကျေးဇူးတင်ပါတယ်။ အချက်အလက်တွေ စုစည်းပြီးပါပြီ — အလုပ်သမား အဆင့် ရွေးချယ်ကြရအောင်။";
 
   // ── Screen 1: Task Title + Category Selection ───────────────────────────
   static const String categoryTitle = "ဘာအကူအညီ လိုအပ်ပါသလဲ";
@@ -258,21 +260,39 @@ class TaskPostingStrings {
   static const String evalMissingBudget = "ဈေးနှုန်း ထည့်သွင်းပါ";
   static const String evalMissingSchedule = "ရက်စွဲနှင့် အချိန် ထည့်သွင်းပါ";
 
-  // ── Tasker-Finding mode (AI match shortlist — Slice 1, spec §4.3) ────────
-  // Pho Wa Yoke pre-filters + scores taskers in Dart; the model only ranks and
-  // explains. Every number shown is real app data, never model output.
+  // ── AI Tasker Finder (spec §4.3) ─────────────────────────────────────────
+  // Pho Wa Yoke asks what the problem is; the model ONLY names a service
+  // category. The tasker search + ranking is local, and every number shown is
+  // real app data, never model output.
   static const String matchCtaTitle = "AI ဖြင့် အကောင်းဆုံး အလုပ်သမား ရှာမည်";
   static const String matchCtaSubtitle =
-      "ဖိုးဝရုပ်က သင့်အတွက် အသင့်တော်ဆုံး ၃ ဦးကို ရွေးပေးပါမည်။";
-  static const String matchSheetTitle = "ဖိုးဝရုပ် ရွေးချယ်ပေးထားသူများ";
+      "သင့်ပြဿနာကို ပြောပြပါ၊ ဖိုးဝရုပ်က သင့်တော်သူများ ရှာပေးပါမည်။";
+  static const String matchSheetTitle = "ဖိုးဝရုပ် အလုပ်သမား ရှာပေးမည်";
+  // Step 1 — the question.
+  static const String matchAskTitle = "ဘာအကူအညီ လိုအပ်ပါသလဲ?";
+  static const String matchAskHint =
+      "ဥပမာ — “ရေပိုက် ယိုနေတယ်” ၊ “အိမ်ခန်း သန့်ရှင်းရေး လုပ်ချင်တယ်”";
+  static const String matchAskFieldLabel = "သင့်ပြဿနာကို ရေးပါ သို့မဟုတ် ပြောပါ";
+  static const String matchAskSubmit = "အလုပ်သမား ရှာမည်";
+  static const String matchAskEmptyError = "ဘာလိုအပ်လဲ အနည်းငယ် ပြောပြပေးပါနော်။";
+  // Step 2 — thinking.
   static const String matchThinking = "အကောင်းဆုံး အလုပ်သမားများ ရှာနေပါသည်…";
   static const String matchThinkingHint = "ခဏစောင့်ပေးပါနော်။";
+  // Step 3 — results.
   static const String matchReadyMessage =
       "ဒါက အသင့်တော်ဆုံး အလုပ်သမားများပါ။ တစ်ဦးကို ရွေးနိုင်ပါပြီ။";
+  static const String matchUnderstoodPrefix = "နားလည်လိုက်တာက —";
+  static const String matchCategoryPrefix = "လိုအပ်တဲ့ ဝန်ဆောင်မှု —";
+  static const String matchLowConfidenceNote =
+      "သေချာမသိသေးလို့ အနီးစပ်ဆုံး ဝန်ဆောင်မှုကို ရွေးထားပါတယ်။ မမှန်ရင် ပြန်ပြောပေးပါ။";
+  static const String matchAlternatesHeading = "အခြား အကြံပြုထားသော အလုပ်သမားများ";
+  static const String matchAlternatesNote =
+      "ဒီဝန်ဆောင်မှုအတွက် အလုပ်သမား နည်းနေလို့ အနီးအနားက အခြားသူများကိုပါ ပြထားပါတယ်။";
   static const String matchPickButton = "ဒီသူကို ရွေးမည်";
+  static const String matchAskAgain = "ထပ်မံ ရှာမည်";
   static const String matchEmptyTitle = "ကိုက်ညီသူ မတွေ့သေးပါ";
   static const String matchEmptyMessage =
-      "စစ်ထုတ်မှုများကို လျှော့ချပြီး ပြန်ကြိုးစားကြည့်ပါ။";
+      "နောက်တစ်ခေါက် ထပ်ကြိုးစားကြည့်ပါ သို့မဟုတ် စာရင်းထဲမှ ကိုယ်တိုင် ရွေးပါ။";
   static const String matchSpeakServicePrompt = "ဘယ်လို အလုပ်သမား လိုချင်လဲ ပြောပါ";
   static const String matchOfflineNote = "အော့ဖ်လိုင်း — အနီးအနား အလုပ်သမားများမှ ရွေးထားသည်";
   // Templated Burmese reason clauses (offline fallback). Composed into a short,

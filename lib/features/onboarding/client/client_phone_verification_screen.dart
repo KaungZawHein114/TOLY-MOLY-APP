@@ -99,8 +99,6 @@ class _ClientPhoneVerificationScreenState
             initiallyVerified: draft.otpVerified,
             alreadySent: draft.otpSent,
             initialDevCode: draft.lastDevOtpCode,
-            phoneAudioKey: AuthAudioKeys.phone,
-            otpAudioKey: AuthAudioKeys.otp,
             // "ပြင်မည်" pops back to the Account step, where the phone lives.
             onEditPhone: () => context.pop(),
             onPhoneChanged: (v) {
@@ -138,7 +136,6 @@ class _ClientPhoneVerificationScreenState
               accepted: _termsAccepted,
               onChanged: _setTerms,
               fullRulesText: OnboardingStrings.rulesBodyText,
-              audioKey: AuthAudioKeys.rules,
               errorText: _showTermsWarning
                   ? OnboardingStrings.termsRequiredWarning
                   : null,

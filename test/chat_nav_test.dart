@@ -4,12 +4,14 @@
 //     backwards-compatible for the original post/find inputs;
 //   • chatNavTargetFor maps each action to the right Routes.* destination
 //     (role-aware), and general/off_topic map to no button.
+import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:toly_moly/core/routing/app_router.dart';
 import 'package:toly_moly/core/utils/ai_mock.dart';
 import 'package:toly_moly/core/utils/ai_service.dart';
 import 'package:toly_moly/features/chatbot/chat_nav.dart';
+import 'package:toly_moly/features/chatbot/data/assistant_api.dart';
 
 void main() {
   group('chatAssistantReply intent detection (offline mock)', () {
@@ -94,10 +96,22 @@ void main() {
   });
 
   group('AiService.chatAssistant', () {
-    // No backend is reachable in the test environment, so a client-role call
-    // must fall through to the same local mock a tasker-role call uses —
-    // this is exactly the "seamless, no error state" fallback the App
-    // Assistant backend is designed around.
+    // With the backend unreachable, a client-role call must fall through to
+    // the same local mock a tasker-role call uses — this is exactly the
+    // "seamless, no error state" fallback the App Assistant backend is
+    // designed around. The client is pointed at a dead port so the test proves
+    // that whether or not a real Django server is up on this machine.
+    setUp(() {
+      AiService.assistantApi = AssistantApi(
+        dio: Dio(BaseOptions(
+          baseUrl: 'http://127.0.0.1:1',
+          connectTimeout: const Duration(milliseconds: 200),
+          receiveTimeout: const Duration(milliseconds: 200),
+        )),
+      );
+    });
+    tearDown(() => AiService.assistantApi = AssistantApi());
+
     test('client role falls back to the local mock when the backend is unreachable',
         () async {
       final reply = await AiService.chatAssistant(

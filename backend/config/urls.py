@@ -11,6 +11,7 @@ urlpatterns = [
     path("api/tasker/", include("apps.taskers.urls")),
     path("api/tasks/", include("apps.tasks.urls")),
     path("api/assistant/", include("apps.assistant.urls")),
+    path("api/matching/", include("apps.matching.urls")),
 ]
 
 if settings.DEBUG:

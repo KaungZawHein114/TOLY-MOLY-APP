@@ -244,7 +244,12 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
     _scrollToBottom();
   }
 
-  /// Media step done (Skip or Continue both call this) — hand off to Summary.
+  /// Media step done (Skip or Continue both call this) — hand off to Tasker
+  /// Level, the SAME screen the Manual flow uses, which is where this method
+  /// converges with Manual before either reaches Summary. Budget/tier are
+  /// never asked about in the conversation itself, but choosing a level is
+  /// still a required step — this was previously skipped entirely, which
+  /// was a bug, not the intended design.
   void _finishMedia() {
     if (_handoffStarted) return;
     setState(() {
@@ -253,7 +258,7 @@ class _VoiceTaskChatScreenState extends ConsumerState<VoiceTaskChatScreen> {
       _stage = _Stage.handoff;
     });
     _scrollToBottom();
-    _after(_kWrapUpDuration, () => context.push(Routes.postTaskReview));
+    _after(_kWrapUpDuration, () => context.push(Routes.postTaskTaskerLevel));
   }
 
   /// Start the conversation over — the draft is rebuilt from scratch, so a

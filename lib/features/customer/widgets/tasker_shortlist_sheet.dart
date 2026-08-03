@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/constants/task_posting_strings.dart';
 import '../../../core/data/demo_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-import '../../../core/utils/ai_mock.dart' show categorizeJob;
 import '../../../core/utils/ai_service.dart';
 import '../../../core/widgets/demo_card.dart' show TrustBadgePill;
 import '../../../core/widgets/large_button.dart';
@@ -13,81 +11,98 @@ import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
 import '../../../core/widgets/voice_input_button.dart';
 
-/// Tasker-Finding mode surface (spec §4.3). A modal bottom sheet that shows
-/// Pho Wa Yoke `thinking → success` while [AiService.matchTaskers] ranks the
-/// [candidates] the screen pre-filtered, then displays a shortlist of ≤3 real
-/// taskers — each with its REAL stats plus a short spoken reason. The user
-/// picks one (prepare-and-confirm: the agent recommends, the human chooses);
-/// nothing is auto-selected or submitted.
+/// AI Tasker Finder surface (spec §4.3). A modal bottom sheet with three
+/// steps:
+///
+///   1. **ask** — Pho Wa Yoke asks "ဘာအကူအညီ လိုအပ်ပါသလဲ?" and the client
+///      types or speaks their problem.
+///   2. **thinking** — ONE call to the classifier backend
+///      ([AiService.classifyServiceCategory]) turns that description into a
+///      service category. On any failure it silently falls back to the local
+///      keyword matcher — the client never sees an error.
+///   3. **results** — the category is searched LOCALLY against [candidates]
+///      ([AiService.findTaskers]): up to five exact-category taskers ranked
+///      nearest-first, then, only if that came up short, related-category
+///      suggestions under their own clearly-separated heading. Every stat
+///      shown is a real [Worker] field; nothing is model output.
+///
+/// The client picks one (prepare-and-confirm: the agent recommends, the human
+/// chooses); nothing is auto-selected or submitted.
 ///
 /// Opens via [showTaskerShortlist]; pops with the chosen worker id (or null).
-class TaskerShortlistSheet extends ConsumerStatefulWidget {
-  /// The task context — its `category` key drives skill-match scoring/reasons.
-  final Map<String, dynamic> task;
-
-  /// The candidate taskers, already pre-filtered by the screen's active filters.
+class TaskerShortlistSheet extends StatefulWidget {
+  /// Every tasker the finder may search — the full demo list, NOT the browse
+  /// screen's filtered view: the AI decides the category itself, so a stale
+  /// category filter must not silently narrow its answer.
   final List<Worker> candidates;
 
-  const TaskerShortlistSheet({
-    super.key,
-    required this.task,
-    required this.candidates,
-  });
+  const TaskerShortlistSheet({super.key, required this.candidates});
 
   @override
-  ConsumerState<TaskerShortlistSheet> createState() =>
-      _TaskerShortlistSheetState();
+  State<TaskerShortlistSheet> createState() => _TaskerShortlistSheetState();
 }
 
-class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
-  late Map<String, dynamic> _task = Map<String, dynamic>.of(widget.task);
-  late final Map<int, Worker> _byId = {
-    for (final w in widget.candidates) w.id: w,
-  };
+enum _FinderPhase { ask, thinking, results }
 
-  bool _loading = true;
-  List<TaskerMatch> _matches = const [];
+class _TaskerShortlistSheetState extends State<TaskerShortlistSheet> {
+  static const int _maxResults = 5;
+
+  final TextEditingController _controller = TextEditingController();
+  late final Map<int, Worker> _byId = {for (final w in widget.candidates) w.id: w};
+
+  _FinderPhase _phase = _FinderPhase.ask;
+  String? _inputError;
+  bool _listening = false;
+  ServiceCategoryResult? _understood;
+  TaskerShortlist _shortlist = const TaskerShortlist(primary: [], alternates: []);
 
   @override
-  void initState() {
-    super.initState();
-    // First frame renders the synchronous "thinking" state; the live call is
-    // kicked off after it, so the frame never depends on async state.
-    WidgetsBinding.instance.addPostFrameCallback((_) => _runMatch());
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 
-  Future<void> _runMatch() async {
-    setState(() => _loading = true);
-    final matches = await AiService.matchTaskers(
-      task: _task,
+  Future<void> _find() async {
+    final text = _controller.text.trim();
+    if (text.isEmpty) {
+      setState(() => _inputError = TaskPostingStrings.matchAskEmptyError);
+      return;
+    }
+    FocusScope.of(context).unfocus();
+    setState(() {
+      _inputError = null;
+      _phase = _FinderPhase.thinking;
+    });
+
+    // One network call (category only), then a local search. If the backend is
+    // unreachable, classifyServiceCategory answers from the local keyword
+    // matcher instead — same shape, no error state.
+    final understood = await AiService.classifyServiceCategory(text);
+    final shortlist = await AiService.findTaskers(
+      category: understood.category,
       candidates: widget.candidates,
+      limit: _maxResults,
     );
     if (!mounted) return;
     setState(() {
-      _matches = matches;
-      _loading = false;
+      _understood = understood;
+      _shortlist = shortlist;
+      _phase = _FinderPhase.results;
     });
   }
 
-  // Mic: the user (re)states the service by voice; we map it to a known skill
-  // and re-rank. Burmese locale first, matching the app's accessibility rules.
-  void _onSpoken(String text) {
-    final trimmed = text.trim();
-    if (trimmed.isEmpty) return;
-    final skill = categorizeJob(trimmed);
-    setState(() => _task = {..._task, 'category': skill});
-    _runMatch();
-    if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('🎙️ $skill'), duration: const Duration(seconds: 2)),
-    );
+  void _askAgain() {
+    setState(() {
+      _phase = _FinderPhase.ask;
+      _inputError = null;
+      _controller.selection =
+          TextSelection(baseOffset: 0, extentOffset: _controller.text.length);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final isOffline =
-        _matches.isNotEmpty && _matches.first.source == AiSource.mock;
 
     return SafeArea(
       top: false,
@@ -122,16 +137,6 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
                     style: theme.textTheme.titleLarge,
                   ),
                 ),
-                Semantics(
-                  label: TaskPostingStrings.matchSpeakServicePrompt,
-                  button: true,
-                  child: VoiceInputButton(
-                    large: false,
-                    localeCandidates: const ['my_MM', 'my-MM', 'my'],
-                    onPartialResult: (_) {},
-                    onFinalResult: _onSpoken,
-                  ),
-                ),
                 IconButton(
                   icon: const Icon(Icons.close),
                   tooltip: TaskPostingStrings.discardDraftCancel,
@@ -140,13 +145,123 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
               ],
             ),
             const SizedBox(height: AppSpacing.sm),
-            Flexible(child: _loading ? _thinking(theme) : _results(theme, isOffline)),
+            Flexible(child: _body(theme)),
           ],
         ),
       ),
     );
   }
 
+  Widget _body(ThemeData theme) {
+    switch (_phase) {
+      case _FinderPhase.ask:
+        return _ask(theme);
+      case _FinderPhase.thinking:
+        return _thinking(theme);
+      case _FinderPhase.results:
+        return _results(theme);
+    }
+  }
+
+  // ── Step 1: what do you need help with? ───────────────────────────────────
+  Widget _ask(ThemeData theme) {
+    return SingleChildScrollView(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const PhoWaYoke(state: PhoWaYokeState.pointing, size: 64),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Semantics(
+                      header: true,
+                      child: Text(
+                        TaskPostingStrings.matchAskTitle,
+                        style: theme.textTheme.titleMedium,
+                      ),
+                    ),
+                    const SizedBox(height: AppSpacing.xxs),
+                    Text(
+                      TaskPostingStrings.matchAskHint,
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          TextField(
+            controller: _controller,
+            autofocus: false,
+            minLines: 2,
+            maxLines: 4,
+            textInputAction: TextInputAction.done,
+            onChanged: (_) {
+              if (_inputError != null) setState(() => _inputError = null);
+            },
+            onSubmitted: (_) => _find(),
+            decoration: InputDecoration(
+              labelText: TaskPostingStrings.matchAskFieldLabel,
+              errorText: _inputError,
+              filled: true,
+              fillColor: theme.cardColor,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+          ),
+          const SizedBox(height: AppSpacing.md),
+          // Speech-to-text: writing is optional — the client can just talk.
+          Row(
+            children: [
+              Semantics(
+                label: TaskPostingStrings.matchSpeakServicePrompt,
+                button: true,
+                child: VoiceInputButton(
+                  large: false,
+                  localeCandidates: const ['my_MM', 'my-MM', 'my'],
+                  onListeningChanged: (v) => setState(() => _listening = v),
+                  onPartialResult: (text) => _controller.text = text,
+                  onFinalResult: (text) {
+                    _controller.text = text;
+                    if (_inputError != null) {
+                      setState(() => _inputError = null);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Expanded(
+                child: Text(
+                  _listening
+                      ? TaskPostingStrings.matchThinkingHint
+                      : TaskPostingStrings.matchSpeakServicePrompt,
+                  style: theme.textTheme.bodySmall
+                      ?.copyWith(color: AppColors.textSecondary),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.lg),
+          LargeButton(
+            label: TaskPostingStrings.matchAskSubmit,
+            icon: Icons.auto_awesome,
+            gradient: AppColors.indigoGradient,
+            onTap: _find,
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ── Step 2: one classify call + the local search ──────────────────────────
   Widget _thinking(ThemeData theme) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
@@ -174,13 +289,15 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
     );
   }
 
-  Widget _results(ThemeData theme, bool isOffline) {
-    if (_matches.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: AppSpacing.xxl),
+  // ── Step 3: results ───────────────────────────────────────────────────────
+  Widget _results(ThemeData theme) {
+    final understood = _understood;
+    if (_shortlist.isEmpty) {
+      return SingleChildScrollView(
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
+            const SizedBox(height: AppSpacing.lg),
             const PhoWaYoke(state: PhoWaYokeState.idle, size: 88),
             const SizedBox(height: AppSpacing.md),
             Text(TaskPostingStrings.matchEmptyTitle,
@@ -192,10 +309,21 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: AppColors.textSecondary),
             ),
+            const SizedBox(height: AppSpacing.md),
+            TextButton.icon(
+              onPressed: _askAgain,
+              icon: const Icon(Icons.refresh),
+              label: const Text(TaskPostingStrings.matchAskAgain),
+            ),
           ],
         ),
       );
     }
+
+    // Low confidence covers both a hesitant model answer and the offline
+    // keyword fallback (which always reports 0) — in both cases we say so
+    // plainly and invite a correction rather than pretending to be sure.
+    final unsure = understood == null || understood.confidence < 0.5;
 
     return SingleChildScrollView(
       child: Column(
@@ -214,8 +342,23 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
               ),
             ],
           ),
-          if (isOffline) ...[
+          if (understood != null) ...[
+            const SizedBox(height: AppSpacing.sm),
+            // The correction affordance sits HERE, next to the detected
+            // category — a wrong reading is spotted at the top, and fixing it
+            // must not mean scrolling past five cards first.
+            _UnderstoodPanel(result: understood, onAskAgain: _askAgain),
+          ],
+          if (unsure) ...[
             const SizedBox(height: AppSpacing.xs),
+            Text(
+              TaskPostingStrings.matchLowConfidenceNote,
+              style: theme.textTheme.bodySmall
+                  ?.copyWith(color: AppColors.textSecondary),
+            ),
+          ],
+          if (understood?.source == AiSource.demo) ...[
+            const SizedBox(height: AppSpacing.xxs),
             Text(
               TaskPostingStrings.matchOfflineNote,
               style: theme.textTheme.bodySmall
@@ -223,30 +366,145 @@ class _TaskerShortlistSheetState extends ConsumerState<TaskerShortlistSheet> {
             ),
           ],
           const SizedBox(height: AppSpacing.md),
-          for (final match in _matches)
+          for (final match in _shortlist.primary)
             if (_byId[match.workerId] != null)
               _ShortlistCard(
                 worker: _byId[match.workerId]!,
                 reason: match.reason,
                 onPick: () => Navigator.of(context).pop(match.workerId),
               ),
+          // Related-category fill — ALWAYS under its own heading, never mixed
+          // into the exact matches above.
+          if (_shortlist.alternates.isNotEmpty) ...[
+            const SizedBox(height: AppSpacing.xs),
+            _AlternatesHeading(),
+            const SizedBox(height: AppSpacing.md),
+            for (final match in _shortlist.alternates)
+              if (_byId[match.workerId] != null)
+                _ShortlistCard(
+                  worker: _byId[match.workerId]!,
+                  reason: match.reason,
+                  isAlternate: true,
+                  onPick: () => Navigator.of(context).pop(match.workerId),
+                ),
+          ],
+          Center(
+            child: TextButton.icon(
+              onPressed: _askAgain,
+              icon: const Icon(Icons.refresh),
+              label: const Text(TaskPostingStrings.matchAskAgain),
+            ),
+          ),
         ],
       ),
     );
   }
 }
 
-/// One shortlist entry: the tasker's real stats, the spoken reason (with its own
-/// read-aloud), and a "pick this one" confirm.
+/// "Here is what I understood" — the client's own words plus the detected
+/// service category, so a wrong reading is obvious at a glance and can be
+/// corrected with one tap on "ထပ်မံ ရှာမည်".
+class _UnderstoodPanel extends StatelessWidget {
+  final ServiceCategoryResult result;
+  final VoidCallback onAskAgain;
+  const _UnderstoodPanel({required this.result, required this.onAskAgain});
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      decoration: BoxDecoration(
+        color: AppColors.indigo100,
+        borderRadius: BorderRadius.circular(AppRadius.md),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (result.problem.isNotEmpty) ...[
+                  Text(
+                    '${TaskPostingStrings.matchUnderstoodPrefix} ${result.problem}',
+                    style: theme.textTheme.bodyMedium
+                        ?.copyWith(color: AppColors.indigo700),
+                  ),
+                  const SizedBox(height: AppSpacing.xxs),
+                ],
+                Text(
+                  '${TaskPostingStrings.matchCategoryPrefix} ${result.category}',
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: AppColors.indigo700,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: AppSpacing.xs),
+          Semantics(
+            label: TaskPostingStrings.matchAskAgain,
+            button: true,
+            child: IconButton(
+              icon: const Icon(Icons.refresh, color: AppColors.indigo700),
+              // IconButton's default 48x48 already meets the design system's
+              // minimum touch target.
+              tooltip: TaskPostingStrings.matchAskAgain,
+              onPressed: onAskAgain,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// The divider between exact-category matches and the related-category fill.
+class _AlternatesHeading extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Divider(color: AppColors.onboardingDivider),
+        const SizedBox(height: AppSpacing.xs),
+        Semantics(
+          header: true,
+          child: Text(
+            TaskPostingStrings.matchAlternatesHeading,
+            style: theme.textTheme.titleSmall,
+          ),
+        ),
+        const SizedBox(height: AppSpacing.xxs),
+        Text(
+          TaskPostingStrings.matchAlternatesNote,
+          style: theme.textTheme.bodySmall
+              ?.copyWith(color: AppColors.textSecondary),
+        ),
+      ],
+    );
+  }
+}
+
+/// One shortlist entry: the tasker's real stats, the templated reason, and a
+/// "pick this one" confirm. [isAlternate] entries sit under the "you may also
+/// consider" heading and carry a muted skill chip, so a related-category
+/// suggestion can never be mistaken for an exact match.
 class _ShortlistCard extends StatelessWidget {
   final Worker worker;
   final String reason;
+  final bool isAlternate;
   final VoidCallback onPick;
 
   const _ShortlistCard({
     required this.worker,
     required this.reason,
     required this.onPick,
+    this.isAlternate = false,
   });
 
   @override
@@ -306,8 +564,11 @@ class _ShortlistCard extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     Text(worker.skill,
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: theme.hintColor)),
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: theme.hintColor,
+                          fontWeight:
+                              isAlternate ? FontWeight.w700 : FontWeight.w400,
+                        )),
                     const SizedBox(height: AppSpacing.sm),
                     TrustBadgePill(tier: worker.currentTier),
                   ],
@@ -338,7 +599,7 @@ class _ShortlistCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.md),
-          // Spoken "why I picked them" reason bubble.
+          // "Why I picked them" — composed only from real Worker fields.
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
@@ -364,11 +625,10 @@ class _ShortlistCard extends StatelessWidget {
   }
 }
 
-/// Opens the Tasker-Finding shortlist. Returns the chosen worker id, or null if
-/// the user dismissed the sheet without picking.
+/// Opens the AI Tasker Finder. Returns the chosen worker id, or null if the
+/// user dismissed the sheet without picking.
 Future<int?> showTaskerShortlist(
   BuildContext context, {
-  required Map<String, dynamic> task,
   required List<Worker> candidates,
 }) {
   return showModalBottomSheet<int>(
@@ -381,6 +641,6 @@ Future<int?> showTaskerShortlist(
     constraints: BoxConstraints(
       maxHeight: MediaQuery.of(context).size.height * 0.88,
     ),
-    builder: (_) => TaskerShortlistSheet(task: task, candidates: candidates),
+    builder: (_) => TaskerShortlistSheet(candidates: candidates),
   );
 }

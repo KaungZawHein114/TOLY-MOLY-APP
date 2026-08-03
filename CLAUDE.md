@@ -12,6 +12,33 @@ for user onboarding (registration, OTP, JWT auth) — see
 Flutter app itself is not yet wired to it; that's a separate follow-up
 phase, and every other feature remains fully offline as described below.
 
+### The three AI agents (the only sanctioned network exceptions)
+
+Three — and only three — features call a real backend. Each is a SEPARATE
+agent with its own Django app, system prompt, endpoint, serializers, tests and
+Flutter API client. **Never share code, prompts or response shapes between
+them**; that separation is what keeps future RAG/personalization work from
+tangling the three products together.
+
+| Agent | Django app | Endpoint | Flutter client | Local fallback |
+|---|---|---|---|---|
+| App Assistant (floating product-help chat) | `apps/assistant` | `POST /api/assistant/chat` | `AssistantApi` | `chatAssistantReply` |
+| AI Task Assistant (Task Posting conversation) | `apps/tasks` | `POST /api/tasks/ai/analyze` | `TaskAssistantApi` | `taskAssistantFallbackTurn` |
+| AI Tasker Finder (client's "find me a tasker") | `apps/matching` | `POST /api/matching/classify-category` | `TaskerFinderApi` | `categorizeJob` |
+
+All three are **live-with-fallback**: any failure (no network, backend down,
+no `OPENAI_API_KEY`, malformed response) silently falls through to a local
+engine in `ai_mock.dart`. The user never sees an error state; only
+`AiSource` records which path answered.
+
+The Tasker Finder is deliberately the smallest of the three: OpenAI **only**
+names a service category. Searching and ranking taskers stays local and
+synchronous (`findTaskersMock` / `taskerFinderScore`), so the shortlist is
+fast, free and deterministic. Keep it that way — a real backend search (GPS,
+live availability, vector retrieval) should replace `findTaskersMock`'s body
+behind the same `(primary, alternates)` shape, not move ranking into the
+prompt.
+
 ## Commands
 
 ```bash

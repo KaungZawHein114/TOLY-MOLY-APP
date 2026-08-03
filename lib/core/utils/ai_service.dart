@@ -1,14 +1,15 @@
 // ============================================================================
 // AI SERVICE — the async seam every AI-flavoured feature in the app calls
 // through. As of 2026-07-29 (the Firebase-removal / "AI becomes demo logic"
-// refactor) every method except [chatAssistant] (client role) and
-// [taskAssistant] makes NO network call of any kind: each is a thin async
-// wrapper around a synchronous, deterministic mock in ai_mock.dart.
-// [evaluateTask] additionally pauses [AiConfig.demoThinkingDelay] first (a
-// pre-existing choice from an earlier session, kept as-is) so its caller's
-// loading UI reads as "thinking" rather than flashing for a frame.
+// refactor) every method except [chatAssistant] (client role),
+// [taskAssistant] and [classifyServiceCategory] makes NO network call of any
+// kind: each is a thin async wrapper around a synchronous, deterministic mock
+// in ai_mock.dart. [evaluateTask] additionally pauses
+// [AiConfig.demoThinkingDelay] first (a pre-existing choice from an earlier
+// session, kept as-is) so its caller's loading UI reads as "thinking" rather
+// than flashing for a frame.
 //
-// TWO real backends exist and are each a SEPARATE agent — different prompt,
+// THREE real backends exist and are each a SEPARATE agent — different prompt,
 // different Django app, different Flutter API client, on purpose. Never
 // share code between them:
 // - [chatAssistant] (client role only): the floating App Assistant —
@@ -18,6 +19,11 @@
 //   Assistant" method) — `backend/apps/tasks/` (`analyze_task`),
 //   `TaskAssistantApi`, live-with-fallback to `taskAssistantFallbackTurn` in
 //   ai_mock.dart. Design: docs/superpowers/specs/2026-07-29-ai-task-assistant-design.md.
+// - [classifyServiceCategory]: the AI Tasker Finder classifier (the client's
+//   "AI ဖြင့် အလုပ်သမား ရှာမည်" button) — `backend/apps/matching/`,
+//   `TaskerFinderApi`, live-with-fallback to `categorizeJob` in ai_mock.dart.
+//   It ONLY names a category; the tasker search + ranking that follows it
+//   ([findTaskers]) is always local and never touches the network.
 //
 // This file used to proxy 10 Firebase Cloud Functions (OpenAI, plus Pinecone
 // for the chatbot's knowledge answers) with live-with-fallback behaviour.
@@ -28,9 +34,12 @@
 // and was deleted outright rather than converted.
 // ============================================================================
 
+import 'package:flutter/foundation.dart' show visibleForTesting;
+
 import '../constants/task_posting_strings.dart' show TaskPostingStrings;
 import '../data/demo_data.dart' show Worker;
 import '../../features/chatbot/data/assistant_api.dart';
+import '../../features/customer/data/tasker_finder_api.dart';
 import '../../features/customer/task_posting/data/task_assistant_api.dart';
 import '../../features/onboarding/onboarding_models.dart' show Gender, TaskerSkill;
 import 'ai_mock.dart';
@@ -122,10 +131,10 @@ class TaskAssistantReply {
   });
 }
 
-/// One AI-ranked tasker recommendation for the Tasker-Finding shortlist
+/// One ranked tasker recommendation for the AI Tasker Finder shortlist
 /// (spec §4.3). [workerId] is ALWAYS an id from the candidate list the app
-/// supplied — the mock orders and explains, it never invents a tasker or a
-/// stat. [reason] is a short Burmese "why I picked them".
+/// supplied — the local search orders and explains, it never invents a tasker
+/// or a stat. [reason] is a short Burmese "why I picked them".
 class TaskerMatch {
   final int workerId;
   final String reason;
@@ -135,6 +144,40 @@ class TaskerMatch {
     required this.reason,
     required this.source,
   });
+}
+
+/// What the AI Tasker Finder understood from the client's description.
+///
+/// [category] is always a real service category (never empty) — the backend
+/// coerces an unrecognised answer to its fallback, and any backend failure
+/// falls through to the local keyword matcher, so the app always has
+/// something to search with. [confidence] is the model's own 0-1 estimate and
+/// is 0 whenever the local matcher answered. [problem] is a short restatement
+/// shown back to the client; it may be empty. [source] is [AiSource.live] when
+/// OpenAI classified it and [AiSource.demo] when the local matcher did.
+class ServiceCategoryResult {
+  final String category;
+  final double confidence;
+  final String problem;
+  final AiSource source;
+  const ServiceCategoryResult({
+    required this.category,
+    required this.confidence,
+    required this.problem,
+    required this.source,
+  });
+}
+
+/// The AI Tasker Finder's shortlist: exact-category matches first, then
+/// clearly-separated related-category suggestions that fill the list out.
+/// The UI must render [alternates] under their own heading — never merged
+/// into [primary].
+class TaskerShortlist {
+  final List<TaskerMatch> primary;
+  final List<TaskerMatch> alternates;
+  const TaskerShortlist({required this.primary, required this.alternates});
+
+  bool get isEmpty => primary.isEmpty && alternates.isEmpty;
 }
 
 /// Fields pulled from a spoken self-introduction for the Onboarding voice mode
@@ -232,7 +275,13 @@ class AiService {
   ///
   /// [history] is an optional recent transcript for light context, newest last:
   /// each entry is `{ 'role': 'user'|'assistant', 'text': '...' }`.
-  static final AssistantApi _assistantApi = AssistantApi();
+  static AssistantApi _assistantApi = AssistantApi();
+
+  /// Swaps the App Assistant's HTTP client. Tests only — same purpose as
+  /// [taskerFinderApi]: exercise the fallback path deterministically instead
+  /// of depending on whether a Django server is running locally.
+  @visibleForTesting
+  static set assistantApi(AssistantApi api) => _assistantApi = api;
 
   static Future<ChatReply> chatAssistant({
     required String message,
@@ -332,20 +381,82 @@ class AiService {
     );
   }
 
-  // ── Tasker-Finding: ranked shortlist with reasons (spec §4.3) ───────────
-  /// Ranks [candidates] for [task] and returns up to 3 [TaskerMatch]es, best
-  /// first. Deterministic — the app pre-filters + supplies the candidates,
-  /// and the ranking only ever returns ids from that set, so it can never
-  /// invent a tasker or a stat.
-  static Future<List<TaskerMatch>> matchTaskers({
-    required Map<String, dynamic> task,
+  // ── AI Tasker Finder: classify (online) then search (local) — spec §4.3 ──
+  /// Turns a client's free-text problem ("my sink is leaking") into a service
+  /// category — a THIRD agent, separate from [chatAssistant] and
+  /// [taskAssistant], with its own backend (`POST
+  /// /api/matching/classify-category`, `backend/apps/matching`) and its own
+  /// prompt. One call, nothing else: the model never sees the tasker list and
+  /// never ranks anyone.
+  ///
+  /// On ANY failure (no network, backend down, no API key configured,
+  /// malformed response) this falls through to the local keyword matcher
+  /// [categorizeJob], which itself defaults to "Handyman" rather than
+  /// returning nothing. The user never sees an error — only
+  /// [ServiceCategoryResult.source] records which path answered.
+  static TaskerFinderApi _taskerFinderApi = TaskerFinderApi();
+
+  /// Swaps the classifier's HTTP client. Tests only — it lets the fallback
+  /// path be exercised deterministically (point it at a dead port) whether or
+  /// not a real Django server happens to be running on the machine.
+  @visibleForTesting
+  static set taskerFinderApi(TaskerFinderApi api) => _taskerFinderApi = api;
+
+  static Future<ServiceCategoryResult> classifyServiceCategory(
+    String message,
+  ) async {
+    final text = message.trim();
+    try {
+      final result = await _taskerFinderApi.classifyCategory(message: text);
+      return ServiceCategoryResult(
+        category: result.category,
+        confidence: result.confidence,
+        problem: result.problem,
+        source: AiSource.live,
+      );
+    } catch (_) {
+      // Backend/network unavailable — the local keyword matcher answers
+      // instead, seamlessly. Confidence 0 marks it as a guess.
+      await _demoPause();
+      return ServiceCategoryResult(
+        category: categorizeJob(text),
+        confidence: 0,
+        problem: '',
+        source: AiSource.demo,
+      );
+    }
+  }
+
+  /// Searches [candidates] for taskers in [category] — fully local, fully
+  /// synchronous underneath, deterministic. Returns up to [limit] exact
+  /// matches ranked nearest-first (quality-aware, see `taskerFinderScore`),
+  /// plus related-category [TaskerShortlist.alternates] to fill any remaining
+  /// slots. Only ever returns ids from [candidates], so it can never invent a
+  /// tasker or a stat.
+  ///
+  /// Async purely to keep the seam swappable: a real backend search (GPS,
+  /// live availability, RAG) drops in here without touching the UI.
+  static Future<TaskerShortlist> findTaskers({
+    required String category,
     required List<Worker> candidates,
+    int limit = 5,
   }) async {
-    if (candidates.isEmpty) return const [];
-    return [
-      for (final r in matchTaskersMock(task, candidates))
-        TaskerMatch(workerId: r.workerId, reason: r.reason, source: AiSource.demo),
-    ];
+    if (candidates.isEmpty) {
+      return const TaskerShortlist(primary: [], alternates: []);
+    }
+    final result = findTaskersMock(category, candidates, limit: limit);
+    return TaskerShortlist(
+      primary: [
+        for (final r in result.primary)
+          TaskerMatch(
+              workerId: r.workerId, reason: r.reason, source: AiSource.demo),
+      ],
+      alternates: [
+        for (final r in result.alternates)
+          TaskerMatch(
+              workerId: r.workerId, reason: r.reason, source: AiSource.demo),
+      ],
+    );
   }
 
   // ── Task-Handling mode (spec §4.4/§4.8) ─────────────────────────────────

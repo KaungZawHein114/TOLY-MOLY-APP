@@ -494,36 +494,60 @@ String _completionSummaryFor(
 }
 
 // ----------------------------------------------------------------------------
-// Tasker-Finding mode (Slice 1, spec §4.3) — deterministic OFFLINE fallback.
+// AI Tasker Finder — the LOCAL search + ranking half of the feature.
 // ----------------------------------------------------------------------------
-// The synchronous fallback for AiService.matchTaskers. It scores every
-// candidate on REAL Worker fields (skill match, rating, distance, tier,
-// completed tasks, availability, verification), sorts, and returns the top ≤3
-// as (workerId, reason) records with a short, templated Burmese reason.
+// The AI (backend/apps/matching → OpenAI) only ever names a service CATEGORY.
+// Everything below — finding the taskers in that category, ordering them, and
+// topping the list up with related-category suggestions — runs here,
+// synchronously, against the hardcoded worker list. That split is deliberate:
+// one short network call, then a deterministic local search, so the same
+// category always produces the same shortlist (demo-safe, testable, free).
 //
-// Crucially it NEVER invents a tasker: every id returned is one of [candidates].
-// The service maps these records into TaskerMatch, mirroring how
-// chatAssistantReply's record is wrapped into ChatReply.
+// It NEVER invents a tasker: every id returned is one of [candidates], and
+// every number quoted in a reason is a real field on that Worker.
+//
+// Swapping this for a real backend search later (GPS distance, live
+// availability, completed-job history, demand, vector/RAG retrieval) means
+// replacing findTaskersMock's body only — the (primary, alternates) shape the
+// UI consumes stays the same.
 
-/// Weighted match score for [w] against a task in [category]. Higher is better.
-/// Same field set the online prompt is told to weigh, so online and offline
-/// rankings feel consistent.
-double taskerMatchScore(Worker w, String category) {
-  final skillMatch = (category.isNotEmpty && w.skill == category) ? 100.0 : 0.0;
-  final ratingScore = w.rating / 5 * 100;
+/// Categories whose taskers are a reasonable second choice when the detected
+/// category runs short. "Handyman" is the general fallback for everything
+/// household, so it appears in most lists; anything not listed here still gets
+/// suggested, just after the related ones.
+const Map<String, List<String>> _relatedCategories = {
+  "Plumber": ["Handyman"],
+  "Electrician": ["AC Technician", "Handyman"],
+  "AC Technician": ["Electrician", "Handyman"],
+  "Carpenter": ["Handyman"],
+  "Cleaner": ["Gardener", "Handyman"],
+  "Gardener": ["Cleaner", "Handyman"],
+  "Handyman": ["Carpenter", "Electrician", "Plumber"],
+  "Delivery": ["Handyman"],
+  "Tutor": [],
+};
+
+/// Ranking score for a tasker the client could actually book. Higher is better.
+///
+/// Distance is the strongest signal by design — "who can reach me" is the
+/// question a client is really asking — but never the only one, so a slightly
+/// farther tasker who is clearly better (higher rating, verified, available)
+/// can still lead. Weights follow the agreed priority: distance > availability
+/// > rating > verification > tasker level. Category is NOT scored here; it is
+/// a hard filter applied by the caller, so a wrong-category tasker can never
+/// out-score a right-category one.
+double taskerFinderScore(Worker w) {
   // Closer is better; 0 miles -> 100, ~6.2 miles (10km) -> 0.
   final distanceScore = (100 - w.distanceMiles * 1.609 * 10).clamp(0, 100).toDouble();
+  final availableScore = w.isAvailableNow ? 100.0 : 0.0;
+  final ratingScore = w.rating / 5 * 100;
+  final verifiedScore = w.isVerified ? 100.0 : 0.0;
   final tierScore = w.currentTier / 7 * 100;
-  final completionScore = (w.completedTasks / 2).clamp(0, 100).toDouble();
-  final availableBonus = w.isAvailableNow ? 100.0 : 0.0;
-  final verifiedBonus = w.isVerified ? 100.0 : 0.0;
-  return skillMatch * 0.35 +
-      ratingScore * 0.20 +
-      distanceScore * 0.15 +
-      tierScore * 0.15 +
-      completionScore * 0.05 +
-      availableBonus * 0.06 +
-      verifiedBonus * 0.04;
+  return distanceScore * 0.45 +
+      availableScore * 0.20 +
+      ratingScore * 0.18 +
+      verifiedScore * 0.09 +
+      tierScore * 0.08;
 }
 
 /// A short, one-line Burmese "why I picked them", built only from real fields.
@@ -544,26 +568,74 @@ String taskerMatchReason(Worker w, String category) {
   return '${parts.take(3).join('၊ ')}။';
 }
 
-/// Deterministic offline shortlist: the top ≤3 candidates for [task]. The
-/// `category` key of [task] drives skill-match scoring. Stable id tiebreak
-/// keeps the result reproducible for the demo (and tests).
-List<({int workerId, String reason})> matchTaskersMock(
-  Map<String, dynamic> task,
-  List<Worker> candidates,
-) {
-  if (candidates.isEmpty) return const [];
-  final category = (task['category'] ?? '').toString();
-  final scored = [
-    for (final w in candidates) (w: w, score: taskerMatchScore(w, category)),
-  ]..sort((a, b) {
-      final byScore = b.score.compareTo(a.score);
+/// Orders [pool] best-first by [taskerFinderScore]. Ties break on the closer
+/// tasker, then on id — so the same pool always comes back in the same order.
+List<Worker> _rankedByFinderScore(Iterable<Worker> pool) {
+  return pool.toList()
+    ..sort((a, b) {
+      final byScore = taskerFinderScore(b).compareTo(taskerFinderScore(a));
       if (byScore != 0) return byScore;
-      return a.w.id.compareTo(b.w.id); // stable tiebreak -> deterministic
+      final byDistance = a.distanceMiles.compareTo(b.distanceMiles);
+      if (byDistance != 0) return byDistance;
+      return a.id.compareTo(b.id);
     });
-  return [
-    for (final e in scored.take(3))
-      (workerId: e.w.id, reason: taskerMatchReason(e.w, category)),
-  ];
+}
+
+/// The AI Tasker Finder's local search: everyone in [category], best-first,
+/// plus related-category suggestions to fill out a short list.
+///
+/// - [primary] — taskers whose skill IS [category], ranked by
+///   [taskerFinderScore] (nearest-first, quality-aware). Capped at [limit].
+/// - [alternates] — only populated when [primary] has fewer than [limit]
+///   entries. Fills the remaining slots from OTHER categories: the ones
+///   [_relatedCategories] considers adjacent first, then anything else, each
+///   group ranked by the same score. The UI shows these under their own
+///   "you may also consider" heading — they are never mixed into [primary].
+///
+/// Never returns two lists that are both empty unless [candidates] is empty:
+/// an unknown category with no exact matches still yields alternates, so the
+/// client always sees someone they could book.
+({
+  List<({int workerId, String reason})> primary,
+  List<({int workerId, String reason})> alternates,
+}) findTaskersMock(
+  String category,
+  List<Worker> candidates, {
+  int limit = 5,
+}) {
+  if (candidates.isEmpty || limit <= 0) {
+    return (primary: const [], alternates: const []);
+  }
+
+  final primaryPool =
+      _rankedByFinderScore(candidates.where((w) => w.skill == category));
+  final primary = primaryPool.take(limit).toList();
+
+  final remaining = limit - primary.length;
+  final alternates = <Worker>[];
+  if (remaining > 0) {
+    final related = _relatedCategories[category] ?? const <String>[];
+    final others = candidates.where((w) => w.skill != category);
+    // Related categories first, then everything else — both ranked the same
+    // way, so the fill is still "nearest good tasker" within each group.
+    alternates
+      ..addAll(_rankedByFinderScore(others.where((w) => related.contains(w.skill))))
+      ..addAll(_rankedByFinderScore(others.where((w) => !related.contains(w.skill))));
+  }
+
+  return (
+    primary: [
+      for (final w in primary)
+        (workerId: w.id, reason: taskerMatchReason(w, category)),
+    ],
+    // taskerMatchReason omits the "matches your skill" clause automatically
+    // for these, since their skill != category — an alternate never claims to
+    // be an exact match.
+    alternates: [
+      for (final w in alternates.take(remaining))
+        (workerId: w.id, reason: taskerMatchReason(w, category)),
+    ],
+  );
 }
 
 // ----------------------------------------------------------------------------

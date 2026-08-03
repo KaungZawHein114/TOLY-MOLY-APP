@@ -21,9 +21,6 @@ class InlineTermsAgreement extends StatelessWidget {
   /// Full legal text shown in the details sheet.
   final String fullRulesText;
 
-  /// Optional AUTH-ONLY listen-clip key, forwarded to [RulesSummaryPanel].
-  final String? audioKey;
-
   /// When non-null, a warning is shown (e.g. the user tried to submit without
   /// agreeing). Cleared by the caller once the box is ticked.
   final String? errorText;
@@ -33,7 +30,6 @@ class InlineTermsAgreement extends StatelessWidget {
     required this.accepted,
     required this.onChanged,
     required this.fullRulesText,
-    this.audioKey,
     this.errorText,
   });
 
@@ -47,7 +43,6 @@ class InlineTermsAgreement extends StatelessWidget {
       ),
       builder: (ctx) => _TermsDetailsSheet(
         fullRulesText: fullRulesText,
-        audioKey: audioKey,
       ),
     );
     // "Accept & Close" returns true → tick the box for the caller.
@@ -149,8 +144,7 @@ class InlineTermsAgreement extends StatelessWidget {
 /// "Accept & Close" button that pops `true`.
 class _TermsDetailsSheet extends StatelessWidget {
   final String fullRulesText;
-  final String? audioKey;
-  const _TermsDetailsSheet({required this.fullRulesText, this.audioKey});
+  const _TermsDetailsSheet({required this.fullRulesText});
 
   @override
   Widget build(BuildContext context) {
@@ -194,7 +188,6 @@ class _TermsDetailsSheet extends StatelessWidget {
               ),
               child: RulesSummaryPanel(
                 fullRulesText: fullRulesText,
-                audioKey: audioKey,
               ),
             ),
           ),

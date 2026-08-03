@@ -13,7 +13,6 @@ import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/onboarding/inline_terms_agreement.dart';
 import '../../../core/widgets/onboarding/onboarding_scaffold.dart';
 import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
-import '../../auth/audio/auth_audio_map.dart';
 import '../../auth/data/auth_failure.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../profile/data/skills_repository_impl.dart';
@@ -218,7 +217,6 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
             accepted: _termsAccepted,
             onChanged: _setTerms,
             fullRulesText: OnboardingStrings.rulesBodyText,
-            audioKey: AuthAudioKeys.rules,
             errorText: _showTermsWarning
                 ? OnboardingStrings.termsRequiredWarning
                 : null,
