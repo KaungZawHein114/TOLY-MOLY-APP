@@ -47,12 +47,31 @@ class ToastSignal {
   const ToastSignal(this.seq, this.amount);
 }
 
+/// A transient signal for generalized push notification banners.
+class PushSignal {
+  final int seq;
+  final String title;
+  final String body;
+  final String emoji;
+  const PushSignal({
+    required this.seq,
+    required this.title,
+    required this.body,
+    this.emoji = '🔔',
+  });
+}
+
 /// Immutable snapshot of notification history + the latest toast signal.
 class NotificationState {
   final List<AppNotification> items;
   final ToastSignal? toast;
+  final PushSignal? push;
 
-  const NotificationState({this.items = const [], this.toast});
+  const NotificationState({
+    this.items = const [],
+    this.toast,
+    this.push,
+  });
 
   /// Badge count for the bell icon.
   int get unreadCount => items.where((n) => !n.read).length;
@@ -60,10 +79,12 @@ class NotificationState {
   NotificationState copyWith({
     List<AppNotification>? items,
     ToastSignal? toast,
+    PushSignal? push,
   }) =>
       NotificationState(
         items: items ?? this.items,
         toast: toast ?? this.toast,
+        push: push ?? this.push,
       );
 }
 
@@ -74,6 +95,7 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
   NotificationNotifier() : super(const NotificationState());
 
   int _toastSeq = 0;
+  int _pushSeq = 0;
 
   /// Called when a digital checkout clears: prepends an unread "Transfer
   /// Successful" record (bumping the bell badge) and raises a toast signal for
@@ -91,6 +113,48 @@ class NotificationNotifier extends StateNotifier<NotificationState> {
     state = state.copyWith(
       items: [item, ...state.items],
       toast: ToastSignal(++_toastSeq, amount),
+    );
+  }
+
+  /// Called when a reward is redeemed (Tasker or Client).
+  void notifyRewardRedeemed(String rewardName) {
+    final now = DateTime.now();
+    final item = AppNotification(
+      id: 'reward_${now.microsecondsSinceEpoch}',
+      title: 'ဆုလာဘ်လဲလှယ်မှု အောင်မြင်ပါသည်',
+      body: '"$rewardName" ကို အောင်မြင်စွာ လဲလှယ်ပြီးပါပြီ။',
+      timestamp: now,
+      read: false,
+    );
+    state = state.copyWith(
+      items: [item, ...state.items],
+      push: PushSignal(
+        seq: ++_pushSeq,
+        title: item.title,
+        body: item.body,
+        emoji: '🎁',
+      ),
+    );
+  }
+
+  /// Called when points are earned or instructions are read.
+  void notifyPointsEarned(String reason, String points) {
+    final now = DateTime.now();
+    final item = AppNotification(
+      id: 'points_${now.microsecondsSinceEpoch}',
+      title: 'မှတ်များ ရရှိပါသည်',
+      body: '$reason အတွက် $points ရရှိပါသည် (စမ်းသပ်မှု)။',
+      timestamp: now,
+      read: false,
+    );
+    state = state.copyWith(
+      items: [item, ...state.items],
+      push: PushSignal(
+        seq: ++_pushSeq,
+        title: item.title,
+        body: item.body,
+        emoji: '⭐',
+      ),
     );
   }
 

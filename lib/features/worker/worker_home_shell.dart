@@ -6,6 +6,8 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import '../../core/widgets/global_push_banner.dart';
+import '../safety/emergency_bottom_sheet.dart';
 import '../activity/activity_overview_screen.dart';
 import '../rewards/rewards_screen.dart';
 import 'activity_placeholder_screen.dart';
@@ -46,11 +48,49 @@ class WorkerHomeShell extends ConsumerWidget {
       }
     });
 
+    // Generalized push notifications (reward redemptions, etc.)
+    ref.listen(notificationProvider.select((s) => s.push), (prev, next) {
+      if (next != null && next != prev) {
+        showGlobalPushBanner(
+          context,
+          title: next.title,
+          body: next.body,
+          emoji: next.emoji,
+        );
+      }
+    });
+
+    // Generalized push notifications (reward redemptions, etc.)
+    ref.listen(notificationProvider.select((s) => s.push), (prev, next) {
+      if (next != null && next != prev) {
+        showGlobalPushBanner(
+          context,
+          title: next.title,
+          body: next.body,
+          emoji: next.emoji,
+        );
+      }
+    });
+
     return Scaffold(
-      // Floating AI assistant — only on the Home tab.
-      floatingActionButton: index == 0
-          ? AgentFab(onTap: () => context.push('${Routes.chatbot}?role=tasker'))
-          : null,
+      // Home → AI assistant. Jobs tab (messages + check-in/out) → red SOS
+      // button so safety is one tap away while a task is in progress.
+      floatingActionButton: switch (index) {
+        0 => AgentFab(onTap: () => context.push('${Routes.chatbot}?role=tasker')),
+        1 => FloatingActionButton.extended(
+            heroTag: 'worker-sos',
+            backgroundColor: AppColors.error,
+            foregroundColor: AppColors.onBrand,
+            icon: const Icon(Icons.shield),
+            label: const Text(
+              'SOS',
+              style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
+            ),
+            onPressed: () =>
+                showEmergencyBottomSheet(context, location: 'လက်ရှိတည်နေရာ'),
+          ),
+        _ => null,
+      },
       body: IndexedStack(
         index: index,
         children: const [

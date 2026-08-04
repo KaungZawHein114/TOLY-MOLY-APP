@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../worker/notifications/notification_service.dart';
 
 /// Rewards & Gamification screen.
 ///
@@ -847,13 +849,13 @@ void _showAllRewardsSheet(BuildContext context, int currentLevel) {
   );
 }
 
-class _RewardCard extends StatelessWidget {
+class _RewardCard extends ConsumerWidget {
   final _Reward reward;
   final bool locked;
   const _RewardCard({required this.reward, required this.locked});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     return Opacity(
       opacity: locked ? 0.65 : 1,
@@ -933,7 +935,7 @@ class _RewardCard extends StatelessWidget {
               child: locked
                   ? _lockedButton(theme)
                   : FilledButton(
-                      onPressed: () {},
+                      onPressed: () => _showRedeemSuccess(context, ref, reward),
                       style: FilledButton.styleFrom(
                         backgroundColor: AppColors.purple700,
                         foregroundColor: AppColors.onBrand,
@@ -953,6 +955,35 @@ class _RewardCard extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showRedeemSuccess(BuildContext context, WidgetRef ref, _Reward reward) {
+    // Notify the app state.
+    ref.read(notificationProvider.notifier).notifyRewardRedeemed(reward.title);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: AppColors.success),
+            SizedBox(width: AppSpacing.sm),
+            Text('လဲလှယ်မှု အောင်မြင်ပါသည်'),
+          ],
+        ),
+        content: Text(
+          'သင်ရွေးချယ်ထားသော "${reward.title}" အတွက် ${_mmStr(reward.cost)} ကို လဲလှယ်ပြီးပါပြီ။',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(foregroundColor: AppColors.tmPurple),
+            child: const Text('အိုကေ', style: TextStyle(fontWeight: FontWeight.bold)),
+          ),
+        ],
       ),
     );
   }

@@ -17,6 +17,7 @@ class AppColors {
 
   // Pho Wa Yoke mascot identity
   static const Color brandPurple = Color(0xFF2E266D);
+  static const Color tmPurple = Color(0xFF1F194D);
   static const Color communityBlue = Color(0xFFBDD7FF);
   static const Color thanakaGold = Color(0xFFD8B36A);
 

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../worker/notifications/notification_service.dart';
 
 /// Client Rewards & VIP screen — STRICTLY the Client/Employer flow.
 ///
@@ -51,6 +53,34 @@ class ClientRewardsScreen extends StatelessWidget {
 // ============================================================================
 // A. HEADER + CLIENT VIP CARD
 // ============================================================================
+
+class _VipTier {
+  final String name;
+  final int minPoints;
+  final IconData icon;
+  const _VipTier({
+    required this.name,
+    required this.minPoints,
+    required this.icon,
+  });
+}
+
+const List<_VipTier> _vipTiers = [
+  _VipTier(name: 'Bronze VIP', minPoints: 0, icon: Icons.shield),
+  _VipTier(name: 'Silver VIP', minPoints: 300, icon: Icons.stars),
+  _VipTier(name: 'Gold VIP', minPoints: 1000, icon: Icons.diamond),
+  _VipTier(name: 'Platinum VIP', minPoints: 2000, icon: Icons.workspace_premium),
+];
+
+const int _currentClientPoints = 1250;
+
+int _currentVipIndex() {
+  var idx = 0;
+  for (var i = 0; i < _vipTiers.length; i++) {
+    if (_currentClientPoints >= _vipTiers[i].minPoints) idx = i;
+  }
+  return idx;
+}
 
 class _HeaderVipSection extends StatelessWidget {
   const _HeaderVipSection();
@@ -119,6 +149,8 @@ class _HeaderVipSection extends StatelessWidget {
   /// brand gradient.
   Widget _buildVipCard(BuildContext context) {
     final theme = Theme.of(context);
+    final vipIdx = _currentVipIndex();
+    final tier = _vipTiers[vipIdx];
 
     return Container(
       padding: const EdgeInsets.all(AppSpacing.lg),
@@ -140,8 +172,8 @@ class _HeaderVipSection extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 alignment: Alignment.center,
-                child: const Icon(
-                  Icons.diamond,
+                child: Icon(
+                  tier.icon,
                   color: AppColors.onBrand,
                   size: AppSizes.iconMd,
                 ),
@@ -152,7 +184,7 @@ class _HeaderVipSection extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Gold VIP',
+                      tier.name,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: AppColors.onBrand,
                         fontWeight: FontWeight.w800,
@@ -160,7 +192,7 @@ class _HeaderVipSection extends StatelessWidget {
                     ),
                     const SizedBox(height: AppSpacing.xxs),
                     Text(
-                      '၁,၂၅၀ မှတ်',
+                      '$_currentClientPoints မှတ်',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: AppColors.onBrandMuted,
                       ),
@@ -170,7 +202,7 @@ class _HeaderVipSection extends StatelessWidget {
               ),
               // Benefits pill button.
               TextButton(
-                onPressed: () {},
+                onPressed: () => _showVipBenefits(context),
                 style: TextButton.styleFrom(
                   backgroundColor: AppColors.onBrand.withValues(alpha: 0.18),
                   foregroundColor: AppColors.onBrand,
@@ -195,16 +227,36 @@ class _HeaderVipSection extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppSpacing.lg),
-          _buildProgress(context),
+          _buildProgress(context, vipIdx),
         ],
       ),
     );
   }
 
-  Widget _buildProgress(BuildContext context) {
+  Widget _buildProgress(BuildContext context, int vipIdx) {
     final theme = Theme.of(context);
-    // 1,250 / 2,000 to Platinum VIP — 750 remaining.
-    const double progress = 1250 / 2000;
+    final hasNext = vipIdx < _vipTiers.length - 1;
+
+    if (!hasNext) {
+      return Row(
+        children: [
+          const Icon(Icons.workspace_premium, color: AppColors.thanakaGold, size: AppSizes.iconSm),
+          const SizedBox(width: AppSpacing.sm),
+          Text(
+            'အမြင့်ဆုံးအဆင့် ရောက်ရှိပြီး',
+            style: theme.textTheme.bodySmall?.copyWith(
+              color: AppColors.onBrand,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ],
+      );
+    }
+
+    final nextTier = _vipTiers[vipIdx + 1];
+    final remaining = nextTier.minPoints - _currentClientPoints;
+    final span = nextTier.minPoints - _vipTiers[vipIdx].minPoints;
+    final progress = ((_currentClientPoints - _vipTiers[vipIdx].minPoints) / span).clamp(0.0, 1.0);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -214,7 +266,7 @@ class _HeaderVipSection extends StatelessWidget {
           children: [
             Flexible(
               child: Text(
-                'Platinum VIP သို့ရောက်ရန်',
+                '${nextTier.name} သို့ရောက်ရန်',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: theme.textTheme.bodySmall?.copyWith(
@@ -224,7 +276,7 @@ class _HeaderVipSection extends StatelessWidget {
               ),
             ),
             Text(
-              '၇၅၀ မှတ် လိုသေးသည်',
+              '$remaining မှတ် လိုသေးသည်',
               style: theme.textTheme.bodySmall?.copyWith(
                 color: AppColors.onBrand,
                 fontWeight: FontWeight.w700,
@@ -245,6 +297,89 @@ class _HeaderVipSection extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+
+  void _showVipBenefits(BuildContext context) {
+    final currentIdx = _currentVipIndex();
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Theme.of(context).cardColor,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.xl)),
+      ),
+      builder: (ctx) {
+        final theme = Theme.of(ctx);
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6,
+          minChildSize: 0.4,
+          maxChildSize: 0.8,
+          expand: false,
+          builder: (ctx, controller) => Column(
+            children: [
+              const SizedBox(height: AppSpacing.sm),
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: theme.dividerColor,
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(AppSpacing.lg),
+                child: Text('VIP အဆင့်များ', style: theme.textTheme.titleLarge),
+              ),
+              Expanded(
+                child: ListView.separated(
+                  controller: controller,
+                  padding: const EdgeInsets.fromLTRB(AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.xxl),
+                  itemCount: _vipTiers.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: AppSpacing.md),
+                  itemBuilder: (ctx, i) {
+                    final tier = _vipTiers[i];
+                    final isCurrent = i == currentIdx;
+                    final isLocked = i > currentIdx;
+                    return Container(
+                      padding: const EdgeInsets.all(AppSpacing.md),
+                      decoration: BoxDecoration(
+                        color: isCurrent ? AppColors.purple100.withValues(alpha: 0.5) : theme.cardColor,
+                        borderRadius: BorderRadius.circular(AppRadius.lg),
+                        border: Border.all(
+                          color: isCurrent ? AppColors.purple700 : theme.dividerColor,
+                          width: isCurrent ? 1.5 : 1,
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(isLocked ? Icons.lock : tier.icon, color: isLocked ? theme.hintColor : AppColors.purple700),
+                          const SizedBox(width: AppSpacing.md),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(tier.name, style: theme.textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                                Text('${tier.minPoints} မှတ်မှ စတင်သည်', style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor)),
+                              ],
+                            ),
+                          ),
+                          if (isCurrent)
+                            Container(
+                              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                              decoration: BoxDecoration(color: AppColors.purple700, borderRadius: BorderRadius.circular(AppRadius.pill)),
+                              child: const Text('လက်ရှိ', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                            ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
@@ -337,84 +472,72 @@ class _StatCard extends StatelessWidget {
 
 /// One redeemable coupon — mock model standing in for future `demo_data.dart`.
 /// `accent` drives the icon tile colour so each coupon reads distinctly.
-class _Coupon {
+class _ClientReward {
   final IconData icon;
   final Color accent;
   final Color accentSurface;
   final String title;
   final String subtitle;
   final String cost;
-  const _Coupon({
+  final int unlockTier;
+  const _ClientReward({
     required this.icon,
     required this.accent,
     required this.accentSurface,
     required this.title,
     required this.subtitle,
     required this.cost,
+    this.unlockTier = 0,
   });
 }
 
-const List<_Coupon> _coupons = [
-  _Coupon(
+const List<_ClientReward> _coupons = [
+  _ClientReward(
     icon: Icons.cleaning_services,
     accent: AppColors.teal,
     accentSurface: AppColors.blue100,
     title: 'သန့်ရှင်းရေး Discount',
     subtitle: '၅,၀၀၀ ကျပ် လျှော့စျေး',
     cost: '၅၀၀ မှတ်',
+    unlockTier: 0,
   ),
-  _Coupon(
+  _ClientReward(
     icon: Icons.bolt,
     accent: AppColors.indigo700,
     accentSurface: AppColors.indigo100,
     title: 'Priority Matching',
     subtitle: 'အလုပ်သမား အမြန်ရှာရန်',
     cost: '၃၀၀ မှတ်',
+    unlockTier: 0,
   ),
-  _Coupon(
+  _ClientReward(
     icon: Icons.storefront,
     accent: AppColors.tealDark,
     accentSurface: AppColors.tealLight,
     title: 'City Mart',
     subtitle: '၃,၀၀၀ ကျပ် ကူပွန်',
     cost: '၈၀၀ မှတ်',
+    unlockTier: 1,
   ),
-  _Coupon(
-    icon: Icons.ac_unit,
-    accent: AppColors.indigo500,
-    accentSurface: AppColors.indigo100,
-    title: 'အဲကွန်း ဝန်ဆောင်မှု',
-    subtitle: '၁၀,၀၀၀ ကျပ် လျှော့စျေး',
-    cost: '၁,၀၀၀ မှတ်',
+  _ClientReward(
+    icon: Icons.support_agent,
+    accent: AppColors.purple700,
+    accentSurface: AppColors.purple100,
+    title: 'Priority Support',
+    subtitle: '၂၄/၇ အထူးဝန်ဆောင်မှု',
+    cost: '၁,၅၀၀ မှတ်',
+    unlockTier: 3,
   ),
-  _Coupon(
-    icon: Icons.local_cafe,
-    accent: AppColors.tealDark,
+  _ClientReward(
+    icon: Icons.money_off,
+    accent: AppColors.success,
     accentSurface: AppColors.tealLight,
-    title: 'Coffee Voucher',
-    subtitle: '၂,၀၀၀ ကျပ် ကူပွန်',
-    cost: '၂၀၀ မှတ်',
-  ),
-  _Coupon(
-    icon: Icons.plumbing,
-    accent: AppColors.teal,
-    accentSurface: AppColors.blue100,
-    title: 'ရေပိုက် ပြင်ဆင်ခ',
-    subtitle: '၈,၀၀၀ ကျပ် လျှော့စျေး',
-    cost: '၉၀၀ မှတ်',
-  ),
-  _Coupon(
-    icon: Icons.local_shipping,
-    accent: AppColors.indigo700,
-    accentSurface: AppColors.indigo100,
-    title: 'အခမဲ့ ပို့ဆောင်ခ',
-    subtitle: 'တစ်ကြိမ်စာ ပို့ဆောင်ခ',
-    cost: '၄၀၀ မှတ်',
+    title: 'Zero Booking Fee',
+    subtitle: 'ဝန်ဆောင်ခ ကင်းလွတ်ခွင့်',
+    cost: '၂,၀၀၀ မှတ်',
+    unlockTier: 3,
   ),
 ];
-
-/// The horizontal rail shows the first few; the rest live behind "See All".
-const int _couponRailCount = 4;
 
 class _CouponsSection extends StatelessWidget {
   const _CouponsSection();
@@ -422,7 +545,9 @@ class _CouponsSection extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final railCoupons = _coupons.take(_couponRailCount).toList();
+    final currentVipIdx = _currentVipIndex();
+    // Show all for the rail but dimmed if locked.
+    final railCoupons = _coupons;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -433,12 +558,12 @@ class _CouponsSection extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  'လဲလှယ်ရန် ကူပွန်များ',
+                  'လဲလှယ်ရန် ဆုလာဘ်များ',
                   style: theme.textTheme.titleLarge,
                 ),
               ),
               TextButton(
-                onPressed: () => _showAllCouponsSheet(context),
+                onPressed: () => _showAllCouponsSheet(context, currentVipIdx),
                 style: TextButton.styleFrom(
                   foregroundColor: AppColors.indigo700,
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
@@ -455,7 +580,7 @@ class _CouponsSection extends StatelessWidget {
         ),
         const SizedBox(height: AppSpacing.md),
         SizedBox(
-          height: 172,
+          height: 180,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: AppSpacing.screen),
@@ -464,7 +589,10 @@ class _CouponsSection extends StatelessWidget {
               padding: EdgeInsets.only(
                 right: i == railCoupons.length - 1 ? 0 : AppSpacing.md,
               ),
-              child: _CouponCard(coupon: railCoupons[i]),
+              child: _RewardCard(
+                reward: railCoupons[i],
+                locked: railCoupons[i].unlockTier > currentVipIdx,
+              ),
             ),
           ),
         ),
@@ -474,7 +602,7 @@ class _CouponsSection extends StatelessWidget {
 }
 
 /// See-All catalogue: every coupon in a 2-column grid.
-void _showAllCouponsSheet(BuildContext context) {
+void _showAllCouponsSheet(BuildContext context, int currentVipIdx) {
   showModalBottomSheet<void>(
     context: context,
     isScrollControlled: true,
@@ -506,7 +634,7 @@ void _showAllCouponsSheet(BuildContext context) {
                 children: [
                   const Icon(Icons.local_activity, color: AppColors.purple700),
                   const SizedBox(width: AppSpacing.sm),
-                  Text('ကူပွန်အားလုံး', style: theme.textTheme.titleLarge),
+                  Text('ဆုလာဘ်အားလုံး', style: theme.textTheme.titleLarge),
                 ],
               ),
             ),
@@ -529,8 +657,11 @@ void _showAllCouponsSheet(BuildContext context) {
                         for (final c in _coupons)
                           SizedBox(
                             width: w,
-                            height: 172,
-                            child: _CouponCard(coupon: c),
+                            height: 180,
+                            child: _RewardCard(
+                              reward: c,
+                              locked: c.unlockTier > currentVipIdx,
+                            ),
                           ),
                       ],
                     );
@@ -545,77 +676,152 @@ void _showAllCouponsSheet(BuildContext context) {
   );
 }
 
-class _CouponCard extends StatelessWidget {
-  final _Coupon coupon;
-  const _CouponCard({required this.coupon});
+class _RewardCard extends ConsumerWidget {
+  final _ClientReward reward;
+  final bool locked;
+  const _RewardCard({required this.reward, required this.locked});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
-    return Container(
-      width: 150,
-      padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowSm,
-            blurRadius: 12,
-            offset: const Offset(0, 5),
-          ),
-        ],
+    return Opacity(
+      opacity: locked ? 0.65 : 1,
+      child: Container(
+        width: 150,
+        padding: const EdgeInsets.all(AppSpacing.md),
+        decoration: BoxDecoration(
+          color: theme.cardColor,
+          borderRadius: BorderRadius.circular(AppRadius.lg),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.shadowSm,
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Stack(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: reward.accentSurface,
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  alignment: Alignment.center,
+                  child: Icon(reward.icon, color: reward.accent, size: AppSizes.iconMd),
+                ),
+                if (locked)
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    child: Container(
+                      padding: const EdgeInsets.all(2),
+                      decoration: const BoxDecoration(
+                        color: AppColors.purple700,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(Icons.lock, size: 10, color: AppColors.onBrand),
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: AppSpacing.md),
+            Text(
+              reward.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.titleSmall?.copyWith(
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: AppSpacing.xxs),
+            Text(
+              reward.subtitle,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
+            ),
+            const Spacer(),
+            SizedBox(
+              width: double.infinity,
+              child: locked
+                  ? _lockedButton(theme)
+                  : FilledButton(
+                      onPressed: () => _showRedeemSuccess(context, ref),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.purple700,
+                        foregroundColor: AppColors.onBrand,
+                        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(AppRadius.pill),
+                        ),
+                      ),
+                      child: Text(
+                        reward.cost,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: AppColors.onBrand,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: coupon.accentSurface,
-              borderRadius: BorderRadius.circular(AppRadius.sm),
-            ),
-            alignment: Alignment.center,
-            child: Icon(coupon.icon, color: coupon.accent, size: AppSizes.iconMd),
-          ),
-          const SizedBox(height: AppSpacing.md),
-          Text(
-            coupon.title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.titleSmall?.copyWith(
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: AppSpacing.xxs),
-          Text(
-            coupon.subtitle,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: theme.textTheme.bodySmall?.copyWith(color: theme.hintColor),
-          ),
-          const Spacer(),
-          SizedBox(
-            width: double.infinity,
-            child: FilledButton(
-              onPressed: () {},
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.purple700,
-                foregroundColor: AppColors.onBrand,
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.pill),
-                ),
-              ),
-              child: Text(
-                coupon.cost,
-                style: theme.textTheme.bodySmall?.copyWith(
-                  color: AppColors.onBrand,
-                  fontWeight: FontWeight.w700,
-                ),
+    );
+  }
+
+  Widget _lockedButton(ThemeData theme) => Container(
+        padding: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+        decoration: BoxDecoration(
+          color: theme.disabledColor.withValues(alpha: 0.1),
+          borderRadius: BorderRadius.circular(AppRadius.pill),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.lock_outline, size: 14, color: theme.hintColor),
+            const SizedBox(width: AppSpacing.xs),
+            Text(
+              '${_vipTiers[reward.unlockTier].name}',
+              style: theme.textTheme.bodySmall?.copyWith(
+                color: theme.hintColor,
+                fontWeight: FontWeight.w700,
+                fontSize: 9,
               ),
             ),
+          ],
+        ),
+      );
+
+  void _showRedeemSuccess(BuildContext context, WidgetRef ref) {
+    // Notify history
+    ref.read(notificationProvider.notifier).notifyRewardRedeemed(reward.title);
+
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+        title: const Row(
+          children: [
+            Icon(Icons.check_circle, color: AppColors.success),
+            SizedBox(width: AppSpacing.sm),
+            Text('လဲလှယ်မှု အောင်မြင်ပါသည်'),
+          ],
+        ),
+        content: Text(
+          'သင်ရွေးချယ်ထားသော "${reward.title}" အတွက် ${reward.cost} ကို လဲလှယ်ပြီးပါပြီ။',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            style: TextButton.styleFrom(foregroundColor: AppColors.tmPurple),
+            child: const Text('အိုကေ', style: TextStyle(fontWeight: FontWeight.bold)),
           ),
         ],
       ),
@@ -683,23 +889,74 @@ const List<_EarnAction> _earnActions = [
   ),
 ];
 
-/// Routes each earn-action to the relevant page. Review/Tip go to the client's
-/// bookings (where those actions happen); Weekly booking opens task posting;
-/// Invite has no dedicated page yet, so it surfaces a friendly notice.
-void _handleEarnTap(BuildContext context, _EarnAction action) {
-  switch (action.target) {
+/// Routes each earn-action to a simulated informational popup explaining
+/// how to perform the action and earn points.
+void _handleEarnTap(BuildContext context, WidgetRef ref, _EarnAction action) {
+  // Notify points earned (simulated)
+  ref.read(notificationProvider.notifier).notifyPointsEarned(action.title, action.points);
+
+  showDialog(
+    context: context,
+    builder: (ctx) => AlertDialog(
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadius.lg)),
+      title: Row(
+        children: [
+          Text(action.emoji, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(child: Text(action.title)),
+        ],
+      ),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'ဘယ်လိုလုပ်ရမလဲ?',
+            style: Theme.of(ctx).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.bold),
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(_getEarnInstruction(action.target)),
+          const SizedBox(height: AppSpacing.lg),
+          Container(
+            padding: const EdgeInsets.all(AppSpacing.md),
+            decoration: BoxDecoration(
+              color: AppColors.success.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.stars, color: AppColors.success, size: 20),
+                const SizedBox(width: AppSpacing.sm),
+                Text(
+                  'ပြီးမြောက်ပါက ${action.points} ရရှိမည်',
+                  style: const TextStyle(color: AppColors.success, fontWeight: FontWeight.bold),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(ctx),
+          style: TextButton.styleFrom(foregroundColor: AppColors.tmPurple),
+          child: const Text('နားလည်ပါပြီ', style: TextStyle(fontWeight: FontWeight.bold)),
+        ),
+      ],
+    ),
+  );
+}
+
+String _getEarnInstruction(_EarnTarget target) {
+  switch (target) {
     case _EarnTarget.review:
+      return 'အလုပ်ပြီးဆုံးသွားသောအခါ "ပြီးစီးမှုအသေးစိတ်" စာမျက်နှာတွင် အလုပ်သမားကို ၅-စတား သုံးသပ်ချက်ပေးခြင်းဖြင့် မှတ်များ ရယူနိုင်ပါသည်။';
     case _EarnTarget.tip:
-      context.push(Routes.activity);
-      break;
+      return 'အလုပ်သမား၏ ဝန်ဆောင်မှုကို သဘောကျပါက ဘောက်ဆူး (Tip) ပေးခြင်းဖြင့် အပိုဆုမှတ်များ ရရှိပါမည်။';
     case _EarnTarget.weeklyBooking:
-      context.push(Routes.postTask);
-      break;
+      return 'အိမ်သန့်ရှင်းရေး သို့မဟုတ် အခြားဝန်ဆောင်မှုများကို အပတ်စဉ် ပုံမှန်အပ်နှံခြင်းဖြင့် VIP အဆင့်သို့ အမြန်ရောက်ရှိနိုင်ပါသည်။';
     case _EarnTarget.invite:
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('ဖိတ်ခေါ်မှုစနစ် မကြာမီ လာမည်နော်')),
-      );
-      break;
+      return 'သင့်သူငယ်ချင်းများကို App သို့ ဖိတ်ခေါ်ပြီး ၎င်းတို့ ပထမဆုံးအကြိမ် အလုပ်အပ်နှံပြီးပါက သင်ရော သင့်သူငယ်ချင်းပါ မှတ်များ ရရှိပါမည်။';
   }
 }
 
@@ -723,12 +980,12 @@ class _EarnPointsSection extends StatelessWidget {
   }
 }
 
-class _EarnRow extends StatelessWidget {
+class _EarnRow extends ConsumerWidget {
   final _EarnAction action;
   const _EarnRow({required this.action});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final highlighted = action.highlighted;
     final radius = BorderRadius.circular(AppRadius.lg);
@@ -754,7 +1011,7 @@ class _EarnRow extends StatelessWidget {
         ),
         child: InkWell(
           borderRadius: radius,
-          onTap: () => _handleEarnTap(context, action),
+          onTap: () => _handleEarnTap(context, ref, action),
           child: Padding(
             padding: const EdgeInsets.all(AppSpacing.md),
             child: Row(

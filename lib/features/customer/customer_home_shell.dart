@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/widgets/chatbot_fab.dart';
+import '../../core/widgets/global_push_banner.dart';
 import '../safety/emergency_bottom_sheet.dart';
 import '../activity/activity_overview_screen.dart';
 import 'activity_screen.dart';
@@ -32,6 +33,18 @@ class CustomerHomeShell extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final index = ref.watch(customerTabIndexProvider);
+
+    // Generalized push notifications (reward redemptions, etc.)
+    ref.listen(notificationProvider.select((s) => s.push), (prev, next) {
+      if (next != null && next != prev) {
+        showGlobalPushBanner(
+          context,
+          title: next.title,
+          body: next.body,
+          emoji: next.emoji,
+        );
+      }
+    });
 
     return Scaffold(
       // Home → AI assistant. Jobs tab (messages + check-in/out) → red SOS

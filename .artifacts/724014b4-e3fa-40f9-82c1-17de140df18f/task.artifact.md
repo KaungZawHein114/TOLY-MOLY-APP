@@ -1,0 +1,3 @@
+- [ ] Add SOS button to `WorkerHomeShell`
+    - [ ] Add import for `emergency_bottom_sheet.dart`
+    - [ ] Update `floatingActionButton` switch/ternary logic
