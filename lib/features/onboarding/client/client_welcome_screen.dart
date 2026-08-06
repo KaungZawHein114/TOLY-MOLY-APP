@@ -19,7 +19,7 @@ class ClientWelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 4, totalSteps: 4),
+      progress: const OnboardingProgress(step: 3, totalSteps: 3),
       mascotState: PhoWaYokeState.success,
       mascotMessage: OnboardingStrings.successMascotMessage,
       // No recorded clip for the completion screen (auth screens don't use TTS).

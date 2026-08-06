@@ -892,9 +892,6 @@ const List<_EarnAction> _earnActions = [
 /// Routes each earn-action to a simulated informational popup explaining
 /// how to perform the action and earn points.
 void _handleEarnTap(BuildContext context, WidgetRef ref, _EarnAction action) {
-  // Notify points earned (simulated)
-  ref.read(notificationProvider.notifier).notifyPointsEarned(action.title, action.points);
-
   showDialog(
     context: context,
     builder: (ctx) => AlertDialog(

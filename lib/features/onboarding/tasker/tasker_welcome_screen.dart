@@ -19,7 +19,7 @@ class TaskerWelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 5, totalSteps: 5),
+      progress: const OnboardingProgress(step: 4, totalSteps: 4),
       mascotState: PhoWaYokeState.success,
       mascotMessage: OnboardingStrings.successMascotMessage,
       // No recorded clip for the completion screen (auth screens don't use TTS).

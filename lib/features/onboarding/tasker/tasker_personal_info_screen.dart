@@ -92,7 +92,7 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
     final draft = ref.watch(taskerDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 1, totalSteps: 5),
+      progress: const OnboardingProgress(step: 1, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.taskerPersonalMascotMessage,
       title: OnboardingStrings.aboutYouTitle,

@@ -85,7 +85,7 @@ class _ClientPhoneVerificationScreenState
     final draft = ref.watch(clientDraftProvider);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 3, totalSteps: 4),
+      progress: const OnboardingProgress(step: 3, totalSteps: 3),
       mascotState:
           draft.otpVerified ? PhoWaYokeState.success : PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.phoneVerificationTitle,

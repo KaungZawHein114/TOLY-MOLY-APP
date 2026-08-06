@@ -9,6 +9,7 @@ import '../../core/widgets/chatbot_fab.dart';
 import '../../core/widgets/global_push_banner.dart';
 import '../safety/emergency_bottom_sheet.dart';
 import '../activity/activity_overview_screen.dart';
+import '../worker/notifications/notification_service.dart';
 import 'activity_screen.dart';
 import 'client_profile_screen.dart';
 import 'client_rewards_screen.dart';

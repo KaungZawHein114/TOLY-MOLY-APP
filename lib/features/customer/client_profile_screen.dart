@@ -279,7 +279,7 @@ class _ClientProfileScreenState extends ConsumerState<ClientProfileScreen> {
 
         // ── Switch role (DEMO ONLY — navigation only, no backend) ──
         BecomeTaskerSignupCard(
-          onTap: () => context.push(Routes.taskerPersonal),
+          onTap: () => context.go(Routes.dashboard),
         ),
 
         // ── Logout (backend: clears JWT + local storage) ──

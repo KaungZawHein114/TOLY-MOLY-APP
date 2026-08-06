@@ -458,84 +458,89 @@ class BecomeClientCard extends StatelessWidget {
             },
             child: Padding(
               padding: const EdgeInsets.all(AppSpacing.md),
-              child: Row(
+              // Stacked layout (icon+copy row, then a full-width CTA below)
+              // matching BecomeTaskerSignupCard for consistency.
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: AppColors.onBrand.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(AppRadius.md),
+                        ),
+                        child: const Icon(
+                          Icons.assignment_outlined,
+                          color: AppColors.onBrand,
+                          size: AppSizes.iconLg,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              ProfileStrings.becomeClientTitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                color: AppColors.onBrand,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            const SizedBox(height: AppSpacing.xs),
+                            Text(
+                              ProfileStrings.becomeClientSubtitle,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodySmall?.copyWith(
+                                color: AppColors.onBrandMuted,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: AppSpacing.md),
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: double.infinity,
+                    constraints: const BoxConstraints(minHeight: 48),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.md,
+                      vertical: AppSpacing.sm,
+                    ),
                     decoration: BoxDecoration(
-                      color: AppColors.onBrand.withValues(alpha: 0.16),
+                      color: AppColors.onBrand,
                       borderRadius: BorderRadius.circular(AppRadius.md),
                     ),
-                    child: const Icon(
-                      Icons.assignment_outlined,
-                      color: AppColors.onBrand,
-                      size: AppSizes.iconLg,
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
+                    alignment: Alignment.center,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
-                          ProfileStrings.becomeClientTitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.titleMedium?.copyWith(
-                            color: AppColors.onBrand,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: AppSpacing.xs),
-                        Text(
-                          ProfileStrings.becomeClientSubtitle,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: AppColors.onBrandMuted,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: AppSpacing.md),
-                  Flexible(
-                    child: Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 96,
-                        maxWidth: 112,
-                        minHeight: 48,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: AppSpacing.md,
-                        vertical: AppSpacing.sm,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.onBrand,
-                        borderRadius: BorderRadius.circular(AppRadius.md),
-                      ),
-                      alignment: Alignment.center,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
+                        Flexible(
+                          child: Text(
                             ProfileStrings.becomeClientCta,
                             textAlign: TextAlign.center,
-                            maxLines: 2,
+                            maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: theme.textTheme.labelLarge?.copyWith(
                               color: AppColors.indigo700,
                               fontWeight: FontWeight.w800,
                             ),
                           ),
-                          const SizedBox(height: AppSpacing.xxs),
-                          const Icon(Icons.arrow_forward_rounded,
-                              color: AppColors.indigo700, size: AppSizes.iconSm),
-                        ],
-                      ),
+                        ),
+                        const SizedBox(width: AppSpacing.xs),
+                        const Icon(Icons.arrow_forward_rounded,
+                            color: AppColors.indigo700, size: AppSizes.iconSm),
+                      ],
                     ),
                   ),
                 ],

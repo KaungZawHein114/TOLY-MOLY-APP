@@ -128,7 +128,7 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
     final isTasker = role == UserRole.tasker;
 
     return OnboardingScaffold(
-      progress: OnboardingProgress(step: 2, totalSteps: isTasker ? 5 : 4),
+      progress: OnboardingProgress(step: 2, totalSteps: isTasker ? 4 : 3),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.accountStepMascotMessage,
       title: OnboardingStrings.accountStepTitle,

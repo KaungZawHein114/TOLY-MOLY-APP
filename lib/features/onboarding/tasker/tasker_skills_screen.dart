@@ -155,7 +155,7 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
     final notifier = ref.read(taskerDraftProvider.notifier);
 
     return OnboardingScaffold(
-      progress: const OnboardingProgress(step: 4, totalSteps: 5),
+      progress: const OnboardingProgress(step: 4, totalSteps: 4),
       mascotState: PhoWaYokeState.pointing,
       mascotMessage: OnboardingStrings.skillsMascotMessage,
       title: OnboardingStrings.skillsTitle,
