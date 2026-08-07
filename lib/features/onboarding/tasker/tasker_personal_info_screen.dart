@@ -13,7 +13,6 @@ import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
-import '../widgets/voice_fill_banner.dart';
 
 class TaskerPersonalInfoScreen extends ConsumerStatefulWidget {
   const TaskerPersonalInfoScreen({super.key});
@@ -102,23 +101,9 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Speak once → Pho Wa Yoke fills the whole form (name/gender/age,
-          // phone for the next step, and skills for that later step).
-          VoiceFillBanner(
-            role: UserRole.tasker,
-            onApplied: () {
-              final d = ref.read(taskerDraftProvider);
-              setState(() {
-                if (d.name.isNotEmpty) _nameController.text = d.name;
-                if (d.age != null) _ageController.text = d.age.toString();
-              });
-            },
-          ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.md),
           AppTextField(
             label: OnboardingStrings.nameLabel,
-            mockTranscript: "Aung Aung",
-            onSpeechResult: (v) => setState(() => _nameController.text = v),
             controller: _nameController,
             leadingIcon: Icons.person_outline,
             hintText: OnboardingStrings.namePlaceholder,
@@ -154,8 +139,6 @@ class _TaskerPersonalInfoScreenState extends ConsumerState<TaskerPersonalInfoScr
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: OnboardingStrings.ageLabel,
-            mockTranscript: "25",
-            onSpeechResult: (v) => setState(() => _ageController.text = v),
             controller: _ageController,
             keyboardType: TextInputType.number,
             leadingIcon: Icons.cake_outlined,

@@ -383,17 +383,30 @@ class _ChatBubble extends StatelessWidget {
     final theme = Theme.of(context);
     final bubble = Container(
       constraints:
-          BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.7),
+          BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.72),
       padding: const EdgeInsets.symmetric(
-          horizontal: AppSpacing.md, vertical: AppSpacing.sm + 2),
+          horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       decoration: BoxDecoration(
-        color: turn.fromAi ? AppColors.blue300 : AppColors.purple700,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
+        color: turn.fromAi ? AppColors.blue300 : AppColors.tmPurple,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(AppRadius.xl),
+          topRight: const Radius.circular(AppRadius.xl),
+          bottomLeft: Radius.circular(turn.fromAi ? 4 : AppRadius.xl),
+          bottomRight: Radius.circular(turn.fromAi ? AppRadius.xl : 4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Text(
         turn.text,
         style: theme.textTheme.bodyLarge?.copyWith(
           color: turn.fromAi ? AppColors.textPrimary : AppColors.onBrand,
+          height: 1.4,
         ),
       ),
     );
@@ -460,10 +473,22 @@ class _TypingBubbleState extends State<_TypingBubble>
             const SizedBox(width: AppSpacing.sm),
             Container(
               padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.md, vertical: AppSpacing.md),
+                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
               decoration: BoxDecoration(
                 color: AppColors.blue300,
-                borderRadius: BorderRadius.circular(AppRadius.lg),
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(AppRadius.xl),
+                  topRight: Radius.circular(AppRadius.xl),
+                  bottomLeft: Radius.circular(4),
+                  bottomRight: Radius.circular(AppRadius.xl),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.04),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: AnimatedBuilder(
                 animation: _controller,
@@ -556,16 +581,17 @@ class _ListeningBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.purple100,
           borderRadius: BorderRadius.circular(AppRadius.pill),
+          border: Border.all(color: AppColors.purple700.withValues(alpha: 0.2)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.graphic_eq,
                 color: AppColors.purple700, size: AppSizes.iconSm),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
             Text(TaskPostingStrings.voiceChatListening,
                 style: theme.textTheme.bodyMedium
-                    ?.copyWith(color: AppColors.brandPurple)),
+                    ?.copyWith(color: AppColors.brandPurple, fontWeight: FontWeight.w600)),
           ],
         ),
       ),
@@ -613,22 +639,34 @@ class _InputBar extends StatelessWidget {
                     horizontal: AppSpacing.lg, vertical: AppSpacing.md),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(AppRadius.pill),
-                  borderSide: BorderSide.none,
+                  borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.pill),
+                  borderSide: BorderSide(color: theme.dividerColor.withValues(alpha: 0.5)),
                 ),
               ),
             ),
           ),
           const SizedBox(width: AppSpacing.sm),
           _MicButton(listening: listening, onTap: onMic),
-          const SizedBox(width: AppSpacing.xs),
+          const SizedBox(width: AppSpacing.sm),
           Semantics(
             label: TaskPostingStrings.voiceChatSendLabel,
             button: true,
-            child: IconButton(
-              onPressed: enabled ? onSend : null,
-              iconSize: AppSizes.iconMd,
-              style: IconButton.styleFrom(minimumSize: const Size(48, 48)),
-              icon: const Icon(Icons.send_rounded, color: AppColors.purple700),
+            child: InkWell(
+              onTap: enabled ? onSend : null,
+              borderRadius: BorderRadius.circular(AppRadius.xl),
+              child: Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: AppColors.tmPurple,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.send_rounded,
+                    color: AppColors.onBrand, size: 20),
+              ),
             ),
           ),
         ],
@@ -716,17 +754,17 @@ class _MicButtonState extends State<_MicButton>
                   customBorder: const CircleBorder(),
                   onTap: widget.onTap,
                   child: Container(
-                    width: 48,
-                    height: 48,
+                    width: 44,
+                    height: 44,
                     decoration: const BoxDecoration(
-                      gradient: AppColors.purpleGradient,
+                      color: AppColors.tmPurple,
                       shape: BoxShape.circle,
                     ),
                     alignment: Alignment.center,
                     child: Icon(
                       widget.listening ? Icons.graphic_eq : Icons.mic_rounded,
                       color: AppColors.onBrand,
-                      size: AppSizes.iconMd,
+                      size: 20,
                     ),
                   ),
                 ),

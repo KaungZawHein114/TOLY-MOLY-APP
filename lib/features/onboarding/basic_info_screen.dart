@@ -138,9 +138,6 @@ class _BasicInfoScreenState extends ConsumerState<BasicInfoScreen> {
         children: [
           AppTextField(
             label: OnboardingStrings.phoneLabel,
-            mockTranscript: "09123456789",
-            onSpeechResult: (v) => setState(
-                () => _phoneError = _phoneFormatError(v.trim())),
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             prefixText: "MM +95",

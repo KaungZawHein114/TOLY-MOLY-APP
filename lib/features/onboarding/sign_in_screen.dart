@@ -76,9 +76,6 @@ class _SignInScreenState extends ConsumerState<SignInScreen> {
         children: [
           AppTextField(
             label: OnboardingStrings.phoneLabel,
-            mockTranscript: "09123456789",
-            onSpeechResult: (v) =>
-                setState(() => _phoneController.text = v),
             controller: _phoneController,
             keyboardType: TextInputType.phone,
             prefixText: "MM +95",

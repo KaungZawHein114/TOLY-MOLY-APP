@@ -200,11 +200,6 @@ class _TaskerSkillsScreenState extends ConsumerState<TaskerSkillsScreen> {
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: OnboardingStrings.customSkillLabel,
-            mockTranscript: "ပန်းခြံပြုပြင်ခြင်း",
-            onSpeechResult: (v) {
-              _customSkillController.text = v;
-              notifier.state = notifier.state.copyWith(customSkill: v);
-            },
             controller: _customSkillController,
             leadingIcon: Icons.handyman_outlined,
             hintText: OnboardingStrings.customSkillLabel,

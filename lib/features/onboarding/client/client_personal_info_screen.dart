@@ -13,7 +13,6 @@ import '../../../core/widgets/onboarding/onboarding_selection_card.dart';
 import '../../../core/widgets/onboarding/shake_on_trigger.dart';
 import '../onboarding_models.dart';
 import '../onboarding_state.dart';
-import '../widgets/voice_fill_banner.dart';
 
 /// "About You" — the redesigned journey's first form step: name, gender and
 /// age together in one comfortable chunk (all recognition/simple answers, no
@@ -105,23 +104,9 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Speak once → Pho Wa Yoke fills the whole form (name/gender/age,
-          // and the phone number for the next step).
-          VoiceFillBanner(
-            role: UserRole.client,
-            onApplied: () {
-              final d = ref.read(clientDraftProvider);
-              setState(() {
-                if (d.name.isNotEmpty) _nameController.text = d.name;
-                if (d.age != null) _ageController.text = d.age.toString();
-              });
-            },
-          ),
-          const SizedBox(height: AppSpacing.xl),
+          const SizedBox(height: AppSpacing.md),
           AppTextField(
             label: OnboardingStrings.nameLabel,
-            mockTranscript: "Aye Aye",
-            onSpeechResult: (v) => setState(() => _updateDraft()),
             controller: _nameController,
             leadingIcon: Icons.person_outline,
             hintText: OnboardingStrings.namePlaceholder,
@@ -157,11 +142,6 @@ class _ClientPersonalInfoScreenState extends ConsumerState<ClientPersonalInfoScr
           const SizedBox(height: AppSpacing.xl),
           AppTextField(
             label: OnboardingStrings.ageLabel,
-            mockTranscript: "25",
-            onSpeechResult: (v) => setState(() {
-              _ageError = _ageFormatError(v.trim());
-              _updateDraft();
-            }),
             controller: _ageController,
             keyboardType: TextInputType.number,
             leadingIcon: Icons.cake_outlined,

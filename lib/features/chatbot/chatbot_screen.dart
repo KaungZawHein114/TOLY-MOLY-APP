@@ -42,10 +42,10 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
   bool _sending = false;
 
   static const List<String> _quickPrompts = [
-    "Fix my sink",
-    "Find a plumber",
-    "Find plumbing jobs",
-    "How do I post a task?",
+    "ဘေစင် ပြင်ချင်လို့",
+    "ပိုက်ပြင်သမား ရှာပေးပါ",
+    "ပိုက်ပြင်အလုပ်တွေ ရှာပေးပါ",
+    "အလုပ် ဘယ်လိုတင်ရမလဲ?",
   ];
 
   // Demo mic: no real speech-to-text is wired up yet, but the affordance and
@@ -141,6 +141,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final messages = ref.watch(chatMessagesProvider);
 
     return Scaffold(
@@ -150,7 +151,7 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
           children: [
             CircleAvatar(
               radius: 14,
-              backgroundColor: AppColors.indigo700,
+              backgroundColor: AppColors.tmPurple,
               backgroundImage: AssetImage("assets/img.png"),
             ),
             SizedBox(width: AppSpacing.sm),
@@ -158,33 +159,39 @@ class _ChatbotScreenState extends ConsumerState<ChatbotScreen> {
           ],
         ),
       ),
-      body: Column(
-        children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scroll,
-              padding: const EdgeInsets.all(AppSpacing.lg),
-              itemCount: messages.length + (_sending ? 1 : 0),
-              itemBuilder: (context, i) {
-                if (_sending && i == messages.length) {
-                  return const _TypingBubble();
-                }
-                return _Bubble(
-                  message: messages[i],
-                  role: widget.role,
-                  onAction: _handleAction,
-                );
-              },
+      body: Container(
+        color: theme.scaffoldBackgroundColor,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                controller: _scroll,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.md,
+                  vertical: AppSpacing.lg,
+                ),
+                itemCount: messages.length + (_sending ? 1 : 0),
+                itemBuilder: (context, i) {
+                  if (_sending && i == messages.length) {
+                    return const _TypingBubble();
+                  }
+                  return _Bubble(
+                    message: messages[i],
+                    role: widget.role,
+                    onAction: _handleAction,
+                  );
+                },
+              ),
             ),
-          ),
-          _QuickPrompts(prompts: _quickPrompts, onTap: _send),
-          _InputBar(
-            controller: _controller,
-            onSend: _send,
-            micTranscript: _micTranscript,
-            onMicResult: _onMicResult,
-          ),
-        ],
+            _QuickPrompts(prompts: _quickPrompts, onTap: _send),
+            _InputBar(
+              controller: _controller,
+              onSend: _send,
+              micTranscript: _micTranscript,
+              onMicResult: _onMicResult,
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -214,18 +221,27 @@ class _Bubble extends StatelessWidget {
           Container(
             constraints: BoxConstraints(
                 maxWidth: MediaQuery.of(context).size.width * 0.78),
-            margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs + 1),
+            margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
             padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.md + 2, vertical: AppSpacing.sm + 2),
+                horizontal: AppSpacing.lg, vertical: AppSpacing.md),
             decoration: BoxDecoration(
-              color: fromUser ? AppColors.indigo700 : theme.cardColor,
+              color: fromUser ? AppColors.tmPurple : theme.cardColor,
               borderRadius: BorderRadius.only(
-                topLeft: const Radius.circular(AppRadius.lg),
-                topRight: const Radius.circular(AppRadius.lg),
-                bottomLeft: Radius.circular(fromUser ? AppRadius.lg : 4),
-                bottomRight: Radius.circular(fromUser ? 4 : AppRadius.lg),
+                topLeft: const Radius.circular(AppRadius.xl),
+                topRight: const Radius.circular(AppRadius.xl),
+                bottomLeft: Radius.circular(fromUser ? AppRadius.xl : 4),
+                bottomRight: Radius.circular(fromUser ? 4 : AppRadius.xl),
               ),
-              border: fromUser ? null : Border.all(color: theme.dividerColor),
+              boxShadow: fromUser
+                  ? null
+                  : [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+              border: fromUser ? null : Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
             ),
             child: Text(
               message.text,
@@ -233,7 +249,7 @@ class _Bubble extends StatelessWidget {
                 color: fromUser
                     ? AppColors.onBrand
                     : theme.textTheme.bodyLarge?.color,
-                height: 1.35,
+                height: 1.4,
               ),
             ),
           ),
@@ -292,28 +308,38 @@ class _TypingBubble extends StatelessWidget {
         decoration: BoxDecoration(
           color: theme.cardColor,
           borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(AppRadius.lg),
-            topRight: Radius.circular(AppRadius.lg),
+            topLeft: Radius.circular(AppRadius.xl),
+            topRight: Radius.circular(AppRadius.xl),
             bottomLeft: Radius.circular(4),
-            bottomRight: Radius.circular(AppRadius.lg),
+            bottomRight: Radius.circular(AppRadius.xl),
           ),
-          border: Border.all(color: theme.dividerColor),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.04),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+          border: Border.all(color: theme.dividerColor.withValues(alpha: 0.5)),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             const SizedBox(
-              width: 16,
-              height: 16,
+              width: 14,
+              height: 14,
               child: CircularProgressIndicator(
                 strokeWidth: 2,
                 valueColor: AlwaysStoppedAnimation(AppColors.indigo500),
               ),
             ),
-            const SizedBox(width: AppSpacing.sm),
+            const SizedBox(width: AppSpacing.md),
             Text(
               AppStrings.chatbotTyping,
-              style: theme.textTheme.bodyMedium?.copyWith(color: theme.hintColor),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.hintColor,
+                fontWeight: FontWeight.w500,
+              ),
             ),
           ],
         ),
@@ -329,8 +355,9 @@ class _QuickPrompts extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox(
-      height: 44,
+    return Container(
+      height: 52,
+      padding: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: AppSpacing.md),
@@ -339,9 +366,17 @@ class _QuickPrompts extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(right: AppSpacing.sm),
               child: ActionChip(
-                label: Text(p),
+                label: Text(
+                  p,
+                  style: const TextStyle(fontWeight: FontWeight.w600),
+                ),
                 onPressed: () => onTap(p),
-                side: const BorderSide(color: AppColors.indigo500),
+                backgroundColor: Theme.of(context).cardColor,
+                side: const BorderSide(color: AppColors.indigo500, width: 1.5),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.lg),
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: AppSpacing.sm),
               ),
             ),
         ],
@@ -403,22 +438,28 @@ class _InputBar extends StatelessWidget {
               semanticPrompt: AppStrings.chatbotMicSemanticLabel,
               mockTranscript: micTranscript,
               onResult: onMicResult,
+              compact: true,
+              decoration: const BoxDecoration(
+                color: AppColors.tmPurple,
+                shape: BoxShape.circle,
+              ),
             ),
             const SizedBox(width: AppSpacing.sm),
             Semantics(
               label: 'Send',
               button: true,
-              child: GestureDetector(
+              child: InkWell(
                 onTap: () => onSend(controller.text),
+                borderRadius: BorderRadius.circular(AppRadius.xl),
                 child: Container(
-                  width: 48,
-                  height: 48,
+                  width: 44,
+                  height: 44,
                   decoration: const BoxDecoration(
-                    color: AppColors.indigo700,
+                    color: AppColors.tmPurple,
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(Icons.send,
-                      color: AppColors.onBrand, size: AppSizes.iconMd),
+                      color: AppColors.onBrand, size: 20),
                 ),
               ),
             ),

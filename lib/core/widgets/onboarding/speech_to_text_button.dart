@@ -15,6 +15,10 @@ class SpeechToTextButton extends StatelessWidget {
   // Smaller footprint to sit inline next to a single field's label.
   final bool compact;
 
+  /// Optional custom background decoration. Falls back to the design system's
+  /// purple gradient if null.
+  final Decoration? decoration;
+
   const SpeechToTextButton({
     super.key,
     required this.semanticPrompt,
@@ -22,6 +26,7 @@ class SpeechToTextButton extends StatelessWidget {
     required this.mockTranscript,
     this.large = false,
     this.compact = false,
+    this.decoration,
   });
 
   @override
@@ -51,13 +56,15 @@ class SpeechToTextButton extends StatelessWidget {
             child: Container(
               width: dimension,
               height: dimension,
-              decoration: const BoxDecoration(
-                gradient: AppColors.purpleGradient,
-                shape: BoxShape.circle,
-              ),
+              decoration: decoration ??
+                  const BoxDecoration(
+                    gradient: AppColors.purpleGradient,
+                    shape: BoxShape.circle,
+                  ),
               alignment: Alignment.center,
               child: Icon(Icons.mic_rounded,
-                  color: AppColors.onBrand, size: large ? 40 : (compact ? 20 : 24)),
+                  color: AppColors.onBrand,
+                  size: large ? 40 : (compact ? 20 : 24)),
             ),
           ),
         ),
