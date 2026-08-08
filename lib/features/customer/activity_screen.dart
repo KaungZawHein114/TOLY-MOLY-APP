@@ -6,6 +6,7 @@ import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import '../../core/widgets/modern_service_card.dart';
 import '../activity/activity_chat.dart';
 import '../worker/task_execution_state.dart';
 import 'widgets/checkin_confirmation_card.dart';
@@ -223,7 +224,6 @@ class ActivityMessagesView extends ConsumerWidget {
         // Chat 1 — the lifecycle task's discussion thread.
         _ChatTile(
           name: kDiscussionTaskerName,
-          emoji: kTaskerEmoji,
           statusLabel: chat1Status,
           statusColor: chat1Color,
           snippet: chat1Snippet,
@@ -239,7 +239,6 @@ class ActivityMessagesView extends ConsumerWidget {
         // Chat 2 — a separate, already-confirmed task in progress.
         _ChatTile(
           name: kProgressTaskerName,
-          emoji: kTaskerEmoji,
           statusLabel: 'ငွေပေးပြီး · လာရန် စောင့်ဆဲ',
           statusColor: AppColors.tealDark,
           snippet:
@@ -266,17 +265,11 @@ class _SafetyNoticeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.blue100,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.blue300.withValues(alpha: 0.3)),
-      ),
+    return ModernServiceCard(
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.shield_outlined, color: AppColors.purple500),
+          const ModernIconBox(icon: Icons.shield_outlined),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -304,7 +297,6 @@ class _SafetyNoticeCard extends StatelessWidget {
 
 class _ChatTile extends StatelessWidget {
   final String name;
-  final String emoji;
   final String statusLabel;
   final Color statusColor;
   final String snippet;
@@ -314,7 +306,6 @@ class _ChatTile extends StatelessWidget {
 
   const _ChatTile({
     required this.name,
-    required this.emoji,
     required this.statusLabel,
     required this.statusColor,
     required this.snippet,
@@ -327,91 +318,94 @@ class _ChatTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ModernServiceCard(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.xs),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(AppSpacing.md),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: AppSpacing.xl,
-                backgroundColor: AppColors.purple100,
-                child: Text(emoji, style: theme.textTheme.titleLarge),
-              ),
-              const SizedBox(width: AppSpacing.md),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      padding: const EdgeInsets.all(AppSpacing.md),
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.purple100,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              color: AppColors.purple700,
+              size: AppSizes.iconLg,
+            ),
+          ),
+          const SizedBox(width: AppSpacing.md),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Expanded(
-                          child: Text(
-                            name,
-                            style: theme.textTheme.titleMedium,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        Text(
-                          time,
-                          style: theme.textTheme.bodySmall?.copyWith(
-                            color: isUnread
-                                ? AppColors.purple500
-                                : AppColors.textSecondary,
-                            fontWeight:
-                                isUnread ? FontWeight.bold : FontWeight.normal,
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: AppSpacing.xxs),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                      decoration: BoxDecoration(
-                        color: statusColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                      ),
+                    Expanded(
                       child: Text(
-                        statusLabel,
-                        style: theme.textTheme.labelSmall?.copyWith(
-                          color: statusColor,
-                          fontWeight: FontWeight.bold,
-                        ),
+                        name,
+                        style: theme.textTheme.titleMedium,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(height: AppSpacing.xs),
                     Text(
-                      snippet,
-                      style: theme.textTheme.bodyMedium?.copyWith(
+                      time,
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: isUnread
-                            ? AppColors.textPrimary
+                            ? AppColors.purple500
                             : AppColors.textSecondary,
                         fontWeight:
                             isUnread ? FontWeight.bold : FontWeight.normal,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
                   ],
                 ),
-              ),
-              if (isUnread) ...[
-                const SizedBox(width: AppSpacing.xs),
+                const SizedBox(height: AppSpacing.xxs),
                 Container(
-                  width: AppSpacing.sm,
-                  height: AppSpacing.sm,
-                  decoration: const BoxDecoration(
-                      color: AppColors.purple500, shape: BoxShape.circle),
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                  decoration: BoxDecoration(
+                    color: statusColor.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppRadius.sm),
+                  ),
+                  child: Text(
+                    statusLabel,
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: statusColor,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: AppSpacing.xs),
+                Text(
+                  snippet,
+                  style: theme.textTheme.bodyMedium?.copyWith(
+                    color: isUnread
+                        ? AppColors.textPrimary
+                        : AppColors.textSecondary,
+                    fontWeight: isUnread ? FontWeight.bold : FontWeight.normal,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
               ],
-            ],
+            ),
           ),
-        ),
+          if (isUnread) ...[
+            const SizedBox(width: AppSpacing.xs),
+            Container(
+              width: AppSpacing.sm,
+              height: AppSpacing.sm,
+              decoration: const BoxDecoration(
+                  color: AppColors.purple500, shape: BoxShape.circle),
+            ),
+          ],
+        ],
       ),
     );
   }
@@ -595,22 +589,12 @@ class _ClientTaskSummaryCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowSm,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const ModernIconBox(icon: Icons.work_outline_rounded),
+          const SizedBox(height: AppSpacing.md),
           Text(
             _bookingSkillLabel(booking.skill),
             style: theme.textTheme.titleMedium?.copyWith(
@@ -656,23 +640,11 @@ class _ClientStatusCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowSm,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: AppColors.purple700, size: AppSizes.iconLg),
+          ModernIconBox(icon: icon),
           const SizedBox(height: AppSpacing.md),
           Text(
             title,
@@ -869,102 +841,100 @@ class _HistoryBookingCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
+    return ModernServiceCard(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: AppSpacing.sm,
-                            vertical: AppSpacing.xxs),
-                        decoration: BoxDecoration(
-                          color: AppColors.lightBg,
-                          borderRadius: BorderRadius.circular(AppRadius.sm),
-                        ),
-                        child: Text(
-                          'ပြီးဆုံးပြီး',
-                          style: theme.textTheme.labelSmall?.copyWith(
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textSecondary,
-                          ),
-                        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const ModernIconBox(icon: Icons.receipt_long_outlined),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
+                      decoration: BoxDecoration(
+                        color: AppColors.lightBg,
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
                       ),
-                      const SizedBox(height: AppSpacing.xs),
-                      Text(
-                        _bookingSkillLabel(booking.skill),
-                        style: theme.textTheme.titleMedium
-                            ?.copyWith(fontWeight: FontWeight.bold),
-                      ),
-                      Text(
-                        '${booking.workerName} • ${booking.date}',
-                        style: theme.textTheme.bodySmall
-                            ?.copyWith(color: AppColors.textSecondary),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Container(
-                  padding: const EdgeInsets.all(AppSpacing.sm),
-                  decoration: BoxDecoration(
-                    color: AppColors.lightBg,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      Text(
-                        'ပေးချေပြီး',
+                      child: Text(
+                        'ပြီးဆုံးပြီး',
                         style: theme.textTheme.labelSmall?.copyWith(
                           fontWeight: FontWeight.bold,
-                          color: AppColors.purple500,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                      Text(
-                        '${booking.totalMmk ~/ 1000}K MMK',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.orangeDark,
-                        ),
+                    ),
+                    const SizedBox(height: AppSpacing.xs),
+                    Text(
+                      _bookingSkillLabel(booking.skill),
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),
+                    Text(
+                      '${booking.workerName} • ${booking.date}',
+                      style: theme.textTheme.bodySmall
+                          ?.copyWith(color: AppColors.textSecondary),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Container(
+                padding: const EdgeInsets.all(AppSpacing.sm),
+                decoration: BoxDecoration(
+                  color: AppColors.lightBg,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    Text(
+                      'ပေးချေပြီး',
+                      style: theme.textTheme.labelSmall?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.purple500,
                       ),
-                    ],
-                  ),
+                    ),
+                    Text(
+                      '${booking.totalMmk ~/ 1000}K MMK',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.orangeDark,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Row(
-              children: [
-                Expanded(
-                  child: LargeButton(
-                    label: 'ပြေစာ ကြည့်ရန်',
-                    gradient: AppColors.purpleGradient,
-                    onTap: () => showActivitySnack(context,
-                        'ပြေစာ အသေးစိတ်ကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'),
-                  ),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.md),
+          Row(
+            children: [
+              Expanded(
+                child: LargeButton(
+                  label: 'ပြေစာ ကြည့်ရန်',
+                  gradient: AppColors.purpleGradient,
+                  onTap: () => showActivitySnack(
+                      context, 'ပြေစာ အသေးစိတ်ကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'),
                 ),
-                const SizedBox(width: AppSpacing.sm),
-                OutlinedButton.icon(
-                  onPressed: () => showActivitySnack(context,
-                      'အဆင့်သတ်မှတ်ခြင်းကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'),
-                  icon: const Icon(Icons.star_outline, size: AppSizes.iconSm),
-                  label: const Text('အဆင့်ပေး'),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              OutlinedButton.icon(
+                onPressed: () => showActivitySnack(context,
+                    'အဆင့်သတ်မှတ်ခြင်းကို ဒီ MVP တွင် မဖွင့်ထားသေးပါ။'),
+                icon: const Icon(Icons.star_outline, size: AppSizes.iconSm),
+                label: const Text('အဆင့်ပေး'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

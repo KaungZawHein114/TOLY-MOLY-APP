@@ -9,7 +9,7 @@ import '../../theme/app_spacing.dart';
 /// question on the screen, so the biggest decision gets the biggest target
 /// (Fitts) and the screen holds exactly one choice (Hick).
 class RoleSelectionCard extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
   final String label;
   final String sublabel;
   final bool selected;
@@ -17,7 +17,7 @@ class RoleSelectionCard extends StatelessWidget {
 
   const RoleSelectionCard({
     super.key,
-    required this.emoji,
+    required this.icon,
     required this.label,
     required this.sublabel,
     required this.selected,
@@ -67,7 +67,7 @@ class RoleSelectionCard extends StatelessWidget {
             ),
             child: Row(
               children: [
-                // Big pictorial anchor — the card is recognizable before a
+                // Big visual anchor — the card is recognizable before a
                 // single word is read.
                 Container(
                   width: 64,
@@ -77,7 +77,11 @@ class RoleSelectionCard extends StatelessWidget {
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
-                  child: Text(emoji, style: const TextStyle(fontSize: 32)),
+                  child: Icon(
+                    icon,
+                    color: AppColors.purple700,
+                    size: AppSizes.iconLg + 8,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.lg),
                 Expanded(

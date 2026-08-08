@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/ai_service.dart';
 import '../../../core/widgets/mascot/mascot_state.dart';
 import '../../../core/widgets/mascot/pho_wa_yoke.dart';
+import '../../../core/widgets/modern_service_card.dart';
 
 /// Builds the task payload the Task-Handling functions expect, from a [Booking].
 Map<String, dynamic> bookingTaskMap(Booking b) => {
@@ -62,19 +63,13 @@ class _TaskerBriefCardState extends ConsumerState<TaskerBriefCard> {
     }
     final brief = _brief!;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.indigo100,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const PhoWaYoke(
-                  state: PhoWaYokeState.pointing, size: 40, decorative: true),
+              const ModernIconBox(icon: Icons.tips_and_updates_outlined),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(TaskPostingStrings.briefTitle,
@@ -102,8 +97,7 @@ class _TaskerBriefCardState extends ConsumerState<TaskerBriefCard> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text('• '),
-                    Expanded(
-                        child: Text(s, style: theme.textTheme.bodyMedium)),
+                    Expanded(child: Text(s, style: theme.textTheme.bodyMedium)),
                   ],
                 ),
               ),
@@ -138,16 +132,12 @@ class _TaskerReminderBannerState extends State<TaskerReminderBanner> {
   Widget build(BuildContext context) {
     if (!_visible) return const SizedBox.shrink();
     final theme = Theme.of(context);
-    return Container(
+    return ModernServiceCard(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: AppColors.warning.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.alarm, color: AppColors.warning),
+          const ModernIconBox(icon: Icons.alarm),
           const SizedBox(width: AppSpacing.sm),
           Expanded(
             child: Column(
@@ -221,12 +211,21 @@ class _CompletionSummaryCardState extends ConsumerState<CompletionSummaryCard> {
 
   ({String label, Color color}) _tierChip(int delta) {
     if (delta > 0) {
-      return (label: TaskPostingStrings.tierSuggestUp, color: AppColors.success);
+      return (
+        label: TaskPostingStrings.tierSuggestUp,
+        color: AppColors.success
+      );
     }
     if (delta < 0) {
-      return (label: TaskPostingStrings.tierSuggestDown, color: AppColors.warning);
+      return (
+        label: TaskPostingStrings.tierSuggestDown,
+        color: AppColors.warning
+      );
     }
-    return (label: TaskPostingStrings.tierSuggestSame, color: AppColors.indigo700);
+    return (
+      label: TaskPostingStrings.tierSuggestSame,
+      color: AppColors.indigo700
+    );
   }
 
   @override
@@ -238,19 +237,13 @@ class _CompletionSummaryCardState extends ConsumerState<CompletionSummaryCard> {
     final s = _summary!;
     final chip = _tierChip(s.suggestedTierDelta);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.success.withValues(alpha: 0.10),
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              const PhoWaYoke(
-                  state: PhoWaYokeState.success, size: 44, decorative: true),
+              const ModernIconBox(icon: Icons.check_circle_outline),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(TaskPostingStrings.completionTitle,

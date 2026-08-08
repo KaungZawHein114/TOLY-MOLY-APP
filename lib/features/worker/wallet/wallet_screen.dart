@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/modern_service_card.dart';
 import 'wallet_service.dart';
 
 /// Formats a kyat amount with thousands separators (no decimals — kyat is
@@ -104,26 +105,16 @@ class _BalanceCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
+    return ModernServiceCard(
       width: double.infinity,
       padding: const EdgeInsets.all(AppSpacing.xl),
-      decoration: BoxDecoration(
-        gradient: AppColors.purpleGradient,
-        borderRadius: BorderRadius.circular(AppRadius.xl),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.purple700.withValues(alpha: 0.3),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'ရရှိနိုင်သော လက်ကျန်ငွေ',
-            style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.onBrandMuted),
+            style: theme.textTheme.bodyMedium
+                ?.copyWith(color: AppColors.textSecondary),
           ),
           const SizedBox(height: AppSpacing.xs),
           Row(
@@ -135,13 +126,15 @@ class _BalanceCard extends StatelessWidget {
                   _formatKyat(wallet.availableBalance),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: theme.textTheme.headlineMedium?.copyWith(color: AppColors.onBrand),
+                  style: theme.textTheme.headlineMedium
+                      ?.copyWith(color: AppColors.textPrimary),
                 ),
               ),
               const SizedBox(width: AppSpacing.sm),
               Text(
                 'ကျပ်',
-                style: theme.textTheme.titleMedium?.copyWith(color: AppColors.onBrandMuted),
+                style: theme.textTheme.titleMedium
+                    ?.copyWith(color: AppColors.textSecondary),
               ),
             ],
           ),
@@ -153,8 +146,8 @@ class _BalanceCard extends StatelessWidget {
               icon: const Icon(Icons.account_balance_wallet_outlined),
               label: const Text('ငွေထုတ်မည်'),
               style: FilledButton.styleFrom(
-                backgroundColor: AppColors.onBrand,
-                foregroundColor: AppColors.purple700,
+                backgroundColor: AppColors.purple700,
+                foregroundColor: AppColors.onBrand,
                 minimumSize: const Size(0, AppSizes.buttonHeight - 6),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(AppRadius.md),
@@ -167,12 +160,12 @@ class _BalanceCard extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(AppSpacing.md),
             decoration: BoxDecoration(
-              color: AppColors.onBrand.withValues(alpha: 0.12),
+              color: AppColors.purple100,
               borderRadius: BorderRadius.circular(AppRadius.md),
             ),
             child: Row(
               children: [
-                const Icon(Icons.lock_clock, color: AppColors.onBrand, size: AppSizes.iconSm),
+                const Icon(Icons.lock_clock, color: AppColors.purple700, size: AppSizes.iconSm),
                 const SizedBox(width: AppSpacing.sm),
                 Expanded(
                   child: Column(
@@ -180,13 +173,14 @@ class _BalanceCard extends StatelessWidget {
                     children: [
                       Text(
                         'ငွေလွှဲဆိုင်းငံ့',
-                        style: theme.textTheme.bodySmall?.copyWith(color: AppColors.onBrandMuted),
+                        style: theme.textTheme.bodySmall
+                            ?.copyWith(color: AppColors.textSecondary),
                       ),
                       const SizedBox(height: AppSpacing.xxs),
                       Text(
                         '${_formatKyat(wallet.pendingBalance)} ကျပ်',
                         style: theme.textTheme.titleMedium?.copyWith(
-                          color: AppColors.onBrand,
+                          color: AppColors.textPrimary,
                           fontWeight: FontWeight.w800,
                         ),
                       ),
@@ -202,7 +196,7 @@ class _BalanceCard extends StatelessWidget {
                     label: 'ငွေလွှဲဆိုင်းငံ့ အကြောင်း',
                     child: Padding(
                       padding: const EdgeInsets.all(AppSpacing.xs),
-                      child: Icon(Icons.info_outline, color: AppColors.onBrandMuted, size: AppSizes.iconSm),
+                      child: Icon(Icons.info_outline, color: AppColors.textSecondary, size: AppSizes.iconSm),
                     ),
                   ),
                 ),
@@ -234,30 +228,12 @@ class _TransactionTile extends StatelessWidget {
         ? _formatDate(txn.date)
         : '${txn.method} • ${_formatDate(txn.date)}';
 
-    return Container(
+    return ModernServiceCard(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(color: AppColors.shadowSm, blurRadius: 10, offset: const Offset(0, 4)),
-        ],
-      ),
       child: Row(
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: accent.withValues(alpha: 0.12),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            alignment: Alignment.center,
-            child: Icon(
-              isCredit ? Icons.south_west : Icons.north_east,
-              color: accent,
-              size: AppSizes.iconMd,
-            ),
+          ModernIconBox(
+            icon: isCredit ? Icons.south_west : Icons.north_east,
           ),
           const SizedBox(width: AppSpacing.md),
           Expanded(

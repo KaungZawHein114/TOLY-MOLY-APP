@@ -3,8 +3,9 @@ import 'package:flutter/services.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import 'modern_service_card.dart';
 
-/// A square emoji + label tile used for category grids and skill badges.
+/// A square work icon + label tile used for category grids and skill badges.
 /// Styling comes from theme tokens; the widget only knows about content + tap.
 class SkillTile extends StatelessWidget {
   final String emoji;
@@ -38,12 +39,14 @@ class SkillTile extends StatelessWidget {
           duration: const Duration(milliseconds: 150),
           decoration: BoxDecoration(
             color: selected
-                ? AppColors.teal.withValues(alpha: 0.14)
+                ? AppColors.purple100
                 : theme.cardColor,
             borderRadius: radius,
             boxShadow: [
               BoxShadow(
-                color: selected ? AppColors.teal.withValues(alpha: 0.25) : AppColors.cardShadow,
+                color: selected
+                    ? AppColors.selectedCardShadow
+                    : AppColors.cardShadow,
                 blurRadius: selected ? 14 : 10,
                 offset: const Offset(0, 4),
               ),
@@ -59,7 +62,7 @@ class SkillTile extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Text(emoji, style: const TextStyle(fontSize: 28)),
+                ModernIconBox(icon: workIconForLabel(label)),
                 const SizedBox(height: AppSpacing.xs),
                 Text(
                   label,
@@ -86,7 +89,7 @@ class SkillTile extends StatelessWidget {
                 if (selected) ...[
                   const SizedBox(height: AppSpacing.xxs),
                   const Icon(Icons.check_circle,
-                      color: AppColors.teal, size: AppSizes.iconSm + 2),
+                      color: AppColors.purple700, size: AppSizes.iconSm + 2),
                 ],
               ],
             ),

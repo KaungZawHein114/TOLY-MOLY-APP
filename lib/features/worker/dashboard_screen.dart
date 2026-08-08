@@ -8,6 +8,7 @@ import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import '../../core/widgets/modern_service_card.dart';
 import '../profile/data/profile_repository.dart';
 import '../profile/data/profile_repository_impl.dart';
 import 'notifications/notification_service.dart';
@@ -64,10 +65,7 @@ final jobsStateProvider = StateProvider<List<Job>>((ref) => jobs);
 final workerInterestsProvider =
     StateProvider<List<WorkerInterest>>((ref) => []);
 
-// Additive Job Board filters (Category/Distance/Budget) — local UI-only
-// state, same pattern as the filters above; they narrow within whatever the
-// worker-skill/tier eligibility check below already allows through, they
-// never bypass it.
+// Additive Job Board filters (Category/Distance/Budget), local UI-only state.
 final jobCategoryFilterProvider = StateProvider<String?>((ref) => null);
 final jobDistanceFilterKmProvider = StateProvider<double?>((ref) => null);
 final jobBudgetFilterProvider =
@@ -169,7 +167,7 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
             children: [
               Row(
                 children: [
-                  Icon(categoryIconFor(job.category),
+                  Icon(workIconForLabel(job.category),
                       color: AppColors.purple700),
                   const SizedBox(width: AppSpacing.sm),
                   Expanded(
@@ -239,19 +237,11 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
     final allJobsState = ref.watch(jobsStateProvider);
     final worker = loggedInWorker;
 
-    // Worker only sees jobs that match their skill and tier. A job this
-    // worker has already expressed interest in stays visible (with the
-    // button swapped to a disabled "Interest Received" state) rather than
-    // disappearing — status only gates whether *other* workers would still
-    // see it as open, not this worker's own view of their own action.
-    var eligible = allJobsState.where((j) {
-      if (j.category != worker.skill) return false;
-      if (worker.currentTier < j.requiredTier) return false;
-      return true;
-    }).toList();
+    // Demo job board: show mixed work categories so the tasker home page does
+    // not look locked to one skill in the offline MVP.
+    var eligible = allJobsState.toList();
 
-    // Category options are derived from whatever is already eligible above —
-    // this never widens the worker-skill/tier gate, it only ever narrows it.
+    // Category options are derived from the visible demo job pool.
     final categoryOptions =
         <String>{for (final j in eligible) j.category}.toList()..sort();
 
@@ -353,9 +343,7 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
         child: ListView(
           padding: const EdgeInsets.all(AppSpacing.lg),
           children: [
-            _WorkerHomeHeader(
-              onSwitchRole: () => context.go(Routes.onboardingWelcome),
-            ),
+            const _WorkerHomeHeader(),
             const SizedBox(height: AppSpacing.lg),
             Row(
               children: [
@@ -365,7 +353,6 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
                     value: monthlyIncome.toString(),
                     unit: AppStrings.currency,
                     label: AppStrings.dashboardMonthlyIncome,
-                    gradient: AppColors.purpleGradient,
                   ),
                 ),
                 const SizedBox(width: AppSpacing.md),
@@ -375,7 +362,6 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
                     value: "$completedJobsCount",
                     unit: "အလုပ်",
                     label: AppStrings.dashboardCompletedJobs,
-                    gradient: AppColors.orangeGradient,
                   ),
                 ),
               ],
@@ -536,13 +522,10 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
   }
 }
 
-/// Worker Home header: TOLY MOLY logo + greeting at the top-left (replacing
-/// the old "Worker Dashboard" AppBar title), with the switch-role and
-/// notification actions on the right — same shape as the customer Home
-/// header, just mirrored.
+/// Worker Home header: TOLY MOLY logo + greeting at the top-left with
+/// notification actions on the right.
 class _WorkerHomeHeader extends ConsumerWidget {
-  final VoidCallback onSwitchRole;
-  const _WorkerHomeHeader({required this.onSwitchRole});
+  const _WorkerHomeHeader();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -575,15 +558,6 @@ class _WorkerHomeHeader extends ConsumerWidget {
                     ?.copyWith(fontWeight: FontWeight.w800),
               ),
             ],
-          ),
-        ),
-        Semantics(
-          label: "အခန်းကဏ္ဍ ပြောင်းမည်",
-          button: true,
-          child: IconButton(
-            icon: const Icon(Icons.swap_horiz, color: AppColors.purple700),
-            tooltip: "အခန်းကဏ္ဍ ပြောင်းမည်",
-            onPressed: onSwitchRole,
           ),
         ),
         const _NotificationBell(),
@@ -726,27 +700,12 @@ class _NotificationTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
+    return ModernServiceCard(
       padding: const EdgeInsets.all(AppSpacing.md),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: theme.dividerColor),
-      ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: AppColors.success.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            alignment: Alignment.center,
-            child: const Icon(Icons.account_balance_wallet_outlined,
-                color: AppColors.success, size: AppSizes.iconSm),
-          ),
+          const ModernIconBox(icon: Icons.account_balance_wallet_outlined),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(
@@ -786,36 +745,31 @@ class _StatCard extends StatelessWidget {
   final String value;
   final String unit;
   final String label;
-  final Gradient gradient;
   const _StatCard({
     required this.emoji,
     required this.value,
     required this.unit,
     required this.label,
-    required this.gradient,
   });
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: gradient,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: gradient.colors.first.withValues(alpha: 0.3),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(emoji, style: const TextStyle(fontSize: 26)),
-          const SizedBox(height: AppSpacing.sm),
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.purple100,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+            ),
+            child: Text(emoji, style: const TextStyle(fontSize: 24)),
+          ),
+          const SizedBox(height: AppSpacing.md),
           Row(
             crossAxisAlignment: CrossAxisAlignment.baseline,
             textBaseline: TextBaseline.alphabetic,
@@ -825,12 +779,12 @@ class _StatCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.headlineSmall
-                        ?.copyWith(color: AppColors.onBrand, fontSize: 24)),
+                        ?.copyWith(color: AppColors.textPrimary, fontSize: 24)),
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(unit,
                   style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.onBrandMuted)),
+                      ?.copyWith(color: AppColors.textSecondary)),
             ],
           ),
           const SizedBox(height: AppSpacing.xxs),
@@ -838,7 +792,7 @@ class _StatCard extends StatelessWidget {
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.onBrandMuted)),
+                  ?.copyWith(color: AppColors.textSecondary)),
         ],
       ),
     );

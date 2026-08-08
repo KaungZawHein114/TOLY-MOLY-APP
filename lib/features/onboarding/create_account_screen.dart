@@ -51,7 +51,7 @@ class CreateAccountScreen extends ConsumerWidget {
               style: theme.textTheme.headlineSmall),
           const SizedBox(height: AppSpacing.xl),
           RoleSelectionCard(
-            emoji: "💼",
+            icon: Icons.person_rounded,
             label: OnboardingStrings.roleClientLabel,
             sublabel: OnboardingStrings.roleClientSublabel,
             selected: role == UserRole.client,
@@ -59,7 +59,7 @@ class CreateAccountScreen extends ConsumerWidget {
           ),
           const SizedBox(height: AppSpacing.lg),
           RoleSelectionCard(
-            emoji: "🛠️",
+            icon: Icons.handyman_outlined,
             label: OnboardingStrings.roleTaskerLabel,
             sublabel: OnboardingStrings.roleTaskerSublabel,
             selected: role == UserRole.tasker,

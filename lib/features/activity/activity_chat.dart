@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
 import '../../core/widgets/large_button.dart';
+import '../../core/widgets/modern_service_card.dart';
 import 'discussion/discussion_chat_page.dart';
 
 // ---------------------------------------------------------------------------
@@ -238,8 +239,9 @@ class LiveTaskBookingCard extends ConsumerWidget {
       TaskPhase.marked => ('အလုပ်လက်ခံပြီး', AppColors.tealDark, AppColors.blue100),
     };
 
-    return Card(
+    return ModernServiceCard(
       margin: const EdgeInsets.symmetric(vertical: AppSpacing.sm),
+      padding: EdgeInsets.zero,
       child: Stack(
         children: [
           if (phase == TaskPhase.marked)
@@ -262,20 +264,36 @@ class LiveTaskBookingCard extends ConsumerWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: AppSpacing.sm, vertical: AppSpacing.xxs),
-                            decoration: BoxDecoration(
-                              color: statusBg,
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                            ),
-                            child: Text(
-                              statusText,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: statusColor,
+                          Row(
+                            children: [
+                              ModernIconBox(
+                                  icon: phase == TaskPhase.marked
+                                      ? Icons.work_outline_rounded
+                                      : Icons.forum_outlined),
+                              const SizedBox(width: AppSpacing.sm),
+                              Flexible(
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(
+                                      horizontal: AppSpacing.sm,
+                                      vertical: AppSpacing.xxs),
+                                  decoration: BoxDecoration(
+                                    color: statusBg,
+                                    borderRadius:
+                                        BorderRadius.circular(AppRadius.sm),
+                                  ),
+                                  child: Text(
+                                    statusText,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style:
+                                        theme.textTheme.labelSmall?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                      color: statusColor,
+                                    ),
+                                  ),
+                                ),
                               ),
-                            ),
+                            ],
                           ),
                           const SizedBox(height: AppSpacing.xs),
                           Text(
@@ -331,7 +349,14 @@ class LiveTaskBookingCard extends ConsumerWidget {
                     children: [
                       CircleAvatar(
                         radius: AppSpacing.md,
-                        child: Text(counterpartEmoji, style: theme.textTheme.bodyLarge),
+                        child: isClient
+                            ? const Icon(
+                                Icons.person_rounded,
+                                color: AppColors.purple700,
+                                size: AppSizes.iconSm,
+                              )
+                            : Text(counterpartEmoji,
+                                style: theme.textTheme.bodyLarge),
                       ),
                       const SizedBox(width: AppSpacing.sm),
                       Expanded(

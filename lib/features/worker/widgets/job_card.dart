@@ -5,25 +5,8 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/data/demo_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/modern_service_card.dart';
 import '../../onboarding/onboarding_models.dart' show toBurmeseDigits;
-
-/// Maps a job category name to a representative icon — purely cosmetic,
-/// derived from the same category strings demo_data.dart already uses
-/// elsewhere (never hardcodes a category list of its own).
-IconData categoryIconFor(String category) {
-  final c = category.toLowerCase();
-  if (c.contains('plumb')) return Icons.plumbing;
-  if (c.contains('electric')) return Icons.electrical_services;
-  if (c.contains('clean')) return Icons.cleaning_services;
-  if (c.contains('carpent')) return Icons.carpenter;
-  if (c.contains('paint')) return Icons.format_paint;
-  if (c.contains('ac') || c.contains('air')) return Icons.ac_unit;
-  if (c.contains('garden')) return Icons.yard;
-  if (c.contains('delivery')) return Icons.local_shipping;
-  if (c.contains('tutor')) return Icons.school;
-  if (c.contains('handyman') || c.contains('appliance')) return Icons.handyman;
-  return Icons.work_outline;
-}
 
 /// "X minutes/hours/days ago" in Burmese, derived from [createdAt] — display
 /// only, computed from the existing [Job.createdAt] field.
@@ -48,30 +31,11 @@ class BudgetBadge extends StatelessWidget {
   Widget build(BuildContext context) {
     final taskerReceives = budgetMmk - (budgetMmk * 0.15).round();
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Expanded(
-              child: _MoneyLine(
-                label: 'Client posted',
-                amount: budgetMmk,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(width: AppSpacing.md),
-            Expanded(
-              child: _MoneyLine(
-                label: 'Tasker gets',
-                amount: taskerReceives,
-                color: AppColors.purple700,
-                emphasized: true,
-              ),
-            ),
-          ],
-        ),
-      ],
+    return _MoneyLine(
+      label: 'Tasker gets',
+      amount: taskerReceives,
+      color: AppColors.purple700,
+      emphasized: true,
     );
   }
 }
@@ -125,7 +89,8 @@ class _MoneyLine extends StatelessWidget {
 class MediaCountStrip extends StatelessWidget {
   final int count;
   final String category;
-  const MediaCountStrip({super.key, required this.count, required this.category});
+  const MediaCountStrip(
+      {super.key, required this.count, required this.category});
 
   @override
   Widget build(BuildContext context) {
@@ -137,7 +102,8 @@ class MediaCountStrip extends StatelessWidget {
         children: [
           for (var i = 0; i < shown; i++)
             Padding(
-              padding: EdgeInsets.only(right: i == shown - 1 ? 0 : AppSpacing.xs),
+              padding:
+                  EdgeInsets.only(right: i == shown - 1 ? 0 : AppSpacing.xs),
               child: Container(
                 width: 44,
                 height: 44,
@@ -146,7 +112,7 @@ class MediaCountStrip extends StatelessWidget {
                   borderRadius: BorderRadius.circular(AppRadius.sm),
                 ),
                 alignment: Alignment.center,
-                child: Icon(categoryIconFor(category),
+                child: Icon(workIconForLabel(category),
                     color: AppColors.purple700, size: AppSizes.iconSm),
               ),
             ),
@@ -289,112 +255,86 @@ class JobCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final accepted = job.status == AppStrings.dashboardInterestReceived;
-    final radius = BorderRadius.circular(AppRadius.lg);
-
-    return Container(
+    return ModernServiceCard(
       margin: const EdgeInsets.only(bottom: AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: radius,
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowMd,
-            blurRadius: 14,
-            offset: const Offset(0, 6),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              ModernIconBox(icon: workIconForLabel(job.category)),
+              const SizedBox(width: AppSpacing.md),
+              Expanded(
+                child: Text(job.category,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.titleMedium),
+              ),
+              if (job.isUrgent) ...[
+                const SizedBox(width: AppSpacing.xs),
+                Flexible(child: StatusBadge(urgent: job.isUrgent)),
+              ],
+            ],
+          ),
+          const SizedBox(height: AppSpacing.sm),
+          Text(job.description,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: theme.textTheme.bodyMedium),
+          const SizedBox(height: AppSpacing.sm + 2),
+          MediaCountStrip(count: job.photoCount, category: job.category),
+          Row(
+            children: [
+              Icon(Icons.location_on, size: 14, color: theme.hintColor),
+              const SizedBox(width: AppSpacing.xxs),
+              Flexible(
+                child: Text(
+                    "${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.hintColor)),
+              ),
+              const SizedBox(width: AppSpacing.sm),
+              Icon(Icons.schedule, size: 14, color: theme.hintColor),
+              const SizedBox(width: AppSpacing.xxs),
+              Flexible(
+                child: Text(relativeTimeFor(job.createdAt),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.hintColor)),
+              ),
+            ],
+          ),
+          const SizedBox(height: AppSpacing.xs),
+          Row(
+            children: [
+              Icon(Icons.verified_user_outlined,
+                  size: 14, color: theme.hintColor),
+              const SizedBox(width: AppSpacing.xxs),
+              Flexible(
+                child: Text(
+                    "${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: theme.textTheme.bodySmall
+                        ?.copyWith(color: theme.hintColor)),
+              ),
+            ],
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
+            child: Divider(height: 1),
+          ),
+          BudgetBadge(budgetMmk: job.aiSuggestedBudgetMmk),
+          const SizedBox(height: AppSpacing.md),
+          JobActionButtons(
+            accepted: accepted,
+            onAccept: onAccept,
+            onViewDetails: onViewDetails,
           ),
         ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(AppSpacing.lg),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: AppColors.purple100,
-                    borderRadius: BorderRadius.circular(AppRadius.md),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(categoryIconFor(job.category),
-                      color: AppColors.purple700, size: AppSizes.iconMd),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: Text(job.category,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.titleMedium),
-                ),
-                if (job.isUrgent) ...[
-                  const SizedBox(width: AppSpacing.xs),
-                  Flexible(child: StatusBadge(urgent: job.isUrgent)),
-                ],
-              ],
-            ),
-            const SizedBox(height: AppSpacing.sm),
-            Text(job.description,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.bodyMedium),
-            const SizedBox(height: AppSpacing.sm + 2),
-            MediaCountStrip(count: job.photoCount, category: job.category),
-            Row(
-              children: [
-                Icon(Icons.location_on, size: 14, color: theme.hintColor),
-                const SizedBox(width: AppSpacing.xxs),
-                Flexible(
-                  child: Text(
-                      "${job.township} • ${job.distanceMiles.toStringAsFixed(1)} km",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.hintColor)),
-                ),
-                const SizedBox(width: AppSpacing.sm),
-                Icon(Icons.schedule, size: 14, color: theme.hintColor),
-                const SizedBox(width: AppSpacing.xxs),
-                Flexible(
-                  child: Text(relativeTimeFor(job.createdAt),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.hintColor)),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xs),
-            Row(
-              children: [
-                Icon(Icons.verified_user_outlined,
-                    size: 14, color: theme.hintColor),
-                const SizedBox(width: AppSpacing.xxs),
-                Flexible(
-                  child: Text(
-                      "${AppStrings.dashboardRequiredTierPrefix}${trustBadgeFor(job.requiredTier)}",
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: theme.textTheme.bodySmall
-                          ?.copyWith(color: theme.hintColor)),
-                ),
-              ],
-            ),
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: AppSpacing.sm),
-              child: Divider(height: 1),
-            ),
-            BudgetBadge(budgetMmk: job.aiSuggestedBudgetMmk),
-            const SizedBox(height: AppSpacing.md),
-            JobActionButtons(
-              accepted: accepted,
-              onAccept: onAccept,
-              onViewDetails: onViewDetails,
-            ),
-          ],
-        ),
       ),
     );
   }

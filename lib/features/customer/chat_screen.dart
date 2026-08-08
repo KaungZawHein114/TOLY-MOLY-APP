@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/modern_service_card.dart';
 import '../../core/widgets/mascot/mascot_message_card.dart';
 import '../../core/widgets/mascot/mascot_state.dart';
 import '../activity/activity_chat.dart';
@@ -15,27 +16,23 @@ import '../activity/activity_chat.dart';
 
 class _Convo {
   final String name;
-  final String emoji;
   final String jobCategory;
   final String snippet;
   final String time;
   final String statusLabel;
   final Color statusColor;
   final bool isUnread;
-  final bool isOnline;
   final bool isVerified;
   final VoidCallback onTap;
 
   const _Convo({
     required this.name,
-    required this.emoji,
     required this.jobCategory,
     required this.snippet,
     required this.time,
     required this.statusLabel,
     required this.statusColor,
     required this.isUnread,
-    required this.isOnline,
     required this.isVerified,
     required this.onTap,
   });
@@ -90,14 +87,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final allConvos = [
       _Convo(
         name: kDiscussionTaskerName,
-        emoji: kTaskerEmoji,
         jobCategory: 'ရေမော်တာ ပြုပြင်ခြင်း',
         snippet: chat1Snippet,
         time: 'ယခု',
         statusLabel: chat1Status,
         statusColor: chat1Color,
         isUnread: phase == TaskPhase.discussing,
-        isOnline: true,
         isVerified: true,
         onTap: () => openDiscussionChat(
           context,
@@ -108,14 +103,12 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       ),
       _Convo(
         name: kProgressTaskerName,
-        emoji: kTaskerEmoji,
         jobCategory: 'ရေပိုက်ပြုပြင်ခြင်း',
         snippet: 'အလုပ် အတည်ဖြစ်ပြီးပါပြီ။ ထွက်ခွာချိန် ရောက်ရင် အသိပေးပါမယ်။',
         time: 'မနက်က',
         statusLabel: 'ငွေပေးပြီး · လာရန် စောင့်ဆဲ',
         statusColor: AppColors.tealDark,
         isUnread: false,
-        isOnline: false,
         isVerified: true,
         onTap: () => openProgressChat(
           context,
@@ -351,57 +344,31 @@ class _ConversationCardState extends State<_ConversationCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = widget.convo;
-    final radius = BorderRadius.circular(AppRadius.lg);
-
     return FadeTransition(
       opacity: _fade,
       child: Semantics(
         button: true,
         label: '${c.name} — ${c.snippet}',
-        child: Material(
-          color: c.isUnread ? AppColors.purple100 : AppColors.lightSurface,
-          borderRadius: radius,
-          elevation: c.isUnread ? 2 : 1,
-          shadowColor: AppColors.shadowSm,
-          child: InkWell(
-            onTap: c.onTap,
-            borderRadius: radius,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // ── Avatar with online indicator ──────────────────────
-                  Stack(
-                    children: [
-                      CircleAvatar(
-                        radius: 28,
-                        backgroundColor: AppColors.purple100,
-                        child: Text(
-                          c.emoji,
-                          style: theme.textTheme.headlineSmall,
-                        ),
-                      ),
-                      if (c.isOnline)
-                        Positioned(
-                          right: 1,
-                          bottom: 1,
-                          child: Container(
-                            width: 13,
-                            height: 13,
-                            decoration: BoxDecoration(
-                              color: AppColors.success,
-                              shape: BoxShape.circle,
-                              border: Border.all(
-                                  color: c.isUnread
-                                      ? AppColors.purple100
-                                      : AppColors.lightSurface,
-                                  width: 2),
-                            ),
-                          ),
-                        ),
-                    ],
+        child: ModernServiceCard(
+          onTap: c.onTap,
+          padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: AppColors.purple100,
+                      borderRadius: BorderRadius.circular(AppRadius.md),
+                    ),
+                    child: const Icon(
+                      Icons.person_rounded,
+                      color: AppColors.purple700,
+                      size: AppSizes.iconLg,
+                    ),
                   ),
                   const SizedBox(width: AppSpacing.md),
 
@@ -525,9 +492,7 @@ class _ConversationCardState extends State<_ConversationCard>
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+            ],
           ),
         ),
       ),

@@ -28,6 +28,7 @@ class AppColors {
   static const Color purple500 = Color(0xFF5549A3);
   static const Color purple300 = Color(0xFF8B84D6);
   static const Color purple100 = Color(0xFFE7E4FF);
+  static const Color workIconSurface = Color(0xFFF2EEFF);
   static const Color blue500 = communityBlue;
   static const Color blue300 = Color(0xFFDCEAFF);
   static const Color blue100 = Color(0xFFF2F7FF);

@@ -27,7 +27,6 @@ const List<double> _ratingTiers = [4.0, 4.5, 4.8];
 // LOCAL UI STATE (Riverpod) — declared in this screen file, not a shared file.
 final workerSortProvider =
     StateProvider<WorkerSort>((ref) => WorkerSort.recommended);
-final availableOnlyProvider = StateProvider<bool>((ref) => false);
 final trustFilterProvider = StateProvider<WorkerTier?>((ref) => null);
 final ratingFilterProvider = StateProvider<double?>((ref) => null);
 final townshipFilterProvider = StateProvider<String?>((ref) => null);
@@ -80,7 +79,6 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
 
   void _clearAllFilters() {
     setState(() => _skill = null);
-    ref.read(availableOnlyProvider.notifier).state = false;
     ref.read(trustFilterProvider.notifier).state = null;
     ref.read(ratingFilterProvider.notifier).state = null;
     ref.read(townshipFilterProvider.notifier).state = null;
@@ -106,7 +104,6 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final sort = ref.watch(workerSortProvider);
-    final availableOnly = ref.watch(availableOnlyProvider);
     final trustFilter = ref.watch(trustFilterProvider);
     final ratingFilter = ref.watch(ratingFilterProvider);
     final townshipFilter = ref.watch(townshipFilterProvider);
@@ -122,7 +119,6 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
     // Apply filters.
     var list = source.where((w) {
       if (_skill != null && w.skill != _skill) return false;
-      if (availableOnly && !w.isAvailableNow) return false;
       // Trust filter is a minimum tier — picking "Tier N" shows tier N and up
       // (with 7 tiers, exact-match would leave most selections empty).
       if (trustFilter != null && w.currentTier < trustFilter.number) {
@@ -165,11 +161,6 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
         ActiveFilterChip(
           label: trustFilter.label,
           onRemove: () => ref.read(trustFilterProvider.notifier).state = null,
-        ),
-      if (availableOnly)
-        ActiveFilterChip(
-          label: AppStrings.exploreAvailableNow,
-          onRemove: () => ref.read(availableOnlyProvider.notifier).state = false,
         ),
       if (ratingFilter != null)
         ActiveFilterChip(
@@ -267,17 +258,6 @@ class _WorkerListScreenState extends ConsumerState<WorkerListScreen> {
                   for (final s in WorkerSort.values) FilterOption(value: s, label: _sortLabel(s)),
                 ],
                 onSelected: (v) => ref.read(workerSortProvider.notifier).state = v,
-              ),
-              FilterDropdown<bool>(
-                semanticLabel: AppStrings.exploreFilterAvailability,
-                displayText:
-                    availableOnly ? AppStrings.exploreAvailableNow : AppStrings.exploreFilterAvailability,
-                isActive: availableOnly,
-                options: [
-                  FilterOption(value: false, label: AppStrings.exploreAllWorkersOption),
-                  FilterOption(value: true, label: AppStrings.exploreAvailableNow),
-                ],
-                onSelected: (v) => ref.read(availableOnlyProvider.notifier).state = v,
               ),
               FilterDropdown<double?>(
                 semanticLabel: AppStrings.exploreFilterRating,

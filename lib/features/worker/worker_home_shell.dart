@@ -103,39 +103,37 @@ class WorkerHomeShell extends ConsumerWidget {
           TaskerProfileScreen(), // 4 — Profile
         ],
       ),
-      // 5 items → type MUST be fixed so the bar inherits our theme colors
-      // instead of falling back to the shifting animation.
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: index,
-        type: BottomNavigationBarType.fixed,
-        selectedItemColor: AppColors.purple700,
-        unselectedItemColor: AppColors.textSecondary,
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: index,
+        onDestinationSelected: (i) =>
+            ref.read(workerTabIndexProvider.notifier).state = i,
         backgroundColor: AppColors.lightSurface,
-        onTap: (i) => ref.read(workerTabIndexProvider.notifier).state = i,
-        items: const [
-          BottomNavigationBarItem(
+        indicatorColor: AppColors.purple100,
+        destinations: const [
+          NavigationDestination(
             icon: Icon(Icons.home_outlined),
-            activeIcon: Icon(Icons.home),
+            selectedIcon: Icon(Icons.home_rounded),
             label: AppStrings.homeTabLabel,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.work_outline),
-            activeIcon: Icon(Icons.work),
+          NavigationDestination(
+            icon: Icon(Icons.work_outline, color: AppColors.purple700),
+            selectedIcon: Icon(Icons.work, color: AppColors.purple700),
             label: AppStrings.jobsTabLabel,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.assignment_outlined),
-            activeIcon: Icon(Icons.assignment),
+          NavigationDestination(
+            icon: Icon(Icons.assignment_outlined, color: AppColors.purple700),
+            selectedIcon:
+                Icon(Icons.assignment_rounded, color: AppColors.purple700),
             label: AppStrings.activityTabLabel,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.star_border),
-            activeIcon: Icon(Icons.star),
+          NavigationDestination(
+            icon: Icon(Icons.card_giftcard_outlined),
+            selectedIcon: Icon(Icons.card_giftcard_rounded),
             label: AppStrings.rewardsTabLabel,
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            activeIcon: Icon(Icons.person),
+          NavigationDestination(
+            icon: Icon(Icons.person_outline_rounded),
+            selectedIcon: Icon(Icons.person_rounded),
             label: AppStrings.profileTabLabel,
           ),
         ],

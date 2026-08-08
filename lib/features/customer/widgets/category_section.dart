@@ -5,42 +5,7 @@ import '../../../core/constants/app_strings.dart';
 import '../../../core/data/demo_data.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
-
-/// A soft background/icon tint for a category, derived from its English
-/// [Category.name] (per CLAUDE.md's suggested category colors). Falls back
-/// to a neutral gray tint for any category outside the suggested set, so new
-/// demo categories never render unstyled.
-class _CategoryTint {
-  final Color background;
-  final Color foreground;
-  const _CategoryTint(this.background, this.foreground);
-}
-
-_CategoryTint _tintFor(String name) {
-  final n = name.toLowerCase();
-  if (n.contains('clean')) {
-    return _CategoryTint(AppColors.blue100, AppColors.indigo700);
-  }
-  if (n.contains('electric')) {
-    return _CategoryTint(
-        AppColors.orangeLight.withValues(alpha: 0.18), AppColors.orangeDark);
-  }
-  if (n.contains('plumb')) {
-    return _CategoryTint(
-        AppColors.tealLight.withValues(alpha: 0.22), AppColors.tealDark);
-  }
-  if (n.contains('ac ') || n.contains('ac repair') || n.contains('air')) {
-    return _CategoryTint(AppColors.purple100, AppColors.purple700);
-  }
-  if (n.contains('garden') ||
-      n.contains('carpentry') ||
-      n.contains('handyman') ||
-      n.contains('appliance')) {
-    return _CategoryTint(
-        AppColors.success.withValues(alpha: 0.14), AppColors.success);
-  }
-  return const _CategoryTint(Color(0xFFEDEFF2), AppColors.textSecondary);
-}
+import '../../../core/widgets/modern_service_card.dart';
 
 /// Grab-style service launcher for the customer Home dashboard: compact
 /// [CategoryCard]s in a 4-column grid on phones. Purely presentational —
@@ -178,7 +143,7 @@ class _CategorySectionState extends State<CategorySection> {
   }
 }
 
-/// A single compact service card: soft mint background, large emoji icon,
+/// A single compact service card: modern work icon,
 /// short label, ripple + press-scale feedback, and hover lift on desktop/web.
 class CategoryCard extends StatefulWidget {
   final Category category;
@@ -197,7 +162,6 @@ class _CategoryCardState extends State<CategoryCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final tint = _tintFor(widget.category.name);
     final radius = BorderRadius.circular(AppRadius.sm);
     final scale = _pressed ? 0.96 : (_hovered ? 1.02 : 1.0);
 
@@ -215,74 +179,37 @@ class _CategoryCardState extends State<CategoryCard> {
             scale: scale,
             duration: AppMotion.fast,
             curve: AppMotion.press,
-            child: AnimatedContainer(
-              duration: AppMotion.fast,
-              curve: AppMotion.press,
-              decoration: BoxDecoration(
-                color: tint.background,
+            child: ModernServiceCard(
+              padding: const EdgeInsets.all(AppSpacing.xs),
+              child: InkWell(
                 borderRadius: radius,
-                border: Border.all(
-                  color: tint.foreground.withValues(alpha: 0.08),
-                ),
-                boxShadow: _hovered
-                    ? [
-                        BoxShadow(
-                          color: AppColors.shadowSm,
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  borderRadius: radius,
-                  onTap: () {
-                    HapticFeedback.selectionClick();
-                    widget.onTap();
-                  },
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppSpacing.xs),
-                    // Safety net for small grid cells (small phones, large text
-                    // scale): scale the whole card body down instead of
-                    // overflowing, matching the pattern used by SkillTile and
-                    // OnboardingSelectionCard.
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 42,
-                            height: 42,
-                            alignment: Alignment.center,
-                            decoration: BoxDecoration(
-                              color: tint.foreground.withValues(alpha: 0.10),
-                              borderRadius: BorderRadius.circular(AppRadius.sm),
-                            ),
-                            child: Text(
-                              widget.category.icon,
-                              style: const TextStyle(fontSize: 26),
-                            ),
-                          ),
-                          const SizedBox(height: AppSpacing.xs),
-                          SizedBox(
-                            width: 72,
-                            child: Text(
-                              widget.category.burmese,
-                              textAlign: TextAlign.center,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: theme.textTheme.labelSmall?.copyWith(
-                                fontWeight: FontWeight.w800,
-                                color: AppColors.textPrimary,
-                              ),
-                            ),
-                          ),
-                        ],
+                onTap: () {
+                  HapticFeedback.selectionClick();
+                  widget.onTap();
+                },
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ModernIconBox(
+                        icon: workIconForLabel(widget.category.name),
                       ),
-                    ),
+                      const SizedBox(height: AppSpacing.xs),
+                      SizedBox(
+                        width: 72,
+                        child: Text(
+                          widget.category.burmese,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: theme.textTheme.labelSmall?.copyWith(
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),

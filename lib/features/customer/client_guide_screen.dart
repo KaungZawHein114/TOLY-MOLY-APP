@@ -6,6 +6,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/routing/app_router.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/modern_service_card.dart';
 import 'customer_home_shell.dart';
 
 class ClientGuideScreen extends StatelessWidget {
@@ -187,38 +188,13 @@ class _GuideSectionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: AppColors.lightSurface,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: AppColors.onboardingDivider),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowSm,
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.indigo100,
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(
-                  section.icon,
-                  color: AppColors.indigo700,
-                  size: 26,
-                ),
-              ),
+              ModernIconBox(icon: section.icon),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Text(
@@ -291,13 +267,14 @@ class _GuideBottomNavigation extends ConsumerWidget {
           label: AppStrings.homeTabLabel,
         ),
         NavigationDestination(
-          icon: Icon(Icons.work_outline),
-          selectedIcon: Icon(Icons.work),
+          icon: Icon(Icons.work_outline, color: AppColors.purple700),
+          selectedIcon: Icon(Icons.work, color: AppColors.purple700),
           label: AppStrings.jobsTabLabel,
         ),
         NavigationDestination(
-          icon: Icon(Icons.assignment_outlined),
-          selectedIcon: Icon(Icons.assignment_rounded),
+          icon: Icon(Icons.assignment_outlined, color: AppColors.purple700),
+          selectedIcon:
+              Icon(Icons.assignment_rounded, color: AppColors.purple700),
           label: AppStrings.activityTabLabel,
         ),
         NavigationDestination(

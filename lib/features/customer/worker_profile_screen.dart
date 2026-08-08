@@ -60,8 +60,11 @@ class WorkerProfileScreen extends ConsumerWidget {
                           shape: BoxShape.circle,
                         ),
                         alignment: Alignment.center,
-                        child: Text(worker.emoji,
-                            style: const TextStyle(fontSize: 48)),
+                        child: const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.purple700,
+                          size: 52,
+                        ),
                       ),
                       const SizedBox(height: AppSpacing.sm + 2),
                       Text(
@@ -112,8 +115,6 @@ class WorkerProfileScreen extends ConsumerWidget {
                     ],
                   ),
                 ),
-                _AvailabilityBanner(available: worker.isAvailableNow),
-                const SizedBox(height: AppSpacing.xl),
                 AppSectionCard(
                   title: "အကြောင်း",
                   icon: Icons.info_outline,
@@ -166,35 +167,6 @@ class _Stat extends StatelessWidget {
           Text(label,
               style: theme.textTheme.bodySmall
                   ?.copyWith(color: theme.hintColor)),
-        ],
-      ),
-    );
-  }
-}
-
-class _AvailabilityBanner extends StatelessWidget {
-  final bool available;
-  const _AvailabilityBanner({required this.available});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final color = available ? AppColors.success : AppColors.orange;
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.md + 2),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(AppRadius.md - 2),
-      ),
-      child: Row(
-        children: [
-          Icon(available ? Icons.check_circle : Icons.schedule, color: color),
-          const SizedBox(width: AppSpacing.sm + 2),
-          Text(
-            available ? AppStrings.availableNowLabel : AppStrings.availableLaterLabel,
-            style: theme.textTheme.bodyMedium
-                ?.copyWith(color: color, fontWeight: FontWeight.w700),
-          ),
         ],
       ),
     );

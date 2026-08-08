@@ -144,7 +144,7 @@ class _DetailRow extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, size: AppSizes.iconMd, color: AppColors.purple500),
+          Icon(icon, size: AppSizes.iconMd, color: AppColors.purple700),
           const SizedBox(width: AppSpacing.md),
           Flexible(
             child: Text(

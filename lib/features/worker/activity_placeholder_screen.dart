@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/modern_service_card.dart';
 import '../activity/activity_chat.dart';
 import 'task_execution_screen.dart';
 
@@ -189,7 +190,6 @@ class _MessagesView extends ConsumerWidget {
     final convos = [
       _ConvoData(
         name: _discussionClientName,
-        emoji: _clientEmoji,
         jobCategory: 'ရေမော်တာ ပြုပြင်ခြင်း',
         statusLabel: discussionEnded ? 'ဆွေးနွေးပြီးဆုံး' : 'ဆွေးနွေးဆဲ',
         statusColor: discussionEnded ? AppColors.success : AppColors.indigo500,
@@ -198,7 +198,6 @@ class _MessagesView extends ConsumerWidget {
             : 'မေးခွန်း ၃ ခု ပို့ထားပြီး အလုပ်ရှင်ရဲ့ အဖြေကို စောင့်နေပါသည်။',
         time: 'ယခု',
         isUnread: !discussionEnded,
-        isOnline: true,
         onTap: () => openDiscussionChat(
           context,
           role: ActivityRole.tasker,
@@ -208,14 +207,12 @@ class _MessagesView extends ConsumerWidget {
       ),
       _ConvoData(
         name: _progressClientName,
-        emoji: _clientEmoji,
         jobCategory: 'ရေပိုက်ပြုပြင်ခြင်း',
         statusLabel: 'အလုပ်ဆောင်ရွက်ဆဲ',
         statusColor: AppColors.tealDark,
         snippet: 'အလုပ် အတည်ပြုပြီးပါပြီ။ အဆင်သင့်ဖြစ်ရင် အသိပေးပါမယ်။',
         time: 'မနက်က',
         isUnread: false,
-        isOnline: false,
         onTap: () => openProgressChat(
           context,
           role: ActivityRole.tasker,
@@ -270,26 +267,22 @@ class _MessagesView extends ConsumerWidget {
 
 class _ConvoData {
   final String name;
-  final String emoji;
   final String jobCategory;
   final String statusLabel;
   final Color statusColor;
   final String snippet;
   final String time;
   final bool isUnread;
-  final bool isOnline;
   final VoidCallback onTap;
 
   const _ConvoData({
     required this.name,
-    required this.emoji,
     required this.jobCategory,
     required this.statusLabel,
     required this.statusColor,
     required this.snippet,
     required this.time,
     required this.isUnread,
-    required this.isOnline,
     required this.onTap,
   });
 }
@@ -304,54 +297,29 @@ class _WorkerConvoCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final c = convo;
-    final radius = BorderRadius.circular(AppRadius.lg);
-
     return Semantics(
       button: true,
       label: '${c.name} — ${c.snippet}',
-      child: Material(
-        color: c.isUnread ? AppColors.purple100 : AppColors.lightSurface,
-        borderRadius: radius,
-        elevation: c.isUnread ? 2 : 1,
-        shadowColor: AppColors.shadowSm,
-        child: InkWell(
-          onTap: c.onTap,
-          borderRadius: radius,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.lg, vertical: AppSpacing.md),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                // Avatar + online dot
-                Stack(
-                  children: [
-                    CircleAvatar(
-                      radius: 28,
-                      backgroundColor: AppColors.purple100,
-                      child:
-                          Text(c.emoji, style: theme.textTheme.headlineSmall),
-                    ),
-                    if (c.isOnline)
-                      Positioned(
-                        right: 1,
-                        bottom: 1,
-                        child: Container(
-                          width: 13,
-                          height: 13,
-                          decoration: BoxDecoration(
-                            color: AppColors.success,
-                            shape: BoxShape.circle,
-                            border: Border.all(
-                              color: c.isUnread
-                                  ? AppColors.purple100
-                                  : AppColors.lightSurface,
-                              width: 2,
-                            ),
-                          ),
-                        ),
-                      ),
-                  ],
+      child: ModernServiceCard(
+        onTap: c.onTap,
+        padding: const EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg, vertical: AppSpacing.md),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+                Container(
+                  width: 48,
+                  height: 48,
+                  alignment: Alignment.center,
+                  decoration: BoxDecoration(
+                    color: AppColors.purple100,
+                    borderRadius: BorderRadius.circular(AppRadius.md),
+                  ),
+                  child: const Icon(
+                    Icons.person_rounded,
+                    color: AppColors.purple700,
+                    size: AppSizes.iconLg,
+                  ),
                 ),
                 const SizedBox(width: AppSpacing.md),
 
@@ -460,9 +428,7 @@ class _WorkerConvoCard extends StatelessWidget {
                     ],
                   ),
                 ),
-              ],
-            ),
-          ),
+          ],
         ),
       ),
     );

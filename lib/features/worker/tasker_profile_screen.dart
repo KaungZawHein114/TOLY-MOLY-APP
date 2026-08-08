@@ -470,12 +470,16 @@ class BecomeClientCard extends StatelessWidget {
                         width: 48,
                         height: 48,
                         decoration: BoxDecoration(
-                          color: AppColors.onBrand.withValues(alpha: 0.16),
+                          color: AppColors.workIconSurface,
                           borderRadius: BorderRadius.circular(AppRadius.md),
+                          border: Border.all(
+                            color:
+                                AppColors.purple700.withValues(alpha: 0.08),
+                          ),
                         ),
                         child: const Icon(
                           Icons.assignment_outlined,
-                          color: AppColors.onBrand,
+                          color: AppColors.purple700,
                           size: AppSizes.iconLg,
                         ),
                       ),

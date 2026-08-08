@@ -534,12 +534,16 @@ class _ShortlistCard extends StatelessWidget {
               Container(
                 width: AppSizes.avatar,
                 height: AppSizes.avatar,
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   color: AppColors.purple100,
-                  shape: BoxShape.circle,
+                  borderRadius: BorderRadius.circular(AppRadius.md),
                 ),
                 alignment: Alignment.center,
-                child: Text(worker.emoji, style: const TextStyle(fontSize: 26)),
+                child: const Icon(
+                  Icons.person_rounded,
+                  color: AppColors.purple700,
+                  size: AppSizes.iconLg,
+                ),
               ),
               const SizedBox(width: AppSpacing.md),
               Expanded(

@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-// For ScrollCacheExtent, which material.dart does not re-export.
-import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -403,7 +401,7 @@ class _DiscussionChatPageState extends ConsumerState<DiscussionChatPage> {
                 reverse: true,
                 // Keeps older bubbles built so "jump to the question above"
                 // always has somewhere to jump to. A discussion is short.
-                scrollCacheExtent: const ScrollCacheExtent.pixels(2000),
+                cacheExtent: 2000,
                 padding: const EdgeInsets.fromLTRB(
                     AppSpacing.lg, AppSpacing.lg, AppSpacing.lg, AppSpacing.md),
                 itemCount: messages.length,
@@ -524,7 +522,12 @@ class _ChatHeader extends StatelessWidget {
               ),
               CircleAvatar(
                 backgroundColor: AppColors.onBrand,
-                child: Text(emoji, style: theme.textTheme.titleMedium),
+                child: emoji == kTaskerEmoji
+                    ? const Icon(
+                        Icons.person_rounded,
+                        color: AppColors.purple700,
+                      )
+                    : Text(emoji, style: theme.textTheme.titleMedium),
               ),
               const SizedBox(width: AppSpacing.sm),
               Expanded(

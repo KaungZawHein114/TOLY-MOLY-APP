@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../core/constants/app_strings.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/widgets/modern_service_card.dart';
 
 /// Pinned card shown on the client's Pending tab when the worker has checked
 /// in and is waiting for the client to confirm arrival.
@@ -27,8 +28,6 @@ class CheckinConfirmationCard extends StatelessWidget {
     return _ConfirmationCard(
       icon: Icons.location_on_rounded,
       iconColor: AppColors.indigo700,
-      surfaceColor: AppColors.indigo100,
-      borderColor: AppColors.indigo500,
       title: AppStrings.checkinCardTitle,
       body: "$workerName ${AppStrings.checkinCardBody}",
       primaryLabel: AppStrings.checkinAcceptCta,
@@ -63,8 +62,6 @@ class CheckoutConfirmationCard extends StatelessWidget {
     return _ConfirmationCard(
       icon: Icons.task_alt_rounded,
       iconColor: AppColors.success,
-      surfaceColor: AppColors.success.withValues(alpha: 0.08),
-      borderColor: AppColors.success.withValues(alpha: 0.35),
       title: AppStrings.checkoutCardTitle,
       body: "$workerName ${AppStrings.checkoutCardBody}",
       primaryLabel: AppStrings.checkoutConfirmCta,
@@ -83,8 +80,6 @@ class CheckoutConfirmationCard extends StatelessWidget {
 class _ConfirmationCard extends StatelessWidget {
   final IconData icon;
   final Color iconColor;
-  final Color surfaceColor;
-  final Color borderColor;
   final String title;
   final String body;
   final String primaryLabel;
@@ -96,8 +91,6 @@ class _ConfirmationCard extends StatelessWidget {
   const _ConfirmationCard({
     required this.icon,
     required this.iconColor,
-    required this.surfaceColor,
-    required this.borderColor,
     required this.title,
     required this.body,
     required this.primaryLabel,
@@ -110,27 +103,14 @@ class _ConfirmationCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      decoration: BoxDecoration(
-        color: surfaceColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        border: Border.all(color: borderColor, width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: iconColor.withValues(alpha: 0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(AppSpacing.lg),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Title row
           Row(
             children: [
-              Icon(icon, color: iconColor, size: 22),
+              ModernIconBox(icon: icon),
               const SizedBox(width: AppSpacing.sm),
               Expanded(
                 child: Text(

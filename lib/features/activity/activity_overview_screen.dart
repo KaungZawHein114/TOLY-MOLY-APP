@@ -4,6 +4,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/modern_service_card.dart';
 
 enum ActivityOverviewRole { client, tasker }
 
@@ -99,7 +100,8 @@ class ActivityOverviewScreen extends StatelessWidget {
                           borderRadius: BorderRadius.circular(AppRadius.md),
                         ),
                         indicatorSize: TabBarIndicatorSize.tab,
-                        dividerColor: AppColors.lightSurface.withValues(alpha: 0),
+                        dividerColor:
+                            AppColors.lightSurface.withValues(alpha: 0),
                         labelColor: AppColors.purple700,
                         unselectedLabelColor: AppColors.onBrandMuted,
                         labelStyle: theme.textTheme.labelMedium?.copyWith(
@@ -241,34 +243,14 @@ class _ActivityCard extends StatelessWidget {
     final theme = Theme.of(context);
     final color = _statusColor(item.status);
 
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        color: theme.cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.shadowSm,
-            blurRadius: 12,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(AppRadius.md),
-                ),
-                child: Icon(_statusIcon(item.status), color: color),
-              ),
+              ModernIconBox(icon: _statusIcon(item.status)),
               const SizedBox(width: AppSpacing.md),
               Expanded(
                 child: Column(

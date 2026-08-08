@@ -92,13 +92,15 @@ class CustomerHomeShell extends ConsumerWidget {
             label: AppStrings.homeTabLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.work_outline),
-            selectedIcon: Icon(Icons.work),
+            icon: Icon(Icons.work_outline, color: AppColors.purple700),
+            selectedIcon: Icon(Icons.work, color: AppColors.purple700),
             label: AppStrings.jobsTabLabel,
           ),
           NavigationDestination(
-            icon: Icon(Icons.assignment_outlined),
-            selectedIcon: Icon(Icons.assignment_rounded),
+            icon:
+                Icon(Icons.assignment_outlined, color: AppColors.purple700),
+            selectedIcon:
+                Icon(Icons.assignment_rounded, color: AppColors.purple700),
             label: AppStrings.activityTabLabel,
           ),
           NavigationDestination(

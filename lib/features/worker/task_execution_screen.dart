@@ -7,6 +7,7 @@ import '../../core/constants/app_strings.dart';
 import '../../core/data/demo_data.dart';
 import '../../core/theme/app_colors.dart';
 import '../../core/theme/app_spacing.dart';
+import '../../core/widgets/modern_service_card.dart';
 import '../../core/widgets/large_button.dart';
 import '../safety/emergency_bottom_sheet.dart';
 import 'task_execution_state.dart';
@@ -102,7 +103,9 @@ class TaskExecutionScreen extends ConsumerWidget {
       // Client confirmed checkout → release escrow into the worker's wallet.
       // This drives the haptic + "Money Received" toast/notification.
       if (nextStatus == ExecutionStatus.completed) {
-        ref.read(walletProvider.notifier).simulateDigitalCheckout(booking.totalMmk.toDouble());
+        ref
+            .read(walletProvider.notifier)
+            .simulateDigitalCheckout(booking.totalMmk.toDouble());
       }
     });
   }
@@ -163,7 +166,8 @@ class TaskExecutionScreen extends ConsumerWidget {
           'SOS',
           style: TextStyle(fontWeight: FontWeight.w900, letterSpacing: 1),
         ),
-        onPressed: () => showEmergencyBottomSheet(context, location: booking.township),
+        onPressed: () =>
+            showEmergencyBottomSheet(context, location: booking.township),
       ),
       body: content,
     );
@@ -177,45 +181,42 @@ class _TaskSummaryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Container(
-      padding: const EdgeInsets.all(AppSpacing.lg),
-      decoration: BoxDecoration(
-        gradient: AppColors.purpleGradient,
-        borderRadius: BorderRadius.circular(AppRadius.lg),
-      ),
+    return ModernServiceCard(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          const ModernIconBox(icon: Icons.work_outline_rounded),
+          const SizedBox(height: AppSpacing.md),
           Text(AppStrings.executionTodaysTask,
               style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.onBrandMuted)),
+                  ?.copyWith(color: AppColors.textSecondary)),
           const SizedBox(height: AppSpacing.xs),
           Text(booking.skill,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
               style: theme.textTheme.headlineSmall
-                  ?.copyWith(color: AppColors.onBrand, fontSize: 22)),
+                  ?.copyWith(color: AppColors.textPrimary, fontSize: 22)),
           const SizedBox(height: AppSpacing.sm),
           Row(
             children: [
-              Icon(Icons.access_time, size: 16, color: AppColors.onBrandMuted),
+              Icon(Icons.access_time, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(booking.timeSlot,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.onBrand)),
+                        ?.copyWith(color: AppColors.textSecondary)),
               ),
               const SizedBox(width: AppSpacing.md),
-              Icon(Icons.location_on, size: 16, color: AppColors.onBrandMuted),
+              Icon(Icons.location_on, size: 16, color: AppColors.textSecondary),
               const SizedBox(width: AppSpacing.xs),
               Flexible(
                 child: Text(booking.township,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.bodyMedium
-                        ?.copyWith(color: AppColors.onBrand)),
+                        ?.copyWith(color: AppColors.textSecondary)),
               ),
             ],
           ),
