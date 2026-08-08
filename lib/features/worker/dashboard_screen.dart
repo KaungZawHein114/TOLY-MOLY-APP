@@ -341,172 +341,198 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
     return Scaffold(
       body: SafeArea(
         child: ListView(
-          padding: const EdgeInsets.all(AppSpacing.lg),
+          padding: EdgeInsets.zero,
           children: [
             const _WorkerHomeHeader(),
-            const SizedBox(height: AppSpacing.lg),
-            Row(
-              children: [
-                Expanded(
-                  child: _StatCard(
-                    emoji: "💰",
-                    value: monthlyIncome.toString(),
-                    unit: AppStrings.currency,
-                    label: AppStrings.dashboardMonthlyIncome,
-                  ),
-                ),
-                const SizedBox(width: AppSpacing.md),
-                Expanded(
-                  child: _StatCard(
-                    emoji: "✅",
-                    value: "$completedJobsCount",
-                    unit: "အလုပ်",
-                    label: AppStrings.dashboardCompletedJobs,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: AppSpacing.xxl),
-            Text(AppStrings.jobBoardTitle, style: theme.textTheme.titleLarge),
-            const SizedBox(height: AppSpacing.sm),
-            JobSearchBar(
-              controller: _searchController,
-              focusNode: jobSearchFocusNode,
-              onChanged: (v) => ref.read(jobSearchProvider.notifier).state = v,
-              onFilterTap: _scrollToFilters,
-            ),
-            const SizedBox(height: AppSpacing.md),
-            Container(
-              key: _filterBarKey,
-              child: JobFilterBar(
-                dropdowns: [
-                  FilterDropdown<String?>(
-                    semanticLabel: AppStrings.jobBoardCategoryLabel,
-                    displayText:
-                        categoryFilter ?? AppStrings.jobBoardCategoryAll,
-                    isActive: categoryFilter != null,
-                    options: [
-                      FilterOption(
-                          value: null, label: AppStrings.jobBoardCategoryAll),
-                      for (final c in categoryOptions)
-                        FilterOption(value: c, label: c),
+            Padding(
+              padding: const EdgeInsets.all(AppSpacing.lg),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.account_balance_wallet_outlined,
+                          iconColor: AppColors.purple700,
+                          iconBackground: AppColors.blue500,
+                          cardBackground: AppColors.purple700,
+                          valueColor: AppColors.onBrand,
+                          labelColor: AppColors.onBrandMuted,
+                          value: monthlyIncome.toString(),
+                          unit: AppStrings.currency,
+                          label: AppStrings.dashboardMonthlyIncome,
+                        ),
+                      ),
+                      const SizedBox(width: AppSpacing.md),
+                      Expanded(
+                        child: _StatCard(
+                          icon: Icons.task_alt_rounded,
+                          iconColor: AppColors.purple700,
+                          iconBackground: AppColors.workIconSurface,
+                          cardBackground: AppColors.blue500,
+                          valueColor: AppColors.textPrimary,
+                          labelColor: AppColors.textSecondary,
+                          value: "$completedJobsCount",
+                          unit: "အလုပ်",
+                          label: AppStrings.dashboardCompletedJobs,
+                        ),
+                      ),
                     ],
-                    onSelected: (v) =>
-                        ref.read(jobCategoryFilterProvider.notifier).state = v,
                   ),
-                  FilterDropdown<double?>(
-                    semanticLabel: AppStrings.jobBoardDistanceLabel,
-                    displayText: distanceKmFilter == null
-                        ? AppStrings.jobBoardDistanceNearby
-                        : "${distanceKmFilter.toStringAsFixed(0)} km",
-                    isActive: distanceKmFilter != null,
-                    options: [
-                      FilterOption(
-                          value: null,
-                          label: AppStrings.jobBoardDistanceNearby),
-                      for (final km in _distanceKmOptions)
-                        FilterOption(
-                            value: km, label: "${km.toStringAsFixed(0)} km"),
-                    ],
-                    onSelected: (v) => ref
-                        .read(jobDistanceFilterKmProvider.notifier)
-                        .state = v,
+                  const SizedBox(height: AppSpacing.xxl),
+                  Text(AppStrings.jobBoardTitle,
+                      style: theme.textTheme.titleLarge),
+                  const SizedBox(height: AppSpacing.sm),
+                  JobSearchBar(
+                    controller: _searchController,
+                    focusNode: jobSearchFocusNode,
+                    onChanged: (v) =>
+                        ref.read(jobSearchProvider.notifier).state = v,
+                    onFilterTap: _scrollToFilters,
                   ),
-                  FilterDropdown<_JobSort>(
-                    semanticLabel: AppStrings.jobBoardSortLabel,
-                    displayText: _jobSortLabel(sort),
-                    isActive: sort != _JobSort.recommended,
-                    options: [
-                      for (final s in _JobSort.values)
-                        FilterOption(value: s, label: _jobSortLabel(s)),
-                    ],
-                    onSelected: (v) =>
-                        ref.read(jobSortProvider.notifier).state = v,
+                  const SizedBox(height: AppSpacing.md),
+                  Container(
+                    key: _filterBarKey,
+                    child: JobFilterBar(
+                      dropdowns: [
+                        FilterDropdown<String?>(
+                          semanticLabel: AppStrings.jobBoardCategoryLabel,
+                          displayText:
+                              categoryFilter ?? AppStrings.jobBoardCategoryAll,
+                          isActive: categoryFilter != null,
+                          options: [
+                            FilterOption(
+                                value: null,
+                                label: AppStrings.jobBoardCategoryAll),
+                            for (final c in categoryOptions)
+                              FilterOption(value: c, label: c),
+                          ],
+                          onSelected: (v) => ref
+                              .read(jobCategoryFilterProvider.notifier)
+                              .state = v,
+                        ),
+                        FilterDropdown<double?>(
+                          semanticLabel: AppStrings.jobBoardDistanceLabel,
+                          displayText: distanceKmFilter == null
+                              ? AppStrings.jobBoardDistanceNearby
+                              : "${distanceKmFilter.toStringAsFixed(0)} km",
+                          isActive: distanceKmFilter != null,
+                          options: [
+                            FilterOption(
+                                value: null,
+                                label: AppStrings.jobBoardDistanceNearby),
+                            for (final km in _distanceKmOptions)
+                              FilterOption(
+                                  value: km,
+                                  label: "${km.toStringAsFixed(0)} km"),
+                          ],
+                          onSelected: (v) => ref
+                              .read(jobDistanceFilterKmProvider.notifier)
+                              .state = v,
+                        ),
+                        FilterDropdown<_JobSort>(
+                          semanticLabel: AppStrings.jobBoardSortLabel,
+                          displayText: _jobSortLabel(sort),
+                          isActive: sort != _JobSort.recommended,
+                          options: [
+                            for (final s in _JobSort.values)
+                              FilterOption(value: s, label: _jobSortLabel(s)),
+                          ],
+                          onSelected: (v) =>
+                              ref.read(jobSortProvider.notifier).state = v,
+                        ),
+                        FilterDropdown<_BudgetFilter>(
+                          semanticLabel: AppStrings.jobBoardBudgetLabel,
+                          displayText: budgetFilter.label,
+                          isActive: budgetFilter != _BudgetFilter.any,
+                          options: [
+                            for (final b in _BudgetFilter.values)
+                              FilterOption(value: b, label: b.label),
+                          ],
+                          onSelected: (v) => ref
+                              .read(jobBudgetFilterProvider.notifier)
+                              .state = v,
+                        ),
+                        FilterDropdown<String?>(
+                          semanticLabel: AppStrings.jobBoardTownshipLabel,
+                          displayText: townshipFilter ??
+                              AppStrings.jobBoardTownshipLabel,
+                          isActive: townshipFilter != null,
+                          options: [
+                            FilterOption(
+                                value: null,
+                                label:
+                                    "${AppStrings.jobBoardCategoryAll} ${AppStrings.jobBoardTownshipLabel}"),
+                            for (final t in _townships)
+                              FilterOption(value: t, label: t),
+                          ],
+                          onSelected: (v) => ref
+                              .read(townshipFilterProvider.notifier)
+                              .state = v,
+                        ),
+                        FilterToggleChip(
+                          label: AppStrings.jobBoardUrgentOnlyChip,
+                          selected: urgentOnly,
+                          onTap: () => ref
+                              .read(urgentOnlyJobsProvider.notifier)
+                              .state = !urgentOnly,
+                        ),
+                      ],
+                      activeFilterChips: activeChips,
+                      onClearAll: activeChips.isEmpty ? null : clearAllFilters,
+                    ),
                   ),
-                  FilterDropdown<_BudgetFilter>(
-                    semanticLabel: AppStrings.jobBoardBudgetLabel,
-                    displayText: budgetFilter.label,
-                    isActive: budgetFilter != _BudgetFilter.any,
-                    options: [
-                      for (final b in _BudgetFilter.values)
-                        FilterOption(value: b, label: b.label),
-                    ],
-                    onSelected: (v) =>
-                        ref.read(jobBudgetFilterProvider.notifier).state = v,
-                  ),
-                  FilterDropdown<String?>(
-                    semanticLabel: AppStrings.jobBoardTownshipLabel,
-                    displayText:
-                        townshipFilter ?? AppStrings.jobBoardTownshipLabel,
-                    isActive: townshipFilter != null,
-                    options: [
-                      FilterOption(
-                          value: null,
-                          label:
-                              "${AppStrings.jobBoardCategoryAll} ${AppStrings.jobBoardTownshipLabel}"),
-                      for (final t in _townships)
-                        FilterOption(value: t, label: t),
-                    ],
-                    onSelected: (v) =>
-                        ref.read(townshipFilterProvider.notifier).state = v,
-                  ),
-                  FilterToggleChip(
-                    label: AppStrings.jobBoardUrgentOnlyChip,
-                    selected: urgentOnly,
-                    onTap: () => ref
-                        .read(urgentOnlyJobsProvider.notifier)
-                        .state = !urgentOnly,
-                  ),
+                  const SizedBox(height: AppSpacing.md),
+                  if (eligible.isEmpty)
+                    Padding(
+                      padding:
+                          const EdgeInsets.symmetric(vertical: AppSpacing.xl),
+                      child: Center(
+                        child: Text(AppStrings.dashboardNoJobsFound,
+                            style: theme.textTheme.bodyMedium
+                                ?.copyWith(color: theme.hintColor)),
+                      ),
+                    )
+                  else
+                    ...List.generate(eligible.length, (i) {
+                      final j = eligible[i];
+                      return TweenAnimationBuilder<double>(
+                        tween: Tween(begin: 0, end: 1),
+                        duration: AppMotion.medium,
+                        curve: AppMotion.enter,
+                        builder: (context, t, child) => Opacity(
+                          opacity: t,
+                          child: Transform.translate(
+                              offset: Offset(0, (1 - t) * 12), child: child),
+                        ),
+                        child: JobCard(
+                          job: j,
+                          onAccept: () {
+                            ref.read(jobsStateProvider.notifier).state = [
+                              for (final job in ref.read(jobsStateProvider))
+                                if (job.id == j.id)
+                                  job.copyWith(
+                                      status: AppStrings
+                                          .dashboardInterestReceived)
+                                else
+                                  job,
+                            ];
+                            ref.read(workerInterestsProvider.notifier).state = [
+                              ...ref.read(workerInterestsProvider),
+                              WorkerInterest(
+                                  workerId: worker.id,
+                                  jobId: j.id,
+                                  createdAt: DateTime.now()),
+                            ];
+                          },
+                          onViewDetails: () => _showJobDetails(j),
+                        ),
+                      );
+                    }),
                 ],
-                activeFilterChips: activeChips,
-                onClearAll: activeChips.isEmpty ? null : clearAllFilters,
               ),
             ),
-            const SizedBox(height: AppSpacing.md),
-            if (eligible.isEmpty)
-              Padding(
-                padding: const EdgeInsets.symmetric(vertical: AppSpacing.xl),
-                child: Center(
-                  child: Text(AppStrings.dashboardNoJobsFound,
-                      style: theme.textTheme.bodyMedium
-                          ?.copyWith(color: theme.hintColor)),
-                ),
-              )
-            else
-              ...List.generate(eligible.length, (i) {
-                final j = eligible[i];
-                return TweenAnimationBuilder<double>(
-                  tween: Tween(begin: 0, end: 1),
-                  duration: AppMotion.medium,
-                  curve: AppMotion.enter,
-                  builder: (context, t, child) => Opacity(
-                    opacity: t,
-                    child: Transform.translate(
-                        offset: Offset(0, (1 - t) * 12), child: child),
-                  ),
-                  child: JobCard(
-                    job: j,
-                    onAccept: () {
-                      ref.read(jobsStateProvider.notifier).state = [
-                        for (final job in ref.read(jobsStateProvider))
-                          if (job.id == j.id)
-                            job.copyWith(
-                                status: AppStrings.dashboardInterestReceived)
-                          else
-                            job,
-                      ];
-                      ref.read(workerInterestsProvider.notifier).state = [
-                        ...ref.read(workerInterestsProvider),
-                        WorkerInterest(
-                            workerId: worker.id,
-                            jobId: j.id,
-                            createdAt: DateTime.now()),
-                      ];
-                    },
-                    onViewDetails: () => _showJobDetails(j),
-                  ),
-                );
-              }),
           ],
         ),
       ),
@@ -531,37 +557,52 @@ class _WorkerHomeHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
     final name = ref.watch(_workerNameProvider).name;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        Image.asset("assets/logo_circle.png", width: 40, height: 40),
-        const SizedBox(width: AppSpacing.sm),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (name != null)
+    return Container(
+      padding: const EdgeInsets.fromLTRB(
+          AppSpacing.lg, AppSpacing.md, AppSpacing.lg, AppSpacing.lg),
+      decoration: const BoxDecoration(
+        color: AppColors.purple700,
+        borderRadius: BorderRadius.vertical(
+          bottom: Radius.circular(AppRadius.xl),
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Image.asset("assets/logo_circle.png", width: 40, height: 40),
+          const SizedBox(width: AppSpacing.sm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
                 Text(
                   AppStrings.workerHomeGreeting,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: theme.textTheme.bodySmall?.copyWith(
-                      color: AppColors.textSecondary,
-                      fontWeight: FontWeight.w600),
+                    color: AppColors.onBrand.withValues(alpha: 0.85),
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
-              Text(
-                name ?? AppStrings.workerHomeGreeting,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: theme.textTheme.titleLarge
-                    ?.copyWith(fontWeight: FontWeight.w800),
-              ),
-            ],
+                Text(
+                  name ?? AppStrings.workerHomeGreeting,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: theme.textTheme.titleLarge?.copyWith(
+                    color: AppColors.onBrand,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        const _NotificationBell(),
-      ],
+          const _NotificationBell(
+            iconColor: AppColors.onBrand,
+            badgeBorderColor: AppColors.purple700,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -570,7 +611,13 @@ class _WorkerHomeHeader extends ConsumerWidget {
 /// opens the notification history and marks everything read (clearing the
 /// badge).
 class _NotificationBell extends ConsumerWidget {
-  const _NotificationBell();
+  final Color iconColor;
+  final Color badgeBorderColor;
+
+  const _NotificationBell({
+    this.iconColor = AppColors.purple700,
+    this.badgeBorderColor = AppColors.lightSurface,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -586,8 +633,7 @@ class _NotificationBell extends ConsumerWidget {
         icon: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.notifications_outlined,
-                color: AppColors.purple700),
+            Icon(Icons.notifications_outlined, color: iconColor),
             if (unread > 0)
               Positioned(
                 right: -3,
@@ -599,8 +645,7 @@ class _NotificationBell extends ConsumerWidget {
                   decoration: BoxDecoration(
                     color: AppColors.error,
                     shape: BoxShape.circle,
-                    border:
-                        Border.all(color: AppColors.lightSurface, width: 1.5),
+                    border: Border.all(color: badgeBorderColor, width: 1.5),
                   ),
                   alignment: Alignment.center,
                   child: Text(
@@ -741,12 +786,22 @@ class _NotificationTile extends StatelessWidget {
 const List<String> _townships = ["လှိုင်", "ကမာရွတ်", "မရမ်းကုန်း", "အင်းစိန်"];
 
 class _StatCard extends StatelessWidget {
-  final String emoji;
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
+  final Color cardBackground;
+  final Color valueColor;
+  final Color labelColor;
   final String value;
   final String unit;
   final String label;
   const _StatCard({
-    required this.emoji,
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    required this.cardBackground,
+    required this.valueColor,
+    required this.labelColor,
     required this.value,
     required this.unit,
     required this.label,
@@ -756,18 +811,20 @@ class _StatCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return ModernServiceCard(
+      backgroundColor: cardBackground,
+      borderColor: cardBackground == AppColors.purple700
+          ? Colors.transparent
+          : AppColors.blue500.withValues(alpha: 0.55),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Container(
-            width: 44,
-            height: 44,
-            alignment: Alignment.center,
-            decoration: BoxDecoration(
-              color: AppColors.purple100,
-              borderRadius: BorderRadius.circular(AppRadius.md),
-            ),
-            child: Text(emoji, style: const TextStyle(fontSize: 24)),
+          ModernIconBox(
+            icon: icon,
+            color: iconColor,
+            backgroundColor: iconBackground,
+            borderColor: iconBackground == AppColors.purple700
+                ? Colors.transparent
+                : AppColors.purple700.withValues(alpha: 0.08),
           ),
           const SizedBox(height: AppSpacing.md),
           Row(
@@ -779,20 +836,19 @@ class _StatCard extends StatelessWidget {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: theme.textTheme.headlineSmall
-                        ?.copyWith(color: AppColors.textPrimary, fontSize: 24)),
+                        ?.copyWith(color: valueColor, fontSize: 24)),
               ),
               const SizedBox(width: AppSpacing.xs),
               Text(unit,
-                  style: theme.textTheme.bodySmall
-                      ?.copyWith(color: AppColors.textSecondary)),
+                  style: theme.textTheme.bodySmall?.copyWith(
+                      color: labelColor, fontWeight: FontWeight.w600)),
             ],
           ),
           const SizedBox(height: AppSpacing.xxs),
           Text(label,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: theme.textTheme.bodySmall
-                  ?.copyWith(color: AppColors.textSecondary)),
+              style: theme.textTheme.bodySmall?.copyWith(color: labelColor)),
         ],
       ),
     );

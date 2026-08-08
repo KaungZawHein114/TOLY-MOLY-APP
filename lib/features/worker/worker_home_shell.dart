@@ -103,40 +103,48 @@ class WorkerHomeShell extends ConsumerWidget {
           TaskerProfileScreen(), // 4 — Profile
         ],
       ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: index,
-        onDestinationSelected: (i) =>
-            ref.read(workerTabIndexProvider.notifier).state = i,
-        backgroundColor: AppColors.lightSurface,
-        indicatorColor: AppColors.purple100,
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home_rounded),
-            label: AppStrings.homeTabLabel,
+      bottomNavigationBar: NavigationBarTheme(
+        data: NavigationBarThemeData(
+          labelTextStyle: WidgetStateProperty.all(
+            const TextStyle(fontSize: 12, height: 1.05),
           ),
-          NavigationDestination(
-            icon: Icon(Icons.work_outline, color: AppColors.purple700),
-            selectedIcon: Icon(Icons.work, color: AppColors.purple700),
-            label: AppStrings.jobsTabLabel,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.assignment_outlined, color: AppColors.purple700),
-            selectedIcon:
-                Icon(Icons.assignment_rounded, color: AppColors.purple700),
-            label: AppStrings.activityTabLabel,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.card_giftcard_outlined),
-            selectedIcon: Icon(Icons.card_giftcard_rounded),
-            label: AppStrings.rewardsTabLabel,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.person_outline_rounded),
-            selectedIcon: Icon(Icons.person_rounded),
-            label: AppStrings.profileTabLabel,
-          ),
-        ],
+        ),
+        child: NavigationBar(
+          height: 76,
+          selectedIndex: index,
+          onDestinationSelected: (i) =>
+              ref.read(workerTabIndexProvider.notifier).state = i,
+          backgroundColor: AppColors.lightSurface,
+          indicatorColor: AppColors.purple100,
+          destinations: const [
+            NavigationDestination(
+              icon: Icon(Icons.home_outlined),
+              selectedIcon: Icon(Icons.home_rounded),
+              label: AppStrings.homeTabLabel,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.work_outline, color: AppColors.purple700),
+              selectedIcon: Icon(Icons.work, color: AppColors.purple700),
+              label: AppStrings.jobsTabLabel,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.assignment_outlined, color: AppColors.purple700),
+              selectedIcon:
+                  Icon(Icons.assignment_rounded, color: AppColors.purple700),
+              label: AppStrings.activityNavLabel,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.card_giftcard_outlined),
+              selectedIcon: Icon(Icons.card_giftcard_rounded),
+              label: AppStrings.rewardsTabLabel,
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.person_outline_rounded),
+              selectedIcon: Icon(Icons.person_rounded),
+              label: AppStrings.profileTabLabel,
+            ),
+          ],
+        ),
       ),
     );
   }

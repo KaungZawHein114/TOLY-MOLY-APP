@@ -291,6 +291,15 @@ class _ActionCardState extends State<_ActionCard> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final cardBackground =
+        widget.filled ? AppColors.purple700 : AppColors.blue500;
+    final titleColor = widget.filled ? AppColors.onBrand : AppColors.textPrimary;
+    final subtitleColor =
+        widget.filled ? AppColors.onBrandMuted : AppColors.textSecondary;
+    final iconBackground =
+        widget.filled ? AppColors.blue500 : AppColors.workIconSurface;
+    final iconColor = AppColors.purple700;
+
     return AnimatedScale(
       scale: _pressed ? 0.95 : 1.0,
       duration: AppMotion.fast,
@@ -301,17 +310,25 @@ class _ActionCardState extends State<_ActionCard> {
         onTapUp: (_) => setState(() => _pressed = false),
         child: ModernServiceCard(
           onTap: widget.onTap,
+          backgroundColor: cardBackground,
+          borderColor: widget.filled
+              ? Colors.transparent
+              : AppColors.blue500.withValues(alpha: 0.55),
           child: ConstrainedBox(
             constraints: const BoxConstraints(minHeight: 110),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ModernIconBox(icon: widget.icon),
+                ModernIconBox(
+                  icon: widget.icon,
+                  color: iconColor,
+                  backgroundColor: iconBackground,
+                ),
                 const SizedBox(height: AppSpacing.md),
                 Text(
                   widget.label,
                   style: theme.textTheme.titleSmall?.copyWith(
-                    color: AppColors.textPrimary,
+                    color: titleColor,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
@@ -319,7 +336,7 @@ class _ActionCardState extends State<_ActionCard> {
                 Text(
                   widget.subtitle,
                   style: theme.textTheme.bodySmall?.copyWith(
-                    color: AppColors.textSecondary,
+                    color: subtitleColor,
                     height: 1.35,
                   ),
                 ),
@@ -402,6 +419,8 @@ class _HowToUseAppCard extends StatelessWidget {
 
     return ModernServiceCard(
       padding: const EdgeInsets.all(AppSpacing.md),
+      backgroundColor: AppColors.blue500,
+      borderColor: AppColors.blue500.withValues(alpha: 0.55),
       onTap: onTap,
       child: Row(
         children: [
@@ -579,11 +598,32 @@ class _AiHelperCard extends StatelessWidget {
     final theme = Theme.of(context);
     return ModernServiceCard(
       onTap: onTap,
+      backgroundColor: AppColors.blue500,
+      borderColor: AppColors.blue500.withValues(alpha: 0.55),
       padding: const EdgeInsets.symmetric(
           horizontal: AppSpacing.lg, vertical: AppSpacing.md),
       child: Row(
         children: [
-          const ModernIconBox(icon: Icons.smart_toy_outlined),
+          Container(
+            width: 44,
+            height: 44,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: AppColors.workIconSurface,
+              borderRadius: BorderRadius.circular(AppRadius.md + 2),
+              border: Border.all(
+                color: AppColors.purple700.withValues(alpha: 0.08),
+              ),
+            ),
+            child: ClipOval(
+              child: Image.asset(
+                'assets/img.png',
+                width: 34,
+                height: 34,
+                fit: BoxFit.cover,
+              ),
+            ),
+          ),
           const SizedBox(width: AppSpacing.md),
           Expanded(
             child: Column(

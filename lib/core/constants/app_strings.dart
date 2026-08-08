@@ -83,6 +83,7 @@ class AppStrings {
   static const String homeCategoriesSearchEmpty = "ရှာဖွေမှုနှင့် ကိုက်ညီသော ဝန်ဆောင်မှု မရှိပါ";
   static const String homeTabLabel = "ပင်မ";
   static const String activityTabLabel = "လုပ်ဆောင်ချက်များ";
+  static const String activityNavLabel = "လုပ်ဆောင်";
   static const String chatTabLabel = "စကားပြော";
   static const String pendingTabLabel = "စောင့်ဆိုင်း";
   static const String jobsTabLabel = "အလုပ်များ";

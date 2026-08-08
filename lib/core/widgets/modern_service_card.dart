@@ -11,6 +11,8 @@ class ModernServiceCard extends StatelessWidget {
   final double? width;
   final EdgeInsetsGeometry? margin;
   final EdgeInsetsGeometry padding;
+  final Color backgroundColor;
+  final Color borderColor;
   final VoidCallback? onTap;
 
   const ModernServiceCard({
@@ -19,6 +21,8 @@ class ModernServiceCard extends StatelessWidget {
     this.width,
     this.margin,
     this.padding = const EdgeInsets.all(AppSpacing.lg),
+    this.backgroundColor = AppColors.lightSurface,
+    this.borderColor = AppColors.onboardingDivider,
     this.onTap,
   });
 
@@ -34,9 +38,9 @@ class ModernServiceCard extends StatelessWidget {
       width: width,
       margin: margin,
       decoration: BoxDecoration(
-        color: AppColors.lightSurface,
+        color: backgroundColor,
         borderRadius: radius,
-        border: Border.all(color: AppColors.onboardingDivider),
+        border: Border.all(color: borderColor),
         boxShadow: [
           BoxShadow(
             color: AppColors.shadowSm,
@@ -64,6 +68,8 @@ class ModernServiceCard extends StatelessWidget {
 class ModernIconBox extends StatelessWidget {
   final IconData icon;
   final Color color;
+  final Color backgroundColor;
+  final Color? borderColor;
   final double size;
   final double iconSize;
 
@@ -71,6 +77,8 @@ class ModernIconBox extends StatelessWidget {
     super.key,
     required this.icon,
     this.color = AppColors.purple700,
+    this.backgroundColor = AppColors.workIconSurface,
+    this.borderColor,
     this.size = 44,
     this.iconSize = AppSizes.iconMd,
   });
@@ -82,10 +90,10 @@ class ModernIconBox extends StatelessWidget {
       height: size,
       alignment: Alignment.center,
       decoration: BoxDecoration(
-        color: AppColors.workIconSurface,
+        color: backgroundColor,
         borderRadius: BorderRadius.circular(AppRadius.md + 2),
         border: Border.all(
-          color: AppColors.purple700.withValues(alpha: 0.08),
+          color: borderColor ?? AppColors.purple700.withValues(alpha: 0.08),
         ),
       ),
       child: Icon(icon, color: color, size: iconSize),
