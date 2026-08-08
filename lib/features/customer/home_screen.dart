@@ -83,7 +83,7 @@ class CustomerHomeScreen extends StatelessWidget {
             SliverToBoxAdapter(
               child: Padding(
                 padding: const EdgeInsets.fromLTRB(
-                    AppSpacing.lg, 0, AppSpacing.lg, AppSpacing.lg),
+                    AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.lg),
                 child: Row(
                   children: [
                     Expanded(

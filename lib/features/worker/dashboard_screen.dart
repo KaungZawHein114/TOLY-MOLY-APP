@@ -345,7 +345,8 @@ class _WorkerDashboardScreenState extends ConsumerState<WorkerDashboardScreen> {
           children: [
             const _WorkerHomeHeader(),
             Padding(
-              padding: const EdgeInsets.all(AppSpacing.lg),
+              padding: const EdgeInsets.fromLTRB(
+                  AppSpacing.lg, AppSpacing.xl, AppSpacing.lg, AppSpacing.lg),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [

@@ -37,13 +37,13 @@ class _WorkerCardState extends State<WorkerCard> {
         scale: _pressed ? 0.97 : 1.0,
         duration: AppMotion.fast,
         curve: AppMotion.press,
-        child: ModernServiceCard(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
           onTap: widget.onTap,
-          child: GestureDetector(
-            behavior: HitTestBehavior.translucent,
-            onTapDown: (_) => setState(() => _pressed = true),
-            onTapCancel: () => setState(() => _pressed = false),
-            onTapUp: (_) => setState(() => _pressed = false),
+          onTapDown: (_) => setState(() => _pressed = true),
+          onTapCancel: () => setState(() => _pressed = false),
+          onTapUp: (_) => setState(() => _pressed = false),
+          child: ModernServiceCard(
             child: Row(
               children: [
                 const _Avatar(),
